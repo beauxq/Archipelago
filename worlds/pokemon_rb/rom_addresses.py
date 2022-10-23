@@ -585,4 +585,5 @@ rom_addresses = {
     "Badge_Text_Marsh_Badge": 0x9918c,
     "Badge_Text_Volcano_Badge": 0x991d6,
     "Badge_Text_Earth_Badge": 0x991f3,
+    "Text_Badges_Needed_Viridian_Gym": 0xa49f2,
 }
