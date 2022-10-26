@@ -190,7 +190,7 @@ class SNIContext(CommonContext):
         # and let auth be used for what it's meant for.
         self.auth = self.rom
         auth = base64.b64encode(self.rom).decode()
-        await self.send_connect(name=auth)
+        self.send_connect(name=auth)
 
     def on_deathlink(self, data: typing.Dict[str, typing.Any]) -> None:
         if not self.killing_player_task or self.killing_player_task.done():
@@ -202,7 +202,7 @@ class SNIContext(CommonContext):
         if self.death_state == DeathState.alive:
             if currently_dead:
                 self.death_state = DeathState.dead
-                await self.send_death()
+                self.send_death()
         # in this state we care about confirming a kill, to move state to dead
         elif self.death_state == DeathState.killing_player:
             # this is being handled in deathlink_kill_player(ctx) already
@@ -230,7 +230,7 @@ class SNIContext(CommonContext):
                 # since the player will likely need that item.
                 # Once the games handled by SNIClient gets made to be remote items,
                 # this will no longer be needed.
-                asyncio.create_task(self.send_msgs([{"cmd": "LocationScouts", "locations": list(new_locations)}]))
+                self.send_msgs_no_wait([{"cmd": "LocationScouts", "locations": list(new_locations)}])
 
     def run_gui(self) -> None:
         from kvui import GameManager

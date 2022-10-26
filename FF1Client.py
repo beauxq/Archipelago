@@ -61,7 +61,7 @@ class FF1Context(CommonContext):
             logger.info('Awaiting connection to NES to get Player information')
             return
 
-        await self.send_connect()
+        self.send_connect()
 
     def _set_message(self, msg: str, msg_id: int):
         if DISPLAY_MSGS:

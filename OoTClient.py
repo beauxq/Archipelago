@@ -98,7 +98,7 @@ class OoTContext(CommonContext):
             logger.info('Awaiting connection to Bizhawk to get player information')
             return
 
-        await self.send_connect()
+        self.send_connect()
 
     def on_deathlink(self, data: dict):
         self.deathlink_pending = True
@@ -160,8 +160,8 @@ async def parse_payload(payload: dict, ctx: OoTContext, force: bool):
             ctx.deathlink_pending = False
             if not ctx.deathlink_sent_this_death:
                 ctx.deathlink_sent_this_death = True
-                await ctx.send_death()
-        else: # link is alive
+                ctx.send_death()
+        else:  # link is alive
             ctx.deathlink_sent_this_death = False
 
 

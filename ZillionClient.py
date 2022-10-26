@@ -110,7 +110,7 @@ class ZillionContext(CommonContext):
             logger.info('waiting for connection to game...')
             return
         logger.info("logging in to server...")
-        await self.send_connect()
+        self.send_connect()
 
     # override
     def run_gui(self) -> None:
@@ -177,7 +177,7 @@ class ZillionContext(CommonContext):
                 "cmd": "Get",
                 "keys": [f"zillion-{self.auth}-doors"]
             }
-            asyncio.create_task(self.send_msgs([payload]))
+            self.send_msgs_no_wait([payload])
         elif cmd == "Retrieved":
             if "keys" not in args:
                 logger.warning(f"invalid Retrieved packet to ZillionClient: {args}")
@@ -203,20 +203,20 @@ class ZillionContext(CommonContext):
                     self.ap_local_count += 1
                     n_locations = len(self.missing_locations) + len(self.checked_locations) - 1  # -1 to ignore win
                     logger.info(f'New Check: {loc_name} ({self.ap_local_count}/{n_locations})')
-                    asyncio.create_task(self.send_msgs([
+                    self.send_msgs_no_wait([
                         {"cmd": 'LocationChecks', "locations": [server_id]}
-                    ]))
+                    ])
                 else:
                     # This will happen a lot in Zillion,
                     # because all the key words are local and unwatched by the server.
                     logger.debug(f"DEBUG: {loc_name} not in missing")
             elif isinstance(event_from_game, events.DeathEventFromGame):
-                asyncio.create_task(self.send_death())
+                self.send_death()
             elif isinstance(event_from_game, events.WinEventFromGame):
                 if not self.finished_game:
-                    asyncio.create_task(self.send_msgs([
+                    self.send_msgs_no_wait([
                         {"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}
-                    ]))
+                    ])
                     self.finished_game = True
             elif isinstance(event_from_game, events.DoorEventFromGame):
                 if self.auth:
@@ -226,7 +226,7 @@ class ZillionContext(CommonContext):
                         "key": f"zillion-{self.auth}-doors",
                         "operations": [{"operation": "replace", "value": doors_b64}]
                     }
-                    asyncio.create_task(self.send_msgs([payload]))
+                    self.send_msgs_no_wait([payload])
             else:
                 logger.warning(f"WARNING: unhandled event from game {event_from_game}")
 
@@ -285,6 +285,7 @@ async def zillion_sync_task(ctx: ZillionContext) -> None:
     help_message_shown = False
 
     with Memory(ctx.from_game, ctx.to_game) as memory:
+        connect_task: "Optional[asyncio.Task[None]]" = None
         while not ctx.exit_event.is_set():
             ram = await memory.read()
             game_id = memory.get_rom_to_ram_data(ram)
@@ -309,7 +310,7 @@ async def zillion_sync_task(ctx: ZillionContext) -> None:
                                         ctx.next_item = 0
                                         ctx.ap_local_count = len(ctx.checked_locations)
                                     else:  # no slot data yet
-                                        asyncio.create_task(ctx.send_connect())
+                                        ctx.send_connect()
                                         log_no_spam("logging in to server...")
                                         await asyncio.wait((
                                             ctx.got_slot_data.wait(),
@@ -333,7 +334,7 @@ async def zillion_sync_task(ctx: ZillionContext) -> None:
                     memory.reset_game_state()
 
                     ctx.auth = name
-                    asyncio.create_task(ctx.connect())
+                    connect_task = asyncio.create_task(ctx.connect())
                     await asyncio.wait((
                         ctx.got_room_info.wait(),
                         ctx.exit_event.wait(),
@@ -348,6 +349,8 @@ async def zillion_sync_task(ctx: ZillionContext) -> None:
 
             await asyncio.sleep(0.09375)
         logger.info("zillion sync task ending")
+        if connect_task:
+            connect_task.cancel()
 
 
 async def main() -> None:

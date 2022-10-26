@@ -73,7 +73,7 @@ class GBContext(CommonContext):
             logger.info('Awaiting connection to Bizhawk to get Player information')
             return
 
-        await self.send_connect()
+        self.send_connect()
 
     def _set_message(self, msg: str, msg_id: int):
         if DISPLAY_MSGS:

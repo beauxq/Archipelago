@@ -174,6 +174,7 @@ class CommonContext:
     # internals
     # current message box through kvui
     _messagebox = None
+    _message_tasks: "typing.ClassVar[typing.Set[asyncio.Task[None]]]" = set()
 
     def __init__(self, server_address: typing.Optional[str], password: typing.Optional[str]) -> None:
         # server state
@@ -261,6 +262,16 @@ class CommonContext:
             return
         await self.server.socket.send(encode(msgs))
 
+    def send_msgs_no_wait(self, msgs: typing.List[typing.Any]) -> None:
+        """ a "fire-and-forget" version of send_msgs
+
+        `msgs` JSON serializable """
+        # following pattern given at
+        # https://docs.python.org/3.10/library/asyncio-task.html#asyncio.create_task
+        task = asyncio.create_task(self.send_msgs(msgs))
+        self._message_tasks.add(task)
+        task.add_done_callback(self._message_tasks.discard)
+
     def consume_players_package(self, package: typing.List[tuple]):
         self.player_names = {slot: name for team, slot, name, orig_name in package if self.team == team}
         self.player_names[0] = "Archipelago"
@@ -284,7 +295,7 @@ class CommonContext:
                 logger.info('Enter slot name:')
                 self.auth = await self.console_input()
 
-    async def send_connect(self, **kwargs: typing.Any) -> None:
+    def send_connect(self, **kwargs: typing.Any) -> None:
         """ send `Connect` packet to log in to server """
         payload = {
             'cmd': 'Connect',
@@ -294,7 +305,7 @@ class CommonContext:
         }
         if kwargs:
             payload.update(kwargs)
-        await self.send_msgs([payload])
+        self.send_msgs_no_wait([payload])
 
     async def console_input(self) -> str:
         self.input_requests += 1
@@ -414,11 +425,11 @@ class CommonContext:
         else:
             logger.info(f"DeathLink: Received from {data['source']}")
 
-    async def send_death(self, death_text: str = ""):
+    def send_death(self, death_text: str = ""):
         if self.server and self.server.socket:
             logger.info("DeathLink: Sending death to your friends...")
             self.last_death_link = time.time()
-            await self.send_msgs([{
+            self.send_msgs_no_wait([{
                 "cmd": "Bounce", "tags": ["DeathLink"],
                 "data": {
                     "time": self.last_death_link,
@@ -759,7 +770,7 @@ if __name__ == '__main__':
             if password_requested and not self.password:
                 await super(TextContext, self).server_auth(password_requested)
             await self.get_username()
-            await self.send_connect()
+            self.send_connect()
 
         def on_package(self, cmd: str, args: dict):
             if cmd == "Connected":

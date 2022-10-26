@@ -175,7 +175,7 @@ class SC2Context(CommonContext):
         if password_requested and not self.password:
             await super(SC2Context, self).server_auth(password_requested)
         await self.get_username()
-        await self.send_connect()
+        self.send_connect()
 
     def on_package(self, cmd: str, args: dict):
         if cmd in {"Connected"}:

@@ -76,7 +76,7 @@ class FactorioContext(CommonContext):
             raise Exception("Cannot connect to a server with unknown own identity, "
                             "bridge to Factorio first.")
 
-        await self.send_connect()
+        self.send_connect()
 
     def on_print(self, args: dict):
         super(FactorioContext, self).on_print(args)
@@ -109,9 +109,9 @@ class FactorioContext(CommonContext):
                 self.rcon_client.send_commands({item_name: f'/ap-get-technology ap-{item_name}-\t-1' for
                                                 item_name in args["checked_locations"]})
             if cmd == "Connected" and self.energy_link_increment:
-                asyncio.create_task(self.send_msgs([{
+                self.send_msgs_no_wait([{
                     "cmd": "SetNotify", "keys": ["EnergyLink"]
-                }]))
+                }])
         elif cmd == "SetReply":
             if args["key"] == "EnergyLink":
                 if self.energy_link_increment and args.get("last_deplete", -1) == self.last_deplete:
@@ -177,7 +177,7 @@ async def game_watcher(ctx: FactorioContext):
                     if death_link_tick != ctx.death_link_tick:
                         ctx.death_link_tick = death_link_tick
                         if "DeathLink" in ctx.tags:
-                            asyncio.create_task(ctx.send_death())
+                            ctx.send_death()
                     if ctx.energy_link_increment:
                         in_world_bridges = data["energy_bridges"]
                         if in_world_bridges:

@@ -57,7 +57,7 @@ class ChecksFinderContext(CommonContext):
         if password_requested and not self.password:
             await super(ChecksFinderContext, self).server_auth(password_requested)
         await self.get_username()
-        await self.send_connect()
+        self.send_connect()
 
     async def connection_closed(self):
         await super(ChecksFinderContext, self).connection_closed()
