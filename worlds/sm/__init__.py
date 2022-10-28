@@ -5,7 +5,7 @@ import copy
 import os
 import threading
 import base64
-from typing import Dict, Set, TextIO
+from typing import Any, Dict, List, Set, TextIO
 
 from worlds.sm.variaRandomizer.graph.graph_utils import GraphUtils
 
@@ -285,28 +285,29 @@ class SMWorld(World):
                                               "data", "SMBasepatch_prebuilt", "sm-basepatch-symbols.json"))
 
         # gather all player ids and names relevant to this rom, then write player name and player id data tables
-        self.playerIdSet: Set[int] = {0} # 0 is for "Archipelago" server
+        playerIdSet: Set[int] = {0}  # 0 is for "Archipelago" server
         for itemLoc in self.world.get_locations():
+            assert itemLoc.item
             # add each playerid who has a location containing an item to send to us *or* to an item_link we're part of
             if itemLoc.item.player == self.player or \
-                    (itemLoc.item.player in self.world.groups and \
+                    (itemLoc.item.player in self.world.groups and
                      self.player in self.world.groups[itemLoc.item.player]['players']):
-                self.playerIdSet |= {itemLoc.player}
+                playerIdSet |= {itemLoc.player}
             # add each playerid, including item link ids, that we'll be sending items to
             if itemLoc.player == self.player:
-                self.playerIdSet |= {itemLoc.item.player}
-        if len(self.playerIdSet) > SM_ROM_PLAYERDATA_COUNT:
+                playerIdSet |= {itemLoc.item.player}
+        if len(playerIdSet) > SM_ROM_PLAYERDATA_COUNT:
             # max 202 entries, but it's possible for item links to add enough replacement items for us, that are placed
             # in worlds that otherwise have no relation to us, that the 2*location count limit is exceeded
-            logger.warning(f"SM is interacting with too many players to fit in ROM. " +
-                            "Removing the highest {len(self.playerIdSet) - SM_ROM_PLAYERDATA_COUNT} ids to fit")
-            self.playerIdSet = set(sorted(self.playerIdSet)[:SM_ROM_PLAYERDATA_COUNT])
-        self.otherPlayerIndex : Dict[int, int] = {} # ap player id -> rom-local player index
-        playerNameData = []
-        playerIdData = []
+            logger.warning("SM is interacting with too many players to fit in ROM. "
+                           f"Removing the highest {len(playerIdSet) - SM_ROM_PLAYERDATA_COUNT} ids to fit")
+            playerIdSet = set(sorted(playerIdSet)[:SM_ROM_PLAYERDATA_COUNT])
+        otherPlayerIndex: Dict[int, int] = {}  # ap player id -> rom-local player index
+        playerNameData: List[Dict[str, Any]] = []
+        playerIdData: List[Dict[str, Any]] = []
         # sort all player data by player id so that the game can look up a player's data reasonably quickly when
         # the client sends an ap playerid to the game
-        for i, playerid in enumerate(sorted(self.playerIdSet)):
+        for i, playerid in enumerate(sorted(playerIdSet)):
             playername = self.world.player_name[playerid] if playerid != 0 else "Archipelago"
             playerIdForRom = playerid
             if playerid > SM_ROM_MAX_PLAYERID:
@@ -317,7 +318,7 @@ class SMWorld(World):
                     raise Exception(f"SM rom cannot fit enough bits to represent self player id {playerid}")
                 else:
                     logger.warning(f"SM rom cannot fit enough bits to represent player id {playerid}, setting to 0 in rom")
-            self.otherPlayerIndex[playerid] = i
+            otherPlayerIndex[playerid] = i
             playerNameData.append({"sym": symbols["rando_player_name_table"],
                                    "offset": i * 16,
                                    "values": playername[:16].upper().center(16).encode()})
@@ -342,18 +343,18 @@ class SMWorld(World):
                     idx += 1
 
                 if itemLoc.item.player == self.player:
-                    itemDestinationType = 0 # dest type 0 means 'regular old SM item' per itemtable.asm
+                    itemDestinationType = 0  # dest type 0 means 'regular old SM item' per itemtable.asm
                 elif itemLoc.item.player in self.world.groups and \
                         self.player in self.world.groups[itemLoc.item.player]['players']:
                     # dest type 2 means 'SM item link item that sends to the current player and others'
                     # per itemtable.asm (groups are synonymous with item_links, currently)
                     itemDestinationType = 2
                 else:
-                    itemDestinationType = 1 # dest type 1 means 'item for entirely someone else' per itemtable.asm
+                    itemDestinationType = 1  # dest type 1 means 'item for entirely someone else' per itemtable.asm
 
                 [w0, w1] = self.getWordArray(itemDestinationType)
                 [w2, w3] = self.getWordArray(itemId)
-                [w4, w5] = self.getWordArray(self.otherPlayerIndex[itemLoc.item.player])
+                [w4, w5] = self.getWordArray(otherPlayerIndex[itemLoc.item.player])
                 [w6, w7] = self.getWordArray(0 if itemLoc.item.advancement else 1)
                 multiWorldLocations.append({"sym": symbols["rando_item_table"],
                                             "offset": locationsDict[itemLoc.name].Id*8,
