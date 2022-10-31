@@ -354,7 +354,8 @@ class SMWorld(World):
 
                 [w0, w1] = self.getWordArray(itemDestinationType)
                 [w2, w3] = self.getWordArray(itemId)
-                [w4, w5] = self.getWordArray(otherPlayerIndex[itemLoc.item.player])
+                [w4, w5] = self.getWordArray(otherPlayerIndex[itemLoc.item.player] if itemLoc.item.player in
+                                             otherPlayerIndex else 0)
                 [w6, w7] = self.getWordArray(0 if itemLoc.item.advancement else 1)
                 multiWorldLocations.append({"sym": symbols["rando_item_table"],
                                             "offset": locationsDict[itemLoc.name].Id*8,
