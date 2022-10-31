@@ -287,7 +287,8 @@ class SMWorld(World):
         # gather all player ids and names relevant to this rom, then write player name and player id data tables
         playerIdSet: Set[int] = {0}  # 0 is for "Archipelago" server
         for itemLoc in self.world.get_locations():
-            assert itemLoc.item
+            assert itemLoc.item, f"World of player '{self.world.player_name[itemLoc.player]}' has a loc.item " + \
+                                 f"that is {itemLoc.item} during generate_output"
             # add each playerid who has a location containing an item to send to us *or* to an item_link we're part of
             if itemLoc.item.player == self.player or \
                     (itemLoc.item.player in self.world.groups and
