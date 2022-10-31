@@ -5,7 +5,7 @@ import copy
 import os
 import threading
 import base64
-from typing import Any, Dict, List, Set, TextIO
+from typing import Any, Dict, Iterable, List, Set, TextIO, TypedDict
 
 from worlds.sm.variaRandomizer.graph.graph_utils import GraphUtils
 
@@ -66,6 +66,13 @@ class SMWeb(WebWorld):
         "multiworld/en",
         ["Farrak Kilhn"]
     )]
+
+
+class ByteEdit(TypedDict):
+    sym: Dict[str, Any]
+    offset: int
+    values: Iterable[int]
+
 
 locations_start_id = 82000
 items_start_id = 83000
@@ -201,7 +208,8 @@ class SMWorld(World):
         create_locations(self, self.player)
         create_regions(self, self.world, self.player)
 
-    def getWordArray(self, w): # little-endian convert a 16-bit number to an array of numbers <= 255 each
+    def getWordArray(self, w: int) -> List[int]:
+        """ little-endian convert a 16-bit number to an array of numbers <= 255 each """
         return [w & 0x00FF, (w & 0xFF00) >> 8]
 
     # used for remote location Credits Spoiler of local items
@@ -304,8 +312,8 @@ class SMWorld(World):
                            f"Removing the highest {len(playerIdSet) - SM_ROM_PLAYERDATA_COUNT} ids to fit")
             playerIdSet = set(sorted(playerIdSet)[:SM_ROM_PLAYERDATA_COUNT])
         otherPlayerIndex: Dict[int, int] = {}  # ap player id -> rom-local player index
-        playerNameData: List[Dict[str, Any]] = []
-        playerIdData: List[Dict[str, Any]] = []
+        playerNameData: List[ByteEdit] = []
+        playerIdData: List[ByteEdit] = []
         # sort all player data by player id so that the game can look up a player's data reasonably quickly when
         # the client sends an ap playerid to the game
         for i, playerid in enumerate(sorted(playerIdSet)):
@@ -327,8 +335,8 @@ class SMWorld(World):
                                  "offset": i * 2,
                                  "values": self.getWordArray(playerIdForRom)})
 
-        multiWorldLocations = []
-        multiWorldItems = []
+        multiWorldLocations: List[ByteEdit] = []
+        multiWorldItems: List[ByteEdit] = []
         idx = 0
         vanillaItemTypesCount = 21
         for itemLoc in self.world.get_locations():
@@ -370,7 +378,7 @@ class SMWorld(World):
                         "paletteSymbolName": "nonprog_item_eight_palette_indices",
                         "dataSymbolName":    "offworld_graphics_data_item"}]
         idx = 0
-        offworldSprites = []
+        offworldSprites: List[ByteEdit] = []
         for itemSprite in itemSprites:
             with open(os.path.join(os.path.dirname(__file__), "data", "custom_sprite", itemSprite["fileName"]), 'rb') as stream:
                 buffer = bytearray(stream.read())
@@ -382,15 +390,21 @@ class SMWorld(World):
                                         "values": buffer[8:264]})
                 idx += 1
 
-        deathLink = [{"sym": symbols["config_deathlink"],
-                      "offset": 0,
-                      "values": [self.world.death_link[self.player].value]}]
-        remoteItem = [{"sym": symbols["config_remote_items"],
-                       "offset": 0,
-                       "values": self.getWordArray(0b001 + (0b010 if self.remote_items else 0b000))}]
-        ownPlayerId = [{"sym": symbols["config_player_id"],
-                        "offset": 0,
-                        "values": self.getWordArray(self.player)}]
+        deathLink: List[ByteEdit] = [{
+            "sym": symbols["config_deathlink"],
+            "offset": 0,
+            "values": [self.world.death_link[self.player].value]
+        }]
+        remoteItem: List[ByteEdit] = [{
+            "sym": symbols["config_remote_items"],
+            "offset": 0,
+            "values": self.getWordArray(0b001 + (0b010 if self.remote_items else 0b000))
+        }]
+        ownPlayerId: List[ByteEdit] = [{
+            "sym": symbols["config_player_id"],
+            "offset": 0,
+            "values": self.getWordArray(self.player)
+        }]
 
         patchDict = {   'MultiWorldLocations': multiWorldLocations,
                         'MultiWorldItems': multiWorldItems,
@@ -403,10 +417,10 @@ class SMWorld(World):
 
         # convert an array of symbolic byte_edit dicts like {"sym": symobj, "offset": 0, "values": [1, 0]}
         # to a single rom patch dict like {0x438c: [1, 0], 0xa4a5: [0, 0, 0]} which varia will understand and apply
-        def resolve_symbols_to_file_offset_based_dict(byte_edits_arr) -> dict:
-            this_patch_as_dict = {}
+        def resolve_symbols_to_file_offset_based_dict(byte_edits_arr: List[ByteEdit]) -> Dict[int, Iterable[int]]:
+            this_patch_as_dict: Dict[int, Iterable[int]] = {}
             for byte_edit in byte_edits_arr:
-                offset_within_rom_file = byte_edit["sym"]["offset_within_rom_file"] + byte_edit["offset"]
+                offset_within_rom_file: int = byte_edit["sym"]["offset_within_rom_file"] + byte_edit["offset"]
                 this_patch_as_dict[offset_within_rom_file] = byte_edit["values"]
             return this_patch_as_dict
 
