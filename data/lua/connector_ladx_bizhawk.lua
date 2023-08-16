@@ -56,6 +56,8 @@ local domains = {
     ["WRITE_CORE_RAM"] = "Main RAM"
 }
 
+local frame_count = 0;
+
 function on_vblank()
     -- Attempt to lessen the CPU load by only polling the UDP socket every x frames.
     -- x = 10 is entirely arbitrary, very little thought went into it.
@@ -69,6 +71,12 @@ function on_vblank()
     --while emu.framecount() % 10 ~= 0 do
     --    emu.frameadvance()
     --end
+    frame_count = frame_count + 1
+    if frame_count >= 10 then
+        frame_count = 0
+    else
+        return
+    end
 
     local data, msg_or_ip, port_or_nil = udp:receivefrom()
     if data then
@@ -145,8 +153,9 @@ function on_vblank()
     end
 end
 
-event.onmemoryexecute(on_vblank, 0x40, "ap_connector_vblank")
+event.onframeend(on_vblank, "ap_connector_frame")
 
+print("connector loaded")
 while true do
     emu.yield()
 end
