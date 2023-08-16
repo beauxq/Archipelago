@@ -3,7 +3,7 @@
 -- SPDX-License-Identifier: MIT
 
 -- This script attempts to implement the basic functionality needed in order for
--- the LADXR Archipelago client to be able to talk to EmuHawk instead of RetroArch
+-- the some Archipelago clients to be able to talk to EmuHawk instead of RetroArch
 -- by reproducing the RetroArch API with EmuHawk's Lua interface.
 --
 -- RetroArch UDP API: https://github.com/libretro/RetroArch/blob/master/command.c
@@ -56,28 +56,8 @@ local domains = {
     ["WRITE_CORE_RAM"] = "Main RAM"
 }
 
-local frame_count = 0;
-
-function on_vblank()
-    -- Attempt to lessen the CPU load by only polling the UDP socket every x frames.
-    -- x = 10 is entirely arbitrary, very little thought went into it.
-    -- We could try to make use of client.get_approx_framerate() here, but the values returned
-    -- seemed more or less arbitrary as well.
-    --
-    -- NOTE: Never mind the above, the LADXR Archipelago client appears to run into problems with
-    --       interwoven GET_STATUS calls, leading to stopped communication.
-    --       For GB(C), polling the socket on every frame is OK-ish, so we just do that.
-    --
-    --while emu.framecount() % 10 ~= 0 do
-    --    emu.frameadvance()
-    --end
-    frame_count = frame_count + 1
-    if frame_count >= 10 then
-        frame_count = 0
-    else
-        return
-    end
-
+-- receive a udp packet and handle it
+local function server_handle()
     local data, msg_or_ip, port_or_nil = udp:receivefrom()
     if data then
         -- "data" format is "COMMAND [PARAMETERS] [...]"
@@ -153,7 +133,14 @@ function on_vblank()
     end
 end
 
-event.onframeend(on_vblank, "ap_connector_frame")
+if emu.getsystemid() == "GBC" then
+    -- This is a workaround for: https://github.com/TASEmulators/BizHawk/issues/3711
+    event.onmemoryexecute(server_handle, 0x40, "ap_connector_vblank")
+    print("using vblank event")
+else
+    event.onframeend(server_handle, "ap_connector_frame")
+    print("using frame event")
+end
 
 print("connector loaded")
 while true do
