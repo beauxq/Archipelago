@@ -67,6 +67,7 @@ class SubversionDaphne(Toggle):
     display_name = "randomize wrecked Daphne gate"
 
 
+# TODO: implement
 class SubversionShortGame(Choice):
     """ Keep the game from being too long by not putting required items in far away places. """
     display_name = "progression items"
@@ -76,9 +77,22 @@ class SubversionShortGame(Choice):
     default = 1
 
 
+# TODO: implement
 class SubversionAutoHints(DefaultOnToggle):
     """ Automatically hint Gravity Boots and Morph Ball """
     display_name = "hint early items"
+
+
+# TODO: implement
+class SubversionTrollAmmo(Toggle):
+    """
+    When activated, a Super Metroid player's Missiles, Supers, and Power Bombs
+    will look the same as your Missiles, Supers, and Power Bombs.
+
+    When not activated, a Super Metroid player's ammo
+    will look like generic Archipelago items.
+    """
+    display_name = "troll ammo"
 
 
 subversion_options: Dict[str, AssembleOptions] = {
@@ -89,7 +103,8 @@ subversion_options: Dict[str, AssembleOptions] = {
     "escape_shortcuts": SubversionEscapeShortcuts,
     "daphne_gate": SubversionDaphne,
     "progression_items": SubversionShortGame,
-    "auto_hints": SubversionAutoHints
+    "auto_hints": SubversionAutoHints,
+    "troll_ammo": SubversionTrollAmmo
 }
 
 
