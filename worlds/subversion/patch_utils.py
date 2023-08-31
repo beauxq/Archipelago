@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 import json
 from pathlib import Path
-from typing import Dict, Final, List, Mapping, Optional, Set, Tuple
+from typing import Dict, Final, List, Mapping, Optional, Set, Tuple, Union
 
 from BaseClasses import ItemClassification, Location
 from worlds.sm.variaRandomizer.rando.Items import ItemManager
@@ -10,6 +10,7 @@ from .config import base_id
 from .item import SubversionItem, local_id_to_sv_item, name_to_id, sv_item_name_to_sm_item_id
 from .location import SubversionLocation
 
+from subversion_rando.ips import patch as ips_patch
 from subversion_rando.item_data import Items
 from subversion_rando.romWriter import RomWriter
 
@@ -353,3 +354,15 @@ class ItemRomData:
             tr[this_offset:this_offset + 2] = id_.to_bytes(2, "little")
 
         return tr
+
+
+def ips_patch_from_file(ips_file_name: Union[str, Path], input_bytes: bytes) -> bytearray:
+    with open(ips_file_name, "rb") as ips_file:
+        ips_data = ips_file.read()
+    return ips_patch(input_bytes, ips_data)
+
+
+def get_multi_patch_path() -> Path:
+    """ multiworld-basepatch.ips """
+    path = Path(__file__).parent.resolve()
+    return path.joinpath("data", "ap_subversion_patch", "multiworld-basepatch.ips")

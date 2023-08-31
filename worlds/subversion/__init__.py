@@ -1,6 +1,8 @@
 import functools
 import logging
-from typing import List, Optional
+import os
+from threading import Event
+from typing import Any, Dict, List, Optional
 
 from BaseClasses import CollectionState, Item, ItemClassification, Location, \
     LocationProgressType, MultiWorld, Region, Tutorial
@@ -9,11 +11,15 @@ from .item import SubversionItem, name_to_id as _item_name_to_id, names_for_item
 from .location import SubversionLocation, name_to_id as _loc_name_to_id
 from .logic import choose_torpedo_bay, cs_to_loadout
 from .options import make_sv_game, subversion_options
+from .patch_utils import ItemRomData, get_multi_patch_path, ips_patch_from_file, offset_from_symbol, patch_item_sprites
+from .rom import SubversionDeltaPatch, get_base_rom_path
 
 from subversion_rando.game import Game as SvGame
 from subversion_rando.item_data import Items
 from subversion_rando.logic_locations import location_logic
 from subversion_rando.logic_shortcut_data import can_win
+from subversion_rando.main_generation import apply_rom_patches
+from subversion_rando.romWriter import RomWriter
 
 
 class SubversionWebWorld(WebWorld):
@@ -46,6 +52,9 @@ class SubversionWorld(World):
     location_name_to_id = _loc_name_to_id
     item_name_to_id = _item_name_to_id
 
+    rom_name: bytes
+    rom_name_available_event: Event
+
     logger: logging.Logger
     sv_game: Optional[SvGame] = None
     torpedo_bay_item: Optional[str] = None
@@ -53,6 +62,8 @@ class SubversionWorld(World):
 
     def __init__(self, multiworld: MultiWorld, player: int):
         super().__init__(multiworld, player)
+        self.rom_name = b""
+        self.rom_name_available_event = Event()
         self.logger = logging.getLogger("Subversion")
 
     def create_item(self, name: str) -> SubversionItem:
@@ -148,10 +159,65 @@ class SubversionWorld(World):
             self.logger.debug("super was already being placed earlier")
 
     def generate_output(self, output_directory: str) -> None:
-        locations = self.multiworld.get_region("Menu", self.player).locations
-        for loc in locations:
-            assert loc.item
-            print(f"{loc.name} got {loc.item.name}")
+        base_rom_path = get_base_rom_path()
+        rom_writer = RomWriter.fromFilePaths(base_rom_path)  # this patches SM to Subversion 1.2
+
+        multi_patch_path = get_multi_patch_path()
+        rom_writer.rom_data = ips_patch_from_file(multi_patch_path, rom_writer.rom_data)
+
+        rom_writer.rom_data = patch_item_sprites(rom_writer.rom_data)
+
+        troll_ammo: bool = getattr(self.multiworld, "troll_ammo")[self.player].value
+        item_rom_data = ItemRomData(self.player, troll_ammo, self.multiworld.player_name)
+        for loc in self.multiworld.get_locations():
+            item_rom_data.register(loc)
+        rom_writer.rom_data = item_rom_data.patch_tables(rom_writer.rom_data)
+
+        assert self.sv_game, "can't call generate_output without create_regions"
+        apply_rom_patches(self.sv_game, rom_writer)
+
+        # TODO: config options
+        # self.multiworld.death_link[self.player].value
+        "config_deathlink"
+        # self.getWordArray(0b001 + (0b010 if self.remote_items else 0b000))
+        "config_remote_items"
+
+        player_id_offset = offset_from_symbol("config_player_id")
+        rom_writer.writeBytes(player_id_offset, self.player.to_bytes(2, "little"))
+
+        # set rom name
+        from Utils import __version__
+        rom_name = bytearray(
+            f'SV{__version__.replace(".", "")[0:3]}_{self.player}_{self.multiworld.seed:11}',
+            'utf8'
+        )[:21]
+        rom_name.extend(b" " * (21 - len(rom_name)))
+        assert len(rom_name) == 21, f"{rom_name=}"
+        rom_writer.writeBytes(0x7fc0, rom_name)
+        self.rom_name = rom_name
+        self.rom_name_available_event.set()
+
+        out_file_base = self.multiworld.get_out_file_name_base(self.player)
+        patched_rom_file_name = os.path.join(output_directory, f"{out_file_base}.sfc")
+        rom_writer.finalizeRom(patched_rom_file_name)  # writes rom file
+
+        patch_file_name = os.path.join(output_directory, f"{out_file_base}{SubversionDeltaPatch.patch_file_ending}")
+        patch = SubversionDeltaPatch(patch_file_name,
+                                     player=self.player,
+                                     player_name=self.multiworld.player_name[self.player],
+                                     patched_path=patched_rom_file_name)
+        patch.write()
+        if os.path.exists(patched_rom_file_name):
+            os.unlink(patched_rom_file_name)
+
+    def modify_multidata(self, multidata: Dict[str, Any]) -> None:
+        import base64
+        # wait for self.rom_name to be available.
+        self.rom_name_available_event.wait()
+        rom_name = self.rom_name
+        assert len(rom_name) == 21, f"{rom_name=}"
+        new_name = base64.b64encode(rom_name).decode()
+        multidata["connect_names"][new_name] = multidata["connect_names"][self.multiworld.player_name[self.player]]
 
     def get_filler_item_name(self) -> str:
         return "Small Ammo"
