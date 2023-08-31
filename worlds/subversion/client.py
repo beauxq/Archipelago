@@ -2,10 +2,11 @@ import logging
 import asyncio
 import time
 
-from NetUtils import ClientStatus, color  # type: ignore
+from NetUtils import ClientStatus, color
 from worlds.AutoSNIClient import SNIClient, SNIContext
 
 from .config import base_id
+from .patch_utils import offset_from_symbol
 
 snes_logger = logging.getLogger("SNES")
 
@@ -20,7 +21,6 @@ SM_ROM_MAX_PLAYERID = 65535
 SM_ROMNAME_START = ROM_START + 0x007FC0
 ROMNAME_SIZE = 0x15
 
-SM_INGAME_MODES = {0x07, 0x09, 0x0b}
 SM_ENDGAME_MODES = {0x26, 0x27}
 SM_DEATH_MODES = {0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A}
 
@@ -31,8 +31,8 @@ SM_SEND_QUEUE_START = SRAM_START + 0x2700
 SM_SEND_QUEUE_RCOUNT = SRAM_START + 0x2680
 SM_SEND_QUEUE_WCOUNT = SRAM_START + 0x2682
 
-SM_DEATH_LINK_ACTIVE_ADDR = ROM_START + 0x277F04    # 1 byte
-SM_REMOTE_ITEM_FLAG_ADDR = ROM_START + 0x277F06    # 1 byte
+SM_DEATH_LINK_ACTIVE_ADDR = ROM_START + offset_from_symbol("config_deathlink")  # 1 byte
+SM_REMOTE_ITEM_FLAG_ADDR = ROM_START + offset_from_symbol("config_remote_items")  # 1 byte
 
 
 class SubversionSNIClient(SNIClient):
@@ -44,8 +44,6 @@ class SubversionSNIClient(SNIClient):
         snes_buffered_write(ctx, WRAM_START + 0x09C2, bytes([1, 0]))
         # deal 255 of damage at next opportunity
         snes_buffered_write(ctx, WRAM_START + 0x0A50, bytes([255]))
-        if not ctx.death_link_allow_survive:
-            snes_buffered_write(ctx, WRAM_START + 0x09D6, bytes([0, 0]))  # set current reserve to 0
 
         await snes_flush_writes(ctx)
         await asyncio.sleep(1)
@@ -54,8 +52,7 @@ class SubversionSNIClient(SNIClient):
         health = await snes_read(ctx, WRAM_START + 0x09C2, 2)
         if health is not None:
             health = health[0] | (health[1] << 8)
-        if not gamemode or gamemode[0] in SM_DEATH_MODES or (
-                ctx.death_link_allow_survive and health is not None and health > 0):
+        if not gamemode or gamemode[0] in SM_DEATH_MODES:
             ctx.death_state = DeathState.dead
 
     async def validate_rom(self, ctx: SNIContext) -> bool:
@@ -88,7 +85,7 @@ class SubversionSNIClient(SNIClient):
 
         if death_link:
             ctx.allow_collect = bool(death_link[0] & 0b100)
-            ctx.death_link_allow_survive = bool(death_link[0] & 0b10)
+            # ctx.death_link_allow_survive = bool(death_link[0] & 0b10)
             await ctx.update_death_link(bool(death_link[0] & 0b1))
 
         return True
