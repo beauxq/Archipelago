@@ -66,6 +66,16 @@ local_id_to_sv_item: Dict[int, SvItem] = {
 }
 """ starting from 0 """
 
+sv_item_name_to_sm_item_id = {
+    Items.Refuel[0]: len(local_id_to_sv_item) + 0,
+    Items.Aqua[0]: len(local_id_to_sv_item) + 1,
+    Items.Speedball[0]: len(local_id_to_sv_item) + 2,
+}
+"""
+in `itemnames.asm` after all of the subversion items,
+there are these items with subversion icons, but different (sm) names
+"""
+
 id_to_sv_item = {
     id_ + base_id: item
     for id_, item in local_id_to_sv_item.items()
