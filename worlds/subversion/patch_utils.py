@@ -7,7 +7,7 @@ from typing import Dict, Final, List, Mapping, Optional, Set, Tuple
 from BaseClasses import ItemClassification, Location
 from worlds.sm.variaRandomizer.rando.Items import ItemManager
 from .config import base_id
-from .item import local_id_to_sv_item, name_to_id, sv_item_name_to_sm_item_id
+from .item import SubversionItem, local_id_to_sv_item, name_to_id, sv_item_name_to_sm_item_id
 from .location import SubversionLocation
 
 from subversion_rando.item_data import Items
@@ -68,7 +68,7 @@ def get_word_array(w: int) -> Tuple[int, int]:
     return (w & 0x00FF, (w & 0xFF00) >> 8)
 
 
-def make_item_name_for_rom(item_name: str) -> bytes:
+def make_item_name_for_rom(item_name: str) -> bytearray:
     """ 64 bytes (32 chars) centered, encoded with box_blue.tbl """
     data = bytearray()
 
@@ -89,11 +89,11 @@ def make_item_name_for_rom(item_name: str) -> bytes:
 _symbols: Optional[Dict[str, str]] = None
 
 
-def offset_from_symbols(symbol: str) -> int:
+def offset_from_symbol(symbol: str) -> int:
     global _symbols
     if _symbols is None:
         path = Path(__file__).parent.resolve()
-        json_path = path.joinpath("path", "ap_subversion_patch", "sm-basepatch-symbols.json")
+        json_path = path.joinpath("data", "ap_subversion_patch", "sm-basepatch-symbols.json")
         with open(json_path) as symbols_file:
             _symbols = json.load(symbols_file)
         assert _symbols
@@ -119,7 +119,7 @@ _item_sprites = [
 ]
 
 
-def patch_item_sprites(rom: bytes) -> bytes:
+def patch_item_sprites(rom: bytes) -> bytearray:
     """
     puts the 2 new off-world item sprites in the rom
 
@@ -130,8 +130,8 @@ def patch_item_sprites(rom: bytes) -> bytes:
     path = Path(__file__).parent.resolve()
 
     for item_sprite in _item_sprites:
-        palette_offset = offset_from_symbols(item_sprite["paletteSymbolName"])
-        data_offset = offset_from_symbols(item_sprite["dataSymbolName"])
+        palette_offset = offset_from_symbol(item_sprite["paletteSymbolName"])
+        data_offset = offset_from_symbol(item_sprite["dataSymbolName"])
         with open(path.joinpath("..", "sm", "data", "custom_sprite", item_sprite["fileName"]), 'rb') as file:
             offworld_data = file.read()
             tr[palette_offset:palette_offset + 8] = offworld_data[0:8]
@@ -179,15 +179,15 @@ _SM_name_to_subversion_name: Dict[str, str] = {
 """ for sprites that look the same """
 
 
-class DestinationType(IntEnum):
+class _DestinationType(IntEnum):
     Me = 0
     Other = 1
     LinkWithMe = 2
 
 
 @dataclass
-class ItemTableEntry:
-    destination: DestinationType
+class _ItemTableEntry:
+    destination: _DestinationType
     item_id: int
     player_index: int
     advancement: bool
@@ -204,7 +204,7 @@ SM_ITEM_GAME_NAME = "Super Metroid"
 
 NUM_ITEMS_WITH_ICONS = len(local_id_to_sv_item) + len(sv_item_name_to_sm_item_id)
 
-ItemNames_ItemTable_PlayerNames_PlayerIDs = Tuple[List[bytes], Dict[int, ItemTableEntry], bytes, List[int]]
+ItemNames_ItemTable_PlayerNames_PlayerIDs = Tuple[List[bytes], Dict[int, _ItemTableEntry], bytes, List[int]]
 
 
 class ItemRomData:
@@ -214,18 +214,19 @@ class ItemRomData:
     """ whether I have the troll ammo option on """
     my_locations: List[SubversionLocation]
     """ locations in my world """
-    # other_locations: List[Location]
-    # """ locations in other worlds that my items are in """
     player_ids: Set[int]
     """ all the players I interact with (including myself and 0 (the server player)) """
+    player_id_to_name: Mapping[int, str]
 
-    def __init__(self, my_player_id: int, troll_ammo: bool) -> None:
+    def __init__(self, my_player_id: int, troll_ammo: bool, player_id_to_name: Mapping[int, str]) -> None:
         self.player = my_player_id
         self.troll_ammo = troll_ammo
         self.my_locations = []
         self.player_ids = {0, my_player_id}
+        self.player_id_to_name = player_id_to_name
 
     def register(self, loc: Location) -> None:
+        """ call this with every multiworld location """
         if loc.player == self.player:
             # my location
             assert isinstance(loc, SubversionLocation)
@@ -239,9 +240,9 @@ class ItemRomData:
                 # my item in someone else's location
                 self.player_ids.add(loc.player)
 
-    def make_tables(self, player_id_to_name: Mapping[int, str]) -> ItemNames_ItemTable_PlayerNames_PlayerIDs:
+    def _make_tables(self) -> ItemNames_ItemTable_PlayerNames_PlayerIDs:
         """ after all locations are registered """
-        item_table: Dict[int, ItemTableEntry] = {}
+        item_table: Dict[int, _ItemTableEntry] = {}
 
         item_names_after_constants: List[bytes] = []
 
@@ -273,8 +274,8 @@ class ItemRomData:
             if loc.item.player == self.player:
                 # my item in my location
                 assert loc.item.code
-                table_entry = ItemTableEntry(
-                    DestinationType.Me,
+                table_entry = _ItemTableEntry(
+                    _DestinationType.Me,
                     loc.item.code - base_id,
                     player_index,
                     progression
@@ -298,12 +299,16 @@ class ItemRomData:
                         if sv_name in sv_item_name_to_sm_item_id:
                             # reserve tank or gravity suit or spring ball, because of the different names
                             item_id = sv_item_name_to_sm_item_id[sv_name]
+                elif isinstance(loc.item, SubversionItem):
+                    # someone else's subversion item in my location
+                    assert loc.item.code
+                    item_id = loc.item.code - base_id
                 if item_id == NUM_ITEMS_WITH_ICONS + len(item_names_after_constants):
                     # if we didn't find a subversion sprite for this item
                     item_names_after_constants.append(make_item_name_for_rom(loc.item.name))
 
-                table_entry = ItemTableEntry(
-                    DestinationType.Other,
+                table_entry = _ItemTableEntry(
+                    _DestinationType.Other,
                     item_id,
                     player_index,
                     progression
@@ -315,7 +320,36 @@ class ItemRomData:
         player_names = bytearray()
         player_names.extend(b"  Archipelago   ")
         for player_id in sorted_player_ids[1:]:
-            this_name = player_id_to_name[player_id].upper().encode("ascii", "ignore")[:16].center(16)
+            this_name = self.player_id_to_name[player_id].upper().encode("ascii", "ignore")[:16].center(16)
             player_names.extend(this_name)
 
         return item_names_after_constants, item_table, player_names, sorted_player_ids
+
+    def patch_tables(self, rom: bytes) -> bytearray:
+        """
+        after calling register on all locations
+
+        input rom, output patched rom
+        """
+        tr = bytearray(rom)
+        item_names_after_constants, item_table, player_names, sorted_player_ids = self._make_tables()
+
+        item_names_offset = offset_from_symbol("item_names") + 64 * NUM_ITEMS_WITH_ICONS
+        concat_bytes = b"".join(item_names_after_constants)
+        tr[item_names_offset:item_names_offset + len(concat_bytes)] = concat_bytes
+
+        item_table_offset = offset_from_symbol("rando_item_table")
+        for index, entry in item_table.items():
+            data = entry.to_bytes()
+            this_offset = item_table_offset + index * len(data)
+            tr[this_offset:this_offset + len(data)] = data
+
+        player_name_offset = offset_from_symbol("rando_player_name_table")
+        tr[player_name_offset:player_name_offset + len(player_names)] = player_names
+
+        player_id_offset = offset_from_symbol("rando_player_id_table")
+        for i, id_ in enumerate(sorted_player_ids):
+            this_offset = player_id_offset + i * 2
+            tr[this_offset:this_offset + 2] = id_.to_bytes(2, "little")
+
+        return tr

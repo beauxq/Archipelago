@@ -83,7 +83,6 @@ class SubversionAutoHints(DefaultOnToggle):
     display_name = "hint early items"
 
 
-# TODO: implement
 class SubversionTrollAmmo(Toggle):
     """
     When activated, a Super Metroid player's Missiles, Supers, and Power Bombs
