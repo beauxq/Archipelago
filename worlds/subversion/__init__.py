@@ -182,8 +182,11 @@ class SubversionWorld(World):
         # TODO: config options
         # self.multiworld.death_link[self.player].value
         "config_deathlink"
-        # self.getWordArray(0b001 + (0b010 if self.remote_items else 0b000))
-        "config_remote_items"
+
+        remote_items_offset = offset_from_symbol("config_remote_items")
+        remote_items_value = 0b101
+        # TODO: if remote items: |= 0b10
+        rom_writer.writeBytes(remote_items_offset, remote_items_value.to_bytes())
 
         player_id_offset = offset_from_symbol("config_player_id")
         rom_writer.writeBytes(player_id_offset, self.player.to_bytes(2, "little"))

@@ -76,13 +76,13 @@ class SubversionSNIClient(SNIClient):
 
         ctx.game = self.game
 
-        # versions lower than 0.3.0 dont have item handling flag nor remote item support
-        romVersion = int(rom_name[2:5].decode('UTF-8'))
-        if romVersion < 30:
-            ctx.items_handling = 0b001  # full local
-        else:
-            item_handling = await snes_read(ctx, SM_REMOTE_ITEM_FLAG_ADDR, 1)
-            ctx.items_handling = 0b001 if item_handling is None else item_handling[0]
+        # romVersion = int(rom_name[2:5].decode('UTF-8'))
+        # if romVersion < 30:
+        ctx.items_handling = 0b101  # remote start inventory, receive items
+        item_handling = await snes_read(ctx, SM_REMOTE_ITEM_FLAG_ADDR, 1)
+        if item_handling:
+            remote_items_bit = item_handling[0] & 0b10
+            ctx.items_handling |= remote_items_bit
 
         ctx.rom = rom_name
 
