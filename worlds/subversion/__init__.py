@@ -11,7 +11,7 @@ from .client import SubversionSNIClient
 from .item import SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
 from .location import SubversionLocation, name_to_id as _loc_name_to_id
 from .logic import choose_torpedo_bay, cs_to_loadout
-from .options import make_sv_game, subversion_options
+from .options import SubversionAutoHints, SubversionShortGame, make_sv_game, subversion_options
 from .patch_utils import ItemRomData, get_multi_patch_path, ips_patch_from_file, offset_from_symbol, patch_item_sprites
 from .rom import SubversionDeltaPatch, get_base_rom_path
 
@@ -72,7 +72,16 @@ class SubversionWorld(World):
     def create_item(self, name: str) -> SubversionItem:
         return SubversionItem(name, self.player)
 
+    def generate_early(self) -> None:
+        auto_hints_option: SubversionAutoHints = getattr(self.multiworld, "auto_hints")[self.player]
+        if auto_hints_option.value:
+            for item_name in SubversionAutoHints.item_names:
+                self.multiworld.start_hints[self.player].value.add(item_name)
+
     def create_regions(self) -> None:
+        progression_items_option: SubversionShortGame = getattr(self.multiworld, "progression_items")[self.player]
+        excludes = frozenset(SubversionShortGame.location_lists[progression_items_option.value])
+
         menu = Region("Menu", self.player, self.multiworld)
         self.multiworld.regions.append(menu)
 
@@ -104,7 +113,7 @@ class SubversionWorld(World):
 
             if loc_name == "Torpedo Bay":
                 loc.place_locked_item(self.create_item(self.torpedo_bay_item))
-            if loc_name in self.spaceport_excluded_locs:
+            if (loc_name in self.spaceport_excluded_locs) or (loc_name in excludes):
                 loc.progress_type = LocationProgressType.EXCLUDED
                 self.multiworld.exclude_locations[self.player].value.add(loc.name)
 
@@ -179,7 +188,7 @@ class SubversionWorld(World):
         assert self.sv_game, "can't call generate_output without create_regions"
         apply_rom_patches(self.sv_game, rom_writer)
 
-        # TODO: config options
+        # TODO: deathlink
         # self.multiworld.death_link[self.player].value
         "config_deathlink"
 

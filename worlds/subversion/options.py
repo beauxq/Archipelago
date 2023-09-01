@@ -1,4 +1,4 @@
-from typing import Any, Dict, FrozenSet, cast
+from typing import Any, ClassVar, Dict, FrozenSet, List, cast
 
 from BaseClasses import MultiWorld
 from Options import AssembleOptions, DefaultOnToggle, FreeText, Toggle, Choice
@@ -8,6 +8,7 @@ from subversion_rando.areaRando import RandomizeAreas
 from subversion_rando.connection_data import VanillaAreas
 from subversion_rando.daphne_gate import get_daphne_gate
 from subversion_rando.game import CypherItems, Game, GameOptions
+from subversion_rando.item_data import Items
 from subversion_rando.logic_presets import casual, expert, medium
 from subversion_rando.trick import Trick
 
@@ -67,7 +68,6 @@ class SubversionDaphne(Toggle):
     display_name = "randomize wrecked Daphne gate"
 
 
-# TODO: implement
 class SubversionShortGame(Choice):
     """ Keep the game from being too long by not putting required items in far away places. """
     display_name = "progression items"
@@ -76,11 +76,28 @@ class SubversionShortGame(Choice):
     option_not_in_suzi = 2
     default = 1
 
+    location_lists = {
+        option_anywhere: [],
+        option_not_in_thunder_lab: ["Shrine Of The Animate Spark", "Enervation Chamber"],
+        option_not_in_suzi: [
+            "Shrine Of The Animate Spark",
+            "Enervation Chamber",
+            "Reef Nook",
+            "Tower Rock Lookout",
+            "Portico",
+            "Saline Cache",
+            "Suzi Ruins Map Station Access",
+            "Obscured Vestibule",
+            "Tram To Suzi Island"
+        ]
+    }
 
-# TODO: implement
+
 class SubversionAutoHints(DefaultOnToggle):
     """ Automatically hint Gravity Boots and Morph Ball """
     display_name = "hint early items"
+
+    item_names: ClassVar[List[str]] = [Items.Morph[0], Items.GravityBoots[0]]
 
 
 class SubversionTrollAmmo(Toggle):
