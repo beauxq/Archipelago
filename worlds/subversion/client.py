@@ -1,12 +1,16 @@
 import logging
 import asyncio
 import time
+from typing import TYPE_CHECKING
 
 from NetUtils import ClientStatus, color
-from worlds.AutoSNIClient import SNIClient, SNIContext
+from worlds.AutoSNIClient import SNIClient
 
 from .config import base_id
 from .patch_utils import offset_from_symbol
+
+if TYPE_CHECKING:
+    from SNIClient import SNIContext
 
 snes_logger = logging.getLogger("SNES")
 
@@ -38,7 +42,7 @@ SM_REMOTE_ITEM_FLAG_ADDR = ROM_START + offset_from_symbol("config_remote_items")
 class SubversionSNIClient(SNIClient):
     game = "Subversion"
 
-    async def deathlink_kill_player(self, ctx: SNIContext) -> None:
+    async def deathlink_kill_player(self, ctx: "SNIContext") -> None:
         from SNIClient import DeathState, snes_buffered_write, snes_flush_writes, snes_read
         # set current health to 1 (to prevent saving with 0 energy)
         snes_buffered_write(ctx, WRAM_START + 0x09C2, bytes([1, 0]))
@@ -55,10 +59,11 @@ class SubversionSNIClient(SNIClient):
         if not gamemode or gamemode[0] in SM_DEATH_MODES:
             ctx.death_state = DeathState.dead
 
-    async def validate_rom(self, ctx: SNIContext) -> bool:
+    async def validate_rom(self, ctx: "SNIContext") -> bool:
         from SNIClient import snes_read
 
         rom_name = await snes_read(ctx, SM_ROMNAME_START, ROMNAME_SIZE)
+        # print(f"{rom_name=}")
         if (
             rom_name is None or
             len(rom_name) != 21 or
@@ -90,7 +95,7 @@ class SubversionSNIClient(SNIClient):
 
         return True
 
-    async def game_watcher(self, ctx: SNIContext) -> None:
+    async def game_watcher(self, ctx: "SNIContext") -> None:
         from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
         if ctx.server is None or ctx.slot is None:
             # not successfully connected to a multiworld server, cannot process the game sending items

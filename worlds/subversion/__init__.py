@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from BaseClasses import CollectionState, Item, ItemClassification, Location, \
     LocationProgressType, MultiWorld, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
+from .client import SubversionSNIClient
 from .item import SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
 from .location import SubversionLocation, name_to_id as _loc_name_to_id
 from .logic import choose_torpedo_bay, cs_to_loadout
@@ -20,6 +21,8 @@ from subversion_rando.logic_locations import location_logic
 from subversion_rando.logic_shortcut_data import can_win
 from subversion_rando.main_generation import apply_rom_patches
 from subversion_rando.romWriter import RomWriter
+
+_ = SubversionSNIClient  # load the module to register the handler
 
 
 class SubversionWebWorld(WebWorld):
