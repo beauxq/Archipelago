@@ -1,3 +1,4 @@
+import logging
 from typing import Any, ClassVar, Dict, FrozenSet, List, cast
 
 from BaseClasses import MultiWorld
@@ -9,7 +10,7 @@ from subversion_rando.connection_data import VanillaAreas
 from subversion_rando.daphne_gate import get_daphne_gate
 from subversion_rando.game import CypherItems, Game, GameOptions
 from subversion_rando.item_data import Items
-from subversion_rando.logic_presets import casual, expert, medium
+from subversion_rando.logic_presets import casual, expert, medium, custom_logic_tricks_from_str
 from subversion_rando.trick import Trick
 
 
@@ -125,7 +126,11 @@ subversion_options: Dict[str, AssembleOptions] = {
 
 
 def _make_custom(data: str) -> FrozenSet[Trick]:
-    # TODO: implement
+    try:
+        logic = custom_logic_tricks_from_str(data)
+        return logic
+    except ValueError:
+        logging.info(f'Subversion: invalid custom logic string "{data}" - defaulting to casual logic')
     return casual
 
 
