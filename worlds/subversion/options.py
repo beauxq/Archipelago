@@ -21,6 +21,9 @@ class SubversionLogic(Choice):
     expert logic - many advanced tricks and glitches
 
     medium logic - some common tricks without too much difficulty
+
+    custom logic - customize logic by getting data string here: https://subversionrando.github.io/SubversionRando/
+                 - use the custom_logic setting in your yaml with this data string
     """
     option_casual = 0
     option_medium = 1
