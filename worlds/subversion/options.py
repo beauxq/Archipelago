@@ -80,7 +80,7 @@ class SubversionShortGame(Choice):
     option_not_in_suzi = 2
     default = 1
 
-    location_lists = {
+    location_lists: ClassVar[Dict[int, List[str]]] = {
         option_anywhere: [],
         option_not_in_thunder_lab: ["Shrine Of The Animate Spark", "Enervation Chamber"],
         option_not_in_suzi: [

@@ -26,7 +26,7 @@ _ = SubversionSNIClient  # load the module to register the handler
 
 
 class SubversionWebWorld(WebWorld):
-    theme = "partyTime"  # TODO: decide
+    theme = "ice"
     tutorials = [
         Tutorial(
             tutorial_name="Setup Guide",
@@ -195,7 +195,7 @@ class SubversionWorld(World):
         remote_items_offset = offset_from_symbol("config_remote_items")
         remote_items_value = 0b101
         # TODO: if remote items: |= 0b10
-        rom_writer.writeBytes(remote_items_offset, remote_items_value.to_bytes())
+        rom_writer.writeBytes(remote_items_offset, remote_items_value.to_bytes(1, "little"))
 
         player_id_offset = offset_from_symbol("config_player_id")
         rom_writer.writeBytes(player_id_offset, self.player.to_bytes(2, "little"))
