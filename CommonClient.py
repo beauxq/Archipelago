@@ -179,6 +179,7 @@ class CommonContext:
 
     finished_game: bool
     ready: bool
+    slot: typing.Optional[int]
     auth: typing.Optional[str]
     seed_name: typing.Optional[str]
 

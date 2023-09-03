@@ -7,14 +7,24 @@ from subversion_rando.location_data import Location as SvLocation, pullCSV
 location_data = pullCSV()
 
 id_to_name = {
-    i + base_id: loc_name
-    for i, loc_name in enumerate(location_data)
+    loc["plmparamlo"] + base_id: loc_name
+    for loc_name, loc in location_data.items()
 }
 
 name_to_id = {
     n: id_
     for id_, n in id_to_name.items()
 }
+
+fallen_locs = {
+    loc["alternateplmparamlo"]: loc["plmparamlo"]
+    for loc in location_data.values()
+    if loc["alternateplmparamlo"]
+}
+"""
+fallen location id from rom (that AP doesn't know)
+to location id that AP knows about
+"""
 
 
 class SubversionLocation(Location):

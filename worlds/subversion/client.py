@@ -7,6 +7,7 @@ from NetUtils import ClientStatus, color
 from worlds.AutoSNIClient import SNIClient
 
 from .config import base_id
+from .location import fallen_locs
 from .patch_utils import offset_from_symbol
 
 if TYPE_CHECKING:
@@ -53,9 +54,9 @@ class SubversionSNIClient(SNIClient):
         await asyncio.sleep(1)
 
         gamemode = await snes_read(ctx, WRAM_START + 0x0998, 1)
-        health = await snes_read(ctx, WRAM_START + 0x09C2, 2)
-        if health is not None:
-            health = health[0] | (health[1] << 8)
+        # health_ram = await snes_read(ctx, WRAM_START + 0x09C2, 2)
+        # if health_ram is not None:
+        #     health = health_ram[0] | (health_ram[1] << 8)
         if not gamemode or gamemode[0] in SM_DEATH_MODES:
             ctx.death_state = DeathState.dead
 
@@ -121,15 +122,21 @@ class SubversionSNIClient(SNIClient):
         while (recv_index < recv_item):
             item_address = recv_index * 8
             message = await snes_read(ctx, SM_SEND_QUEUE_START + item_address, 8)
-            if not message:
-                raise ConnectionError(f"snes_read returned {message}")
-            item_index = (message[4] | (message[5] << 8)) >> 3
+            if message is None:
+                logging.warning("connection lost receiving item from game")
+                return
+            # print(f"{message=} {[hex(d) for d in message]}")
+            rom_loc_id = (message[4] | (message[5] << 8)) >> 3
+            # print(f"{rom_loc_id=}")
 
             recv_index += 1
             snes_buffered_write(ctx, SM_SEND_QUEUE_RCOUNT,
                                 bytes([recv_index & 0xFF, (recv_index >> 8) & 0xFF]))
 
-            location_id = base_id + item_index
+            rom_loc_id_that_ap_knows = fallen_locs.get(rom_loc_id, rom_loc_id)
+            # print(f"{rom_loc_id_that_ap_knows=}")
+            location_id = base_id + rom_loc_id_that_ap_knows
+            # print(f"{location_id=}")
 
             ctx.locations_checked.add(location_id)
             location = ctx.location_names[location_id]
@@ -143,9 +150,14 @@ class SubversionSNIClient(SNIClient):
         if data is None:
             return
 
+        # print(f"{data=} {int.from_bytes(data, 'little')=} {len(ctx.items_received)=}")
         item_out_ptr = data[0] | (data[1] << 8)
 
+        # TODO: receiving major item doesn't let me dismiss the message box for 6 seconds
+        # and music restarts
+
         if item_out_ptr < len(ctx.items_received):
+            # print(f"{item_out_ptr=} < {len(ctx.items_received)=}")
             item = ctx.items_received[item_out_ptr]
             item_id = item.item - base_id
             if bool(ctx.items_handling and (ctx.items_handling & 0b010)):
@@ -154,9 +166,12 @@ class SubversionSNIClient(SNIClient):
                 location_id = 0x00  # backward compat
 
             player_id = item.player if item.player <= SM_ROM_MAX_PLAYERID else 0
+            # print(f"writing to receive queue memory offset {SM_RECV_QUEUE_START + item_out_ptr * 4}")
+            # print(f"{hex(player_id & 0xFF)} {hex((player_id >> 8) & 0xFF)} {item_id & 0xFF} {location_id & 0xFF}")
             snes_buffered_write(ctx, SM_RECV_QUEUE_START + item_out_ptr * 4, bytes(
                 [player_id & 0xFF, (player_id >> 8) & 0xFF, item_id & 0xFF, location_id & 0xFF]))
             item_out_ptr += 1
+            # print(f"wcount mem offset {SM_RECV_QUEUE_WCOUNT}: {hex(item_out_ptr & 0xFF)} {(item_out_ptr >> 8) & 0xFF}")
             snes_buffered_write(ctx, SM_RECV_QUEUE_WCOUNT,
                                 bytes([item_out_ptr & 0xFF, (item_out_ptr >> 8) & 0xFF]))
             logging.info('Received %s from %s (%s) (%d/%d in list)' % (
