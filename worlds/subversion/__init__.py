@@ -94,6 +94,9 @@ class SubversionWorld(World):
         self.torpedo_bay_item = tb_item
         self.spaceport_excluded_locs = exc_locs
 
+        if tb_item != Items.GravityBoots[0]:
+            self.multiworld.early_items[self.player][Items.GravityBoots[0]] = 1
+
         for loc_name in _loc_name_to_id:
             loc = SubversionLocation(self.player, loc_name, menu)
             menu.locations.append(loc)
