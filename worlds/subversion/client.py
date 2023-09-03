@@ -171,7 +171,7 @@ class SubversionSNIClient(SNIClient):
             snes_buffered_write(ctx, SM_RECV_QUEUE_START + item_out_ptr * 4, bytes(
                 [player_id & 0xFF, (player_id >> 8) & 0xFF, item_id & 0xFF, location_id & 0xFF]))
             item_out_ptr += 1
-            # print(f"wcount mem offset {SM_RECV_QUEUE_WCOUNT}: {hex(item_out_ptr & 0xFF)} {(item_out_ptr >> 8) & 0xFF}")
+            # print(f"wcount addr {SM_RECV_QUEUE_WCOUNT}: {hex(item_out_ptr & 0xFF)} {(item_out_ptr >> 8) & 0xFF}")
             snes_buffered_write(ctx, SM_RECV_QUEUE_WCOUNT,
                                 bytes([item_out_ptr & 0xFF, (item_out_ptr >> 8) & 0xFF]))
             logging.info('Received %s from %s (%s) (%d/%d in list)' % (
