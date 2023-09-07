@@ -1,2 +1,1 @@
-subversion_rando @ git+https://github.com/SubversionRando/SubversionRando
-# TODO: commit hash and version tag       SubversionRando/SubversionRando@cd6a940ad7b585c75a560b91468d6b9eee030559#0.5.2
+subversion_rando @ git+https://github.com/SubversionRando/SubversionRando@af8683593fb97ab2375aa328bf28e1c926d77635#0.3.0
