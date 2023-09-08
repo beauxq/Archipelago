@@ -186,6 +186,7 @@ class SubversionWorld(World):
         else:
             patch_bytes = None  # will get from subversion_rando package
         rom_writer = RomWriter.fromFilePaths(base_rom_path, patch_bytes)  # this patches SM to Subversion 1.2
+        self.logger.debug(f"Subversion player {self.player} patched Super Metroid to Subversion")
 
         multi_patch_path = get_multi_patch_path()
         rom_writer.rom_data = ips_patch_from_file(multi_patch_path, rom_writer.rom_data)
@@ -224,6 +225,8 @@ class SubversionWorld(World):
         rom_writer.writeBytes(0x7fc0, rom_name)
         self.rom_name = rom_name
         self.rom_name_available_event.set()
+
+        self.logger.debug(f"Subversion player {self.player} applied all patches")
 
         out_file_base = self.multiworld.get_out_file_name_base(self.player)
         patched_rom_file_name = os.path.join(output_directory, f"{out_file_base}.sfc")
