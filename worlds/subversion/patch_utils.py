@@ -133,7 +133,7 @@ def patch_item_sprites(rom: bytes) -> bytearray:
     for item_sprite in _item_sprites:
         palette_offset = offset_from_symbol(item_sprite["paletteSymbolName"])
         data_offset = offset_from_symbol(item_sprite["dataSymbolName"])
-        with open(path.joinpath("..", "sm", "data", "custom_sprite", item_sprite["fileName"]), 'rb') as file:
+        with open(path.joinpath("data", "custom_sprite", item_sprite["fileName"]), 'rb') as file:
             offworld_data = file.read()
             tr[palette_offset:palette_offset + 8] = offworld_data[0:8]
             tr[data_offset:data_offset + 256] = offworld_data[8:264]
