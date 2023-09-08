@@ -180,7 +180,7 @@ class SubversionWorld(World):
         base_rom_path = get_base_rom_path()
         if is_apworld():
             with open_file_apworld_compatible(
-                os.path.join("subversion", "subversion_rando", "subversion.1.2.ips"), "rb"
+                "/".join(["subversion", "subversion_rando", "subversion.1.2.ips"]), "rb"
             ) as sub12_patch_file:
                 patch_bytes = sub12_patch_file.read()
         else:

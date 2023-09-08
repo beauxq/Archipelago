@@ -41,7 +41,11 @@ def open_file_apworld_compatible(
 ) -> IO[Any]:
     if _is_apworld:
         (zip_file, stem) = _get_zip_file()
-        resource = str(resource)
+        # zip file needs /, not \
+        if isinstance(resource, pathlib.Path):
+            resource = resource.as_posix()
+        else:
+            resource = resource.replace("\\", "/")
         with zip_file as zf:
             zip_file_path = resource[resource.index(stem + "/"):]
             if mode == 'rb':
