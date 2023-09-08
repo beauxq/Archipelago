@@ -133,9 +133,11 @@ class SubversionWorld(World):
     def create_items(self) -> None:
         count_sjb = 0  # 1 SJB is progression, the rest are not
         count_la = 0  # 10 large ammo are prog, rest not
+        excluded_tb_item = False  # 1 item is placed before fill algorithm
         for name in names_for_item_pool():
-            if name == self.torpedo_bay_item:
+            if name == self.torpedo_bay_item and not excluded_tb_item:
                 # this item is created and placed in create_regions
+                excluded_tb_item = True
                 continue
             this_item = self.create_item(name)
             if name == Items.SpaceJumpBoost[0]:
@@ -235,6 +237,8 @@ class SubversionWorld(World):
         patch.write()
         if os.path.exists(patched_rom_file_name):
             os.unlink(patched_rom_file_name)
+
+        self.logger.debug(f"Subversion player {self.player} finished generate_output")
 
     def modify_multidata(self, multidata: Dict[str, Any]) -> None:
         import base64
