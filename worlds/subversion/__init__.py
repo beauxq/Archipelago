@@ -8,6 +8,7 @@ from BaseClasses import CollectionState, Item, ItemClassification, Location, \
     LocationProgressType, MultiWorld, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from .client import SubversionSNIClient
+from .config import is_apworld, open_file_apworld_compatible
 from .item import SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
 from .location import SubversionLocation, name_to_id as _loc_name_to_id
 from .logic import choose_torpedo_bay, cs_to_loadout
@@ -175,7 +176,14 @@ class SubversionWorld(World):
 
     def generate_output(self, output_directory: str) -> None:
         base_rom_path = get_base_rom_path()
-        rom_writer = RomWriter.fromFilePaths(base_rom_path)  # this patches SM to Subversion 1.2
+        if is_apworld():
+            with open_file_apworld_compatible(
+                os.path.join("subversion_rando", "subversion.1.2.ips"), "rb"
+            ) as sub12_patch_file:
+                patch_bytes = sub12_patch_file.read()
+        else:
+            patch_bytes = None  # will get from subversion_rando package
+        rom_writer = RomWriter.fromFilePaths(base_rom_path, patch_bytes)  # this patches SM to Subversion 1.2
 
         multi_patch_path = get_multi_patch_path()
         rom_writer.rom_data = ips_patch_from_file(multi_patch_path, rom_writer.rom_data)
