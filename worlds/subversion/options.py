@@ -36,6 +36,7 @@ class SubversionLogic(Choice):
 class SubversionCustomLogic(FreeText):
     """ customize logic by getting data string here: https://subversionrando.github.io/SubversionRando/ """
     display_name = "custom logic string"
+    default = "000000000000"
 
 
 class SubversionAreaRando(Toggle):
