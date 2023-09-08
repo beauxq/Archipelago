@@ -7,7 +7,7 @@ from .config import base_id, is_apworld, open_file_apworld_compatible
 from subversion_rando.location_data import Location as SvLocation, pullCSV
 
 if is_apworld():
-    csv_file = open_file_apworld_compatible(os.path.join("subversion_rando", "subversiondata12.csv"))
+    csv_file = open_file_apworld_compatible(os.path.join("subversion", "subversion_rando", "subversiondata12.csv"))
     location_data = pullCSV(csv_file)
 else:
     location_data = pullCSV()
