@@ -2,7 +2,7 @@ import io
 import os
 import pathlib
 import sys
-from typing import IO, Any, Literal, Tuple, overload
+from typing import IO, Any, Literal, Tuple, Union, overload
 import zipfile
 
 
@@ -25,14 +25,23 @@ def _get_zip_file() -> Tuple[zipfile.ZipFile, str]:
 
 
 @overload
-def open_file_apworld_compatible(resource: str, mode: Literal["rb"], encoding: None = None) -> IO[bytes]: ...
+def open_file_apworld_compatible(
+    resource: Union[str, pathlib.Path], mode: Literal["rb"], encoding: None = None
+) -> IO[bytes]: ...
+
+
 @overload
-def open_file_apworld_compatible(resource: str, mode: Literal["r"] = "r", encoding: None = None) -> IO[str]: ...
+def open_file_apworld_compatible(
+    resource: Union[str, pathlib.Path], mode: Literal["r"] = "r", encoding: None = None
+) -> IO[str]: ...
 
 
-def open_file_apworld_compatible(resource: str, mode: str = "r", encoding: None = None) -> IO[Any]:
+def open_file_apworld_compatible(
+    resource: Union[str, pathlib.Path], mode: str = "r", encoding: None = None
+) -> IO[Any]:
     if _is_apworld:
         (zip_file, stem) = _get_zip_file()
+        resource = str(resource)
         with zip_file as zf:
             zip_file_path = resource[resource.index(stem + "/"):]
             if mode == 'rb':

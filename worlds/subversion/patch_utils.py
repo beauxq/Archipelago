@@ -6,7 +6,7 @@ from typing import Dict, Final, List, Mapping, Optional, Set, Tuple, Union
 
 from BaseClasses import ItemClassification, Location
 from worlds.sm.variaRandomizer.rando.Items import ItemManager
-from .config import base_id
+from .config import base_id, open_file_apworld_compatible
 from .item import SubversionItem, local_id_to_sv_item, name_to_id, sv_item_name_to_sm_item_id
 from .location import SubversionLocation
 
@@ -95,7 +95,7 @@ def offset_from_symbol(symbol: str) -> int:
     if _symbols is None:
         path = Path(__file__).parent.resolve()
         json_path = path.joinpath("data", "ap_subversion_patch", "sm-basepatch-symbols.json")
-        with open(json_path) as symbols_file:
+        with open_file_apworld_compatible(json_path) as symbols_file:
             _symbols = json.load(symbols_file)
         assert _symbols
 
@@ -133,7 +133,9 @@ def patch_item_sprites(rom: bytes) -> bytearray:
     for item_sprite in _item_sprites:
         palette_offset = offset_from_symbol(item_sprite["paletteSymbolName"])
         data_offset = offset_from_symbol(item_sprite["dataSymbolName"])
-        with open(path.joinpath("data", "custom_sprite", item_sprite["fileName"]), 'rb') as file:
+        with open_file_apworld_compatible(
+            path.joinpath("data", "custom_sprite", item_sprite["fileName"]), 'rb'
+        ) as file:
             offworld_data = file.read()
             tr[palette_offset:palette_offset + 8] = offworld_data[0:8]
             tr[data_offset:data_offset + 256] = offworld_data[8:264]
@@ -357,7 +359,7 @@ class ItemRomData:
 
 
 def ips_patch_from_file(ips_file_name: Union[str, Path], input_bytes: bytes) -> bytearray:
-    with open(ips_file_name, "rb") as ips_file:
+    with open_file_apworld_compatible(ips_file_name, "rb") as ips_file:
         ips_data = ips_file.read()
     return ips_patch(input_bytes, ips_data)
 
