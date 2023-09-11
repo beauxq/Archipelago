@@ -140,10 +140,10 @@ AC:C9F7 write_repeated_memory_loop
 0000 73ee69b0 romhacks/subversion/main.asm
 0001 29a1abf8 romhacks/subversion/common/itemextras.asm
 0002 da8a69d5 romhacks/subversion/common/multiworld.asm
-0003 9bd74bd9 romhacks/subversion/common/items.asm
+0003 fa094882 romhacks/subversion/common/items.asm
 
 [rom checksum]
-f2d91210
+9276b5c6
 
 [addr-to-line mapping]
 ff:ffff 0000:00000001
@@ -786,3 +786,4 @@ ac:ccb4 0002:000002f6
 84:895b 0003:00000100
 84:895c 0003:00000100
 84:895d 0003:00000100
+84:e4f8 0003:00000105
