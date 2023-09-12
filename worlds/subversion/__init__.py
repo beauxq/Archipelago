@@ -2,7 +2,7 @@ import functools
 import logging
 import os
 from threading import Event
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TextIO
 
 from BaseClasses import CollectionState, Item, ItemClassification, Location, \
     LocationProgressType, MultiWorld, Region, Tutorial
@@ -22,6 +22,7 @@ from subversion_rando.logic_locations import location_logic
 from subversion_rando.logic_shortcut_data import can_win
 from subversion_rando.main_generation import apply_rom_patches
 from subversion_rando.romWriter import RomWriter
+from subversion_rando.trick_data import trick_name_lookup
 
 _ = SubversionSNIClient  # load the module to register the handler
 
@@ -242,6 +243,19 @@ class SubversionWorld(World):
             os.unlink(patched_rom_file_name)
 
         self.logger.debug(f"Subversion player {self.player} finished generate_output")
+
+    def write_spoiler_header(self, spoiler_handle: TextIO) -> None:
+        def bool_to_text(variable: bool) -> str:
+            return "Yes" if variable else "No"
+
+        assert self.sv_game, "need info from earlier in generation to write spoiler"
+        logic = self.sv_game.options.logic
+
+        player_name = self.multiworld.get_player_name(self.player)
+        spoiler_handle.write(f"\ntricks in logic for Subversion player {self.player} {player_name}:\n")
+
+        for trick, trick_name in trick_name_lookup.items():
+            spoiler_handle.write(f"  {trick_name:23}: {bool_to_text(trick in logic)}\n")
 
     def modify_multidata(self, multidata: Dict[str, Any]) -> None:
         import base64
