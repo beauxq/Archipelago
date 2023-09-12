@@ -38,6 +38,22 @@ class SubversionCustomLogic(FreeText):
     display_name = "custom logic string"
     default = "000000000000"
 
+    @classmethod
+    def from_any(cls, data: Any) -> "SubversionCustomLogic":
+        if isinstance(data, int):
+            # yaml interprets numbers with leading 0 as octal
+            # We don't want octal, we want the string.
+
+            # if it's the right number of digits it probably was interpreted as decimal, not octal
+            # (octal -> decimal reduces the number of digits or keeps them the same)
+            if data >= 100_000_000_000 and data < 1_000_000_000_000:
+                return cls(str(data))
+            else:
+                # convert back to octal
+                return cls(oct(data)[2:].zfill(len(SubversionCustomLogic.default)))
+        assert isinstance(data, str), f"I don't know how to handle {type(data)} for {cls.__name__}"
+        return cls(data)
+
 
 class SubversionAreaRando(Toggle):
     """ sections of the map are shuffled around """
@@ -139,7 +155,7 @@ def _make_custom(data: str) -> FrozenSet[Trick]:
 
 
 def make_sv_game(mw: MultiWorld, p: int) -> Game:
-    mwa: Any = mw  # for type checker and to not getattr for every option
+    mwa: Any = mw  # PR 993 PLS!!
     logic_preset = cast(SubversionLogic, mwa.logic_preset[p])
 
     logics = {
