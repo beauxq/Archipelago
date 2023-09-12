@@ -153,9 +153,6 @@ class SubversionSNIClient(SNIClient):
         # print(f"{data=} {int.from_bytes(data, 'little')=} {len(ctx.items_received)=}")
         item_out_ptr = data[0] | (data[1] << 8)
 
-        # TODO: receiving major item doesn't let me dismiss the message box for 6 seconds
-        # and music restarts
-
         if item_out_ptr < len(ctx.items_received):
             # print(f"{item_out_ptr=} < {len(ctx.items_received)=}")
             item = ctx.items_received[item_out_ptr]
