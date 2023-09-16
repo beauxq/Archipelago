@@ -1,16 +1,11 @@
 from typing import Optional
 
 from BaseClasses import Location, Region
-from .config import base_id, is_apworld, open_file_apworld_compatible
+from .config import base_id
 
 from subversion_rando.location_data import Location as SvLocation, pullCSV
 
-if is_apworld():
-    # not using os.path.join because this is a path inside the zip file, that wants /
-    csv_file = open_file_apworld_compatible("/".join(["subversion", "subversion_rando", "subversiondata12.csv"]))
-    location_data = pullCSV(csv_file)
-else:
-    location_data = pullCSV()
+location_data = pullCSV()
 
 id_to_name = {
     loc["plmparamlo"] + base_id: loc_name

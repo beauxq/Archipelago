@@ -1,8 +1,9 @@
 import io
+import logging
 import os
 import pathlib
 import sys
-from typing import IO, Any, Literal, Tuple, Union, overload
+from typing import IO, Any, Literal, NoReturn, Tuple, Union, overload
 import zipfile
 
 
@@ -51,7 +52,7 @@ def open_file_apworld_compatible(
             if mode == 'rb':
                 return zf.open(zip_file_path, 'r')
             else:
-                assert mode in ('r', 'w')
+                assert mode == 'r' or mode == 'w', f"{mode=}"
                 return io.TextIOWrapper(zf.open(zip_file_path, mode), encoding)
     else:
         return open(resource, mode)
@@ -72,3 +73,24 @@ def exists_apworld_compatible(resource: str) -> bool:
                 return False
     else:
         return os.path.exists(resource)
+
+
+def load_library() -> bool:
+    if not is_apworld():
+        return False
+
+    (zip_file, _stem) = _get_zip_file()
+    logging.info("loading subversion_rando library...")
+    for file in zip_file.namelist():
+        if file.startswith('subversion/subversion_rando/'):
+            new_path = file[11:]
+            zip_file.getinfo(file).filename = new_path
+            zip_file.extract(file, 'lib')
+    return True
+
+
+try:
+    import subversion_rando as _  # noqa: F401
+except ModuleNotFoundError as e:
+    if not load_library():
+        raise e
