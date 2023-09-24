@@ -2,13 +2,14 @@ import logging
 from typing import Any, ClassVar, Dict, FrozenSet, List, cast
 
 from BaseClasses import MultiWorld
-from Options import AssembleOptions, DefaultOnToggle, FreeText, Toggle, Choice
+from Options import AssembleOptions, DefaultOnToggle, FreeText, Range, Toggle, Choice
 from .location import location_data
 
 from subversion_rando.areaRando import RandomizeAreas
 from subversion_rando.connection_data import VanillaAreas
 from subversion_rando.daphne_gate import get_daphne_gate
 from subversion_rando.game import CypherItems, Game, GameOptions
+from subversion_rando.goal import generate_goals
 from subversion_rando.item_data import Items
 from subversion_rando.logic_presets import casual, expert, medium, custom_logic_tricks_from_str
 from subversion_rando.trick import Trick
@@ -113,6 +114,16 @@ class SubversionShortGame(Choice):
         ]
     }
 
+    cypher_options: ClassVar[Dict[int, CypherItems]] = {
+        option_anywhere: CypherItems.Anything,
+        option_not_in_thunder_lab: CypherItems.NotRequired,
+        option_not_in_suzi: CypherItems.SmallAmmo
+    }
+    """
+    This is just for its effect on objective rando,
+    where SmallAmmo means the map stations in Suzi won't be required.
+    """
+
 
 class SubversionAutoHints(DefaultOnToggle):
     """ Automatically hint Gravity Boots and Morph Ball """
@@ -132,6 +143,25 @@ class SubversionTrollAmmo(Toggle):
     display_name = "troll ammo"
 
 
+class SubversionObjectiveRando(Range):
+    """
+    Choose the number of random objectives.
+    0 will have just the normal space port crash objective.
+
+    if greater than 0:
+        - Accessing map stations will reveal one of the objectives.
+          The objectives are tracked in the Logbook Mission page.
+
+        - Crashing the space port is not required unless it is chosen as one of the objectives.
+            - (The GFS Daphne will be both docked at the space port and crashed on the planet at the same time.)
+
+        - The Power Bomb requirement to get to the wrecked Weapon Control Center is also removed.
+    """
+    display_name = "objective rando"
+    range_start = 0
+    range_end = 10
+
+
 subversion_options: Dict[str, AssembleOptions] = {
     "logic_preset": SubversionLogic,
     "custom_logic": SubversionCustomLogic,
@@ -141,7 +171,8 @@ subversion_options: Dict[str, AssembleOptions] = {
     "daphne_gate": SubversionDaphne,
     "progression_items": SubversionShortGame,
     "auto_hints": SubversionAutoHints,
-    "troll_ammo": SubversionTrollAmmo
+    "troll_ammo": SubversionTrollAmmo,
+    "objective_rando": SubversionObjectiveRando
 }
 
 
@@ -165,14 +196,20 @@ def make_sv_game(mw: MultiWorld, p: int) -> Game:
         SubversionLogic.option_custom: _make_custom(mwa.custom_logic[p].value)
     }
 
+    objective_rando = cast(SubversionObjectiveRando, mwa.objective_rando[p])
+
+    progression_items = cast(SubversionShortGame, mwa.progression_items[p])
+    cypher_option = SubversionShortGame.cypher_options[progression_items.value]
+
     sv_options = GameOptions(
         logics[logic_preset.value],
         bool(cast(SubversionAreaRando, mwa.area_rando[p]).value),
         "D",  # unused
         bool(cast(SubversionSmallSpaceport, mwa.small_spaceport[p]).value),
         bool(cast(SubversionEscapeShortcuts, mwa.escape_shortcuts[p]).value),
-        CypherItems.Anything,  # unused
+        cypher_option,  # used only for objective rando, not for fill
         bool(cast(SubversionDaphne, mwa.daphne_gate[p]).value),
+        objective_rando.value
     )
 
     seed = mw.seed or 0
@@ -183,5 +220,8 @@ def make_sv_game(mw: MultiWorld, p: int) -> Game:
     if sv_options.daphne_gate:
         daphne_blocks = get_daphne_gate(sv_options)
         sv_game.daphne_blocks = daphne_blocks
+    if sv_options.objective_rando > 0:
+        goals = generate_goals(sv_options)
+        sv_game.goals = goals
 
     return sv_game

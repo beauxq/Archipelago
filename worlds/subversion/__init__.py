@@ -18,7 +18,7 @@ from .rom import SubversionDeltaPatch, get_base_rom_path
 from subversion_rando.game import Game as SvGame
 from subversion_rando.item_data import Items
 from subversion_rando.logic_locations import location_logic
-from subversion_rando.logic_shortcut_data import can_win
+from subversion_rando.logic_goal import can_win
 from subversion_rando.main_generation import apply_rom_patches
 from subversion_rando.romWriter import RomWriter
 from subversion_rando.trick_data import trick_name_lookup
@@ -197,7 +197,7 @@ class SubversionWorld(World):
 
         # TODO: deathlink
         # self.multiworld.death_link[self.player].value
-        "config_deathlink"
+        offset_from_symbol("config_deathlink")
 
         remote_items_offset = offset_from_symbol("config_remote_items")
         remote_items_value = 0b101
