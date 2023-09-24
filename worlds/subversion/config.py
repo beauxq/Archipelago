@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import IO, Any, Literal, NoReturn, Tuple, Union, overload
+from typing import IO, Any, Literal, Tuple, Union, overload
 import zipfile
 
 
@@ -62,6 +62,11 @@ def open_file_apworld_compatible(
 
 
 def exists_apworld_compatible(resource: str) -> bool:
+    """
+    os.path.exists - but compatible with apworld
+
+    this isn't tested - not sure if it works
+    """
     if _is_apworld:
         (zip_file, stem) = _get_zip_file()
         with zip_file as zf:
