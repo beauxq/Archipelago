@@ -31,8 +31,8 @@ def assert_cannot_reach_island(tester: SVTestBase, multiworld: MultiWorld):
 
 
 def assert_can_reach_island_if_should(tester: SVTestBase, multiworld: MultiWorld):
-    sd_options = get_stardew_options(multiworld)
-    include_island = sd_options.exclude_ginger_island.value == options.ExcludeGingerIsland.option_false
+    stardew_options = get_stardew_options(multiworld)
+    include_island = stardew_options.exclude_ginger_island.value == options.ExcludeGingerIsland.option_false
     if include_island:
         assert_can_reach_island(tester, multiworld)
     else:
@@ -63,8 +63,8 @@ def assert_has_deluxe_scarecrow_recipe(tester: SVTestBase, multiworld: MultiWorl
 
 
 def assert_festivals_give_access_to_deluxe_scarecrow(tester: SVTestBase, multiworld: MultiWorld):
-    sd_options = get_stardew_options(multiworld)
-    has_festivals = sd_options.festival_locations.value == options.FestivalLocations.option_disabled
+    stardew_options = get_stardew_options(multiworld)
+    has_festivals = stardew_options.festival_locations.value != options.FestivalLocations.option_disabled
     if not has_festivals:
         return
 
