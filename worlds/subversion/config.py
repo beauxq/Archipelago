@@ -2,6 +2,7 @@ import io
 import logging
 import os
 import pathlib
+from shutil import rmtree
 import sys
 from typing import IO, Any, Literal, Tuple, Union, overload
 import zipfile
@@ -80,10 +81,7 @@ def exists_apworld_compatible(resource: str) -> bool:
         return os.path.exists(resource)
 
 
-def load_library() -> bool:
-    if not is_apworld():
-        return False
-
+def load_library() -> None:
     (zip_file, _stem) = _get_zip_file()
     logging.info("loading subversion_rando library...")
     for file in zip_file.namelist():
@@ -91,11 +89,22 @@ def load_library() -> bool:
             new_path = file[11:]
             zip_file.getinfo(file).filename = new_path
             zip_file.extract(file, 'lib')
-    return True
 
 
-try:
-    import subversion_rando as _  # noqa: F401
-except ModuleNotFoundError as e:
-    if not load_library():
-        raise e
+if is_apworld():
+    if "lib" not in sys.path:
+        sys.path.append("lib")
+
+    lib_dir = os.path.join("lib", "subversion_rando")
+    lib_crc_file_name = os.path.join(lib_dir, "crc")
+    validated = False
+    if os.path.exists(lib_crc_file_name):
+        from lib_crc import crc  # type: ignore
+        with open(lib_crc_file_name) as lib_crc_file:
+            text_crc = lib_crc_file.read()
+        if int(text_crc) == crc:
+            validated = True
+    if not validated:
+        if os.path.exists(lib_dir):
+            rmtree(lib_dir)
+        load_library()

@@ -9,6 +9,7 @@
 
 import os
 from shutil import copytree, make_archive, rmtree
+import zlib
 
 ORIG = "subversion"
 TEMP = "subversion_temp"
@@ -41,6 +42,24 @@ copytree(subversion_rando_dir, os.path.join(TEMP, "subversion_rando"))
 
 if os.path.exists(os.path.join(TEMP, "subversion_rando", "__pycache__")):
     rmtree(os.path.join(TEMP, "subversion_rando", "__pycache__"))
+
+
+def lib_crc() -> int:
+    crc = 0
+    for p, _dir_names, file_names in os.walk(os.path.join(TEMP, "subversion_rando")):
+        for file_name in file_names:
+            full_path = os.path.join(p, file_name)
+            with open(full_path, 'rb') as file:
+                crc = zlib.crc32(file.read(), crc)
+    return crc
+
+
+crc = lib_crc()
+print(f"writing crc {crc}")
+with open(os.path.join(TEMP, "subversion_rando", "crc"), "w") as crc_file:
+    crc_file.write(f"{crc}")
+with open(os.path.join(TEMP, "lib_crc.py"), "w") as crc_module:
+    crc_module.write(f"crc = {crc}\n")
 
 os.rename(ORIG, MOVE)
 os.rename(TEMP, ORIG)
