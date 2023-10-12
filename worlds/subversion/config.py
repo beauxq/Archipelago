@@ -99,7 +99,9 @@ if is_apworld():
     lib_crc_file_name = os.path.join(lib_dir, "crc")
     validated = False
     if os.path.exists(lib_crc_file_name):
-        from lib_crc import crc  # type: ignore
+        from .lib_crc import crc  # type: ignore
+        # created by apworld script
+
         with open(lib_crc_file_name) as lib_crc_file:
             text_crc = lib_crc_file.read()
         if int(text_crc) == crc:
