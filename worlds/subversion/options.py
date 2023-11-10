@@ -6,11 +6,10 @@ from Options import AssembleOptions, DefaultOnToggle, FreeText, Range, Toggle, C
 from .location import location_data
 
 from subversion_rando.areaRando import RandomizeAreas
-from subversion_rando.connection_data import VanillaAreas
+from subversion_rando.connection_data import vanilla_areas
 from subversion_rando.daphne_gate import get_daphne_gate
 from subversion_rando.game import CypherItems, Game, GameOptions
 from subversion_rando.goal import generate_goals
-from subversion_rando.item_data import Items
 from subversion_rando.logic_presets import casual, expert, medium, custom_logic_tricks_from_str
 from subversion_rando.trick import Trick
 
@@ -125,11 +124,31 @@ class SubversionShortGame(Choice):
     """
 
 
-class SubversionAutoHints(DefaultOnToggle):
-    """ Automatically hint Gravity Boots and Morph Ball """
+class SubversionAutoHints(Choice):
+    """
+    Automatically hint your early progression items
+    (likely Gravity Boots, Morph Ball, Missiles - depends on what items you're expected to get first)
+    """
     display_name = "hint early items"
+    option_none = 0
+    option_light = 1
+    option_normal = 2
+    default = 2
+    # I thought about including option_heavy,
+    # but I don't like the idea of subversion players
+    # pressuring other players with lots of hints
 
-    item_names: ClassVar[List[str]] = [Items.Morph[0], Items.GravityBoots[0]]
+    # this is for backwards compatibility with old yamls
+    # (can be removed after some time passes)
+    @classmethod
+    def from_text(cls, text: str) -> "SubversionAutoHints":
+        text = text.lower()
+        if text == "true":
+            assert isinstance(SubversionAutoHints.default, int)
+            return cls(SubversionAutoHints.default)
+        elif text == "false":
+            return cls(SubversionAutoHints.option_none)
+        return super(SubversionAutoHints, cls).from_text(text)
 
 
 class SubversionTrollAmmo(Toggle):
@@ -214,7 +233,7 @@ def make_sv_game(mw: MultiWorld, p: int) -> Game:
 
     seed = mw.seed or 0
 
-    connections = RandomizeAreas(False, seed) if sv_options.area_rando else VanillaAreas()
+    connections = RandomizeAreas(False, seed) if sv_options.area_rando else vanilla_areas()
 
     sv_game = Game(sv_options, location_data, connections, seed)
     if sv_options.daphne_gate:

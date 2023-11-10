@@ -1,8 +1,9 @@
 import functools
+import itertools
 import logging
 import os
 from threading import Event
-from typing import Any, Dict, List, Optional, TextIO
+from typing import Any, Dict, Iterable, List, Optional, Set, TextIO, Union
 
 from BaseClasses import CollectionState, Item, ItemClassification, Location, \
     LocationProgressType, MultiWorld, Region, Tutorial
@@ -15,10 +16,14 @@ from .options import SubversionAutoHints, SubversionShortGame, make_sv_game, sub
 from .patch_utils import ItemRomData, get_multi_patch_path, ips_patch_from_file, offset_from_symbol, patch_item_sprites
 from .rom import SubversionDeltaPatch, get_base_rom_path
 
+from subversion_rando.connection_data import area_doors
 from subversion_rando.game import Game as SvGame
-from subversion_rando.item_data import Items
+from subversion_rando.item_data import Item as SvItem, Items, unique_items
+from subversion_rando.loadout import Loadout
+from subversion_rando.location_data import pullCSV
 from subversion_rando.logic_locations import location_logic
 from subversion_rando.logic_goal import can_win
+from subversion_rando.logic_updater import updateLogic
 from subversion_rando.main_generation import apply_rom_patches
 from subversion_rando.romWriter import RomWriter
 from subversion_rando.trick_data import trick_name_lookup
@@ -56,7 +61,7 @@ class SubversionWorld(World):
     location_name_to_id = _loc_name_to_id
     item_name_to_id = _item_name_to_id
 
-    rom_name: bytes
+    rom_name: Union[bytes, bytearray]
     rom_name_available_event: Event
 
     logger: logging.Logger
@@ -72,12 +77,6 @@ class SubversionWorld(World):
 
     def create_item(self, name: str) -> SubversionItem:
         return SubversionItem(name, self.player)
-
-    def generate_early(self) -> None:
-        auto_hints_option: SubversionAutoHints = getattr(self.multiworld, "auto_hints")[self.player]
-        if auto_hints_option.value:
-            for item_name in SubversionAutoHints.item_names:
-                self.multiworld.start_hints[self.player].value.add(item_name)
 
     def create_regions(self) -> None:
         progression_items_option: SubversionShortGame = getattr(self.multiworld, "progression_items")[self.player]
@@ -176,7 +175,75 @@ class SubversionWorld(World):
         else:
             self.logger.debug("super was already being placed earlier")
 
+    def first_progression_items(self, sv_game: SvGame, auto_hints: SubversionAutoHints) -> List[str]:
+        """ names of items that I'm expected to receive first """
+        # TODO: does generation know the hint cost?
+        # I might want to lower these if the hint cost is lower.
+        # (I think I don't want to raise them if the hint cost is higher.)
+        if auto_hints.value == SubversionAutoHints.option_normal:
+            target_location_count = 11  # + torpedo bay makes 12
+        else:  # option_light
+            target_location_count = 5
+        self.logger.debug(f"subversion player {self.player} auto hinting to {target_location_count} locations")
+        base_loadout = (Items.spaceDrop, area_doors["SunkenNestL"])
+        items_in_my_own_locations: Set[str] = set()
+
+        def minimize(items: Iterable[SvItem]) -> List[str]:
+            """
+            remove as many items as we can while keeping access to enough locations
+
+            then filter to items not in my own locations
+            """
+            items_excluded: Set[SvItem] = set()
+            for item in items:
+                items_excluded.add(item)
+                candidate_items = filter(lambda it: it not in items_excluded, items)
+                loadout = Loadout(sv_game, itertools.chain(base_loadout, candidate_items))
+                locs = pullCSV().values()
+                updateLogic(locs, loadout)
+                if sum(loc["inlogic"] for loc in locs) < target_location_count:
+                    # can't exclude that item because it lowers the location count too low
+                    items_excluded.remove(item)
+            minimized = [item[0] for item in items if item not in items_excluded]
+            self.logger.debug(f"{minimized=}")
+            minimized = [item_name for item_name in minimized if item_name not in items_in_my_own_locations]
+            self.logger.debug(f"not in my locations: {minimized}")
+            return minimized
+
+        items_picked_up: List[SvItem] = []
+        loadout = Loadout(sv_game, base_loadout)
+        unused_locations = pullCSV().values()
+        for sphere in self.multiworld.get_spheres():
+            my_items_in_this_sphere: List[SvItem] = []
+            for loc in sphere:
+                if (
+                    isinstance(loc.item, SubversionItem) and
+                    loc.item.player == self.player and
+                    loc.item.sv_item in unique_items
+                ):
+                    my_items_in_this_sphere.append(loc.item.sv_item)
+                    if loc.player == self.player:
+                        items_in_my_own_locations.add(loc.item.sv_item[0])
+            my_items_in_this_sphere.sort()  # there's a PR to do this inside get_spheres, then won't need it here
+            self.random.shuffle(my_items_in_this_sphere)
+            for item in my_items_in_this_sphere:
+                items_picked_up.append(item)
+                loadout.append(item)
+                updateLogic(unused_locations, loadout)
+                if sum(loc["inlogic"] for loc in unused_locations) >= target_location_count:
+                    self.logger.debug(f"early items: {[it[0] for it in items_picked_up]}")
+                    return minimize(items_picked_up)
+        return minimize(items_picked_up)
+
     def generate_output(self, output_directory: str) -> None:
+        assert self.sv_game, "can't call generate_output without create_regions"
+        auto_hints_option: SubversionAutoHints = getattr(self.multiworld, "auto_hints")[self.player]
+        if auto_hints_option.value:
+            hint_items = self.first_progression_items(self.sv_game, auto_hints_option)
+            self.logger.debug(f"{hint_items=}")
+            for item_name in hint_items:
+                self.multiworld.start_hints[self.player].value.add(item_name)
+
         base_rom_path = get_base_rom_path()
         rom_writer = RomWriter.fromFilePaths(base_rom_path)  # this patches SM to Subversion 1.2
         self.logger.debug(f"Subversion player {self.player} patched Super Metroid to Subversion")
@@ -192,7 +259,6 @@ class SubversionWorld(World):
             item_rom_data.register(loc)
         rom_writer.rom_data = item_rom_data.patch_tables(rom_writer.rom_data)
 
-        assert self.sv_game, "can't call generate_output without create_regions"
         apply_rom_patches(self.sv_game, rom_writer)
 
         # TODO: deathlink

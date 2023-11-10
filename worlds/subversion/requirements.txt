@@ -1,1 +1,1 @@
-subversion_rando @ git+https://github.com/SubversionRando/SubversionRando@f38ab16df1342d17a306396ee8290ef39bf589d3#0.4.1
+subversion_rando @ git+https://github.com/SubversionRando/SubversionRando@b18331a3ad8e2a36bcba48d486a7cce625b1fc91#0.4.3
