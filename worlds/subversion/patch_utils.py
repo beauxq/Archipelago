@@ -120,7 +120,7 @@ _item_sprites = [
 ]
 
 
-def patch_item_sprites(rom: bytes) -> bytearray:
+def patch_item_sprites(rom: Union[bytes, bytearray]) -> bytearray:
     """
     puts the 2 new off-world item sprites in the rom
 
@@ -207,7 +207,7 @@ SM_ITEM_GAME_NAME = "Super Metroid"
 
 NUM_ITEMS_WITH_ICONS = len(local_id_to_sv_item) + len(sv_item_name_to_sm_item_id)
 
-ItemNames_ItemTable_PlayerNames_PlayerIDs = Tuple[List[bytes], Dict[int, _ItemTableEntry], bytes, List[int]]
+ItemNames_ItemTable_PlayerNames_PlayerIDs = Tuple[List[bytearray], Dict[int, _ItemTableEntry], bytearray, List[int]]
 
 
 class ItemRomData:
@@ -247,7 +247,7 @@ class ItemRomData:
         """ after all locations are registered """
         item_table: Dict[int, _ItemTableEntry] = {}
 
-        item_names_after_constants: List[bytes] = []
+        item_names_after_constants: List[bytearray] = []
 
         sorted_player_ids = sorted(self.player_ids)
         if len(sorted_player_ids) > 246:  # magic number from asm patch
@@ -328,7 +328,7 @@ class ItemRomData:
 
         return item_names_after_constants, item_table, player_names, sorted_player_ids
 
-    def patch_tables(self, rom: bytes) -> bytearray:
+    def patch_tables(self, rom: Union[bytes, bytearray]) -> bytearray:
         """
         after calling register on all locations
 
@@ -358,7 +358,7 @@ class ItemRomData:
         return tr
 
 
-def ips_patch_from_file(ips_file_name: Union[str, Path], input_bytes: bytes) -> bytearray:
+def ips_patch_from_file(ips_file_name: Union[str, Path], input_bytes: Union[bytes, bytearray]) -> bytearray:
     with open_file_apworld_compatible(ips_file_name, "rb") as ips_file:
         ips_data = ips_file.read()
     return ips_patch(input_bytes, ips_data)
