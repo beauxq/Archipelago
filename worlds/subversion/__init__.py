@@ -186,6 +186,8 @@ class SubversionWorld(World):
             target_location_count = 5
         self.logger.debug(f"subversion player {self.player} auto hinting to {target_location_count} locations")
         base_loadout = (Items.spaceDrop, area_doors["SunkenNestL"])
+
+        # This set is only referenced for unique items so it doesn't matter whether non-unique items go in it.
         items_in_my_own_locations: Set[str] = set()
 
         def minimize(items: Iterable[SvItem]) -> List[str]:
@@ -204,7 +206,7 @@ class SubversionWorld(World):
                 if sum(loc["inlogic"] for loc in locs) < target_location_count:
                     # can't exclude that item because it lowers the location count too low
                     items_excluded.remove(item)
-            minimized = [item[0] for item in items if item not in items_excluded]
+            minimized = [item[0] for item in items if item in unique_items and item not in items_excluded]
             self.logger.debug(f"{minimized=}")
             minimized = [item_name for item_name in minimized if item_name not in items_in_my_own_locations]
             self.logger.debug(f"not in my locations: {minimized}")
@@ -218,8 +220,7 @@ class SubversionWorld(World):
             for loc in sphere:
                 if (
                     isinstance(loc.item, SubversionItem) and
-                    loc.item.player == self.player and
-                    loc.item.sv_item in unique_items
+                    loc.item.player == self.player
                 ):
                     my_items_in_this_sphere.append(loc.item.sv_item)
                     if loc.player == self.player:
