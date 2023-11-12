@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set, TextIO, Union
 
 from BaseClasses import CollectionState, Item, ItemClassification, Location, \
     LocationProgressType, MultiWorld, Region, Tutorial
+from NetUtils import Hint
 from worlds.AutoWorld import WebWorld, World
 from .client import SubversionSNIClient
 from .item import SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
@@ -324,6 +325,31 @@ class SubversionWorld(World):
         assert len(rom_name) == 21, f"{rom_name=}"
         new_name = base64.b64encode(rom_name).decode()
         multidata["connect_names"][new_name] = multidata["connect_names"][self.multiworld.player_name[self.player]]
+
+        # there is no hook between progression balancing and `write_multidata` for `start_hints`
+        # so I'm copying code from `write_multidata` to here
+        precollected_hints: Dict[int, Set[Hint]] = multidata["precollected_hints"]
+
+        def precollect_hint(location: Location) -> None:
+            assert location.item and location.address and location.item.code
+            hint = Hint(location.item.player, location.player, location.address,
+                        location.item.code, False, "", location.item.flags)
+            precollected_hints[location.player].add(hint)
+            if location.item.player not in self.multiworld.groups:
+                precollected_hints[location.item.player].add(hint)
+            else:
+                players_in_group = self.multiworld.groups[location.item.player].get("players")
+                assert not (players_in_group is None)
+                for player in players_in_group:
+                    precollected_hints[player].add(hint)
+
+        for location in self.multiworld.get_filled_locations():
+            if isinstance(location.address, int):
+                assert not (location.item is None or location.item.code is None), (
+                    f"item code None should be event, location.address should then also be None. {location=}"
+                )
+                if location.item.name in self.multiworld.start_hints[location.item.player]:
+                    precollect_hint(location)
 
     def get_filler_item_name(self) -> str:
         return "Small Ammo"
