@@ -3,6 +3,7 @@ from typing import Dict, Iterator
 from BaseClasses import Item, ItemClassification as IC
 from .config import base_id
 
+from subversion_rando.area_rando_types import DoorPairs
 from subversion_rando.item_data import Item as SvItem, Items
 from subversion_rando.fillAssumed import FillAssumed
 
@@ -88,7 +89,7 @@ name_to_id = {
 
 
 def names_for_item_pool() -> Iterator[str]:
-    sv_fill = FillAssumed([])
+    sv_fill = FillAssumed(DoorPairs([]))
     for sv_item in sv_fill.prog_items:
         yield sv_item[0]
     for sv_item in sv_fill.extra_items:
