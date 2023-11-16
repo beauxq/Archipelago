@@ -63,12 +63,12 @@ def item_counts(cs: CollectionState, p: int) -> Iterator[Tuple[str, int]]:
     return ((item_name, cs.item_count(item_name, p)) for item_name in item_name_to_id)
 
 
-def cs_to_loadout(sv_game: Game,  collection_state: CollectionState, player: int) -> Loadout:
+def cs_to_loadout(sv_game: Game, collection_state: CollectionState, player: int) -> Loadout:
     """ convert Archipelago CollectionState to subversion_rando collection state """
     loadout = Loadout(sv_game)
     for item_name, count in item_counts(collection_state, player):
         loadout.contents[id_to_sv_item[item_name_to_id[item_name]]] += count
     loadout.append(Items.spaceDrop)
     loadout.append(area_doors["SunkenNestL"])
-    update_area_logic(loadout)  # TODO: test performance of this
+    update_area_logic(loadout)
     return loadout
