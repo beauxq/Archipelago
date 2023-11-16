@@ -25,7 +25,7 @@ from subversion_rando.location_data import pullCSV
 from subversion_rando.logic_locations import location_logic
 from subversion_rando.logic_goal import can_win
 from subversion_rando.logic_updater import updateLogic
-from subversion_rando.main_generation import apply_rom_patches
+from subversion_rando.main_generation import apply_rom_patches, daphne_gate_spoiler
 from subversion_rando.romWriter import RomWriter
 from subversion_rando.trick_data import trick_name_lookup
 
@@ -316,6 +316,10 @@ class SubversionWorld(World):
 
         for trick, trick_name in trick_name_lookup.items():
             spoiler_handle.write(f"  {trick_name:23}: {bool_to_text(trick in logic)}\n")
+
+        spoiler_handle.write(f"\nplayer {self.player} {daphne_gate_spoiler(self.sv_game)}\n")
+
+        # TODO: area rando connections, objective rando info
 
     def modify_multidata(self, multidata: Dict[str, Any]) -> None:
         import base64
