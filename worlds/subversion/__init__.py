@@ -14,8 +14,8 @@ from .item import SubversionItem, name_to_id as _item_name_to_id, names_for_item
 from .location import SubversionLocation, name_to_id as _loc_name_to_id
 from .logic import choose_torpedo_bay, cs_to_loadout
 from .options import SubversionAutoHints, SubversionShortGame, make_sv_game, subversion_options
-from .patch_utils import ItemRomData, get_multi_patch_path, ips_patch_from_file, offset_from_symbol, patch_item_sprites
-from .rom import SubversionDeltaPatch, get_base_rom_path
+from .patch_utils import GenData, ItemRomData, make_gen_data
+from .rom import SubversionDeltaPatch
 
 from subversion_rando.connection_data import area_doors
 from subversion_rando.game import Game as SvGame
@@ -25,8 +25,7 @@ from subversion_rando.location_data import pullCSV
 from subversion_rando.logic_locations import location_logic
 from subversion_rando.logic_goal import can_win
 from subversion_rando.logic_updater import updateLogic
-from subversion_rando.main_generation import apply_rom_patches, daphne_gate_spoiler
-from subversion_rando.romWriter import RomWriter
+from subversion_rando.main_generation import daphne_gate_spoiler
 from subversion_rando.trick_data import trick_name_lookup
 
 _ = SubversionSNIClient  # load the module to register the handler
@@ -246,34 +245,10 @@ class SubversionWorld(World):
             for item_name in hint_items:
                 self.multiworld.start_hints[self.player].value.add(item_name)
 
-        base_rom_path = get_base_rom_path()
-        rom_writer = RomWriter.fromFilePaths(base_rom_path)  # this patches SM to Subversion 1.2
-        self.logger.debug(f"Subversion player {self.player} patched Super Metroid to Subversion")
-
-        multi_patch_path = get_multi_patch_path()
-        rom_writer.rom_data = ips_patch_from_file(multi_patch_path, rom_writer.rom_data)
-
-        rom_writer.rom_data = patch_item_sprites(rom_writer.rom_data)
-
         troll_ammo: bool = getattr(self.multiworld, "troll_ammo")[self.player].value
         item_rom_data = ItemRomData(self.player, troll_ammo, self.multiworld.player_name)
         for loc in self.multiworld.get_locations():
             item_rom_data.register(loc)
-        rom_writer.rom_data = item_rom_data.patch_tables(rom_writer.rom_data)
-
-        apply_rom_patches(self.sv_game, rom_writer)
-
-        # TODO: deathlink
-        # self.multiworld.death_link[self.player].value
-        offset_from_symbol("config_deathlink")
-
-        remote_items_offset = offset_from_symbol("config_remote_items")
-        remote_items_value = 0b101
-        # TODO: if remote items: |= 0b10
-        rom_writer.writeBytes(remote_items_offset, remote_items_value.to_bytes(1, "little"))
-
-        player_id_offset = offset_from_symbol("config_player_id")
-        rom_writer.writeBytes(player_id_offset, self.player.to_bytes(2, "little"))
 
         # set rom name
         from Utils import __version__
@@ -283,24 +258,19 @@ class SubversionWorld(World):
         )[:21]
         rom_name.extend(b" " * (21 - len(rom_name)))
         assert len(rom_name) == 21, f"{rom_name=}"
-        rom_writer.writeBytes(0x7fc0, rom_name)
         self.rom_name = rom_name
         self.rom_name_available_event.set()
 
-        self.logger.debug(f"Subversion player {self.player} applied all patches")
+        gen_data = GenData(item_rom_data.get_jsonable_data(), self.sv_game, self.player, self.rom_name)
 
         out_file_base = self.multiworld.get_out_file_name_base(self.player)
-        patched_rom_file_name = os.path.join(output_directory, f"{out_file_base}.sfc")
-        rom_writer.finalizeRom(patched_rom_file_name)  # writes rom file
 
         patch_file_name = os.path.join(output_directory, f"{out_file_base}{SubversionDeltaPatch.patch_file_ending}")
         patch = SubversionDeltaPatch(patch_file_name,
                                      player=self.player,
                                      player_name=self.multiworld.player_name[self.player],
-                                     patched_path=patched_rom_file_name)
+                                     gen_data=make_gen_data(gen_data))
         patch.write()
-        if os.path.exists(patched_rom_file_name):
-            os.unlink(patched_rom_file_name)
 
         self.logger.debug(f"Subversion player {self.player} finished generate_output")
 

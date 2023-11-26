@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import IntEnum
+from itertools import chain
 import json
 from pathlib import Path
 from typing import Dict, Final, List, Mapping, Optional, Set, Tuple, Union
@@ -10,6 +11,7 @@ from .config import base_id, open_file_apworld_compatible
 from .item import SubversionItem, local_id_to_sv_item, name_to_id, sv_item_name_to_sm_item_id
 from .location import SubversionLocation
 
+from subversion_rando.game import Game as SvGame
 from subversion_rando.ips import patch as ips_patch
 from subversion_rando.item_data import Items
 from subversion_rando.romWriter import RomWriter
@@ -209,6 +211,8 @@ NUM_ITEMS_WITH_ICONS = len(local_id_to_sv_item) + len(sv_item_name_to_sm_item_id
 
 ItemNames_ItemTable_PlayerNames_PlayerIDs = Tuple[List[bytearray], Dict[int, _ItemTableEntry], bytearray, List[int]]
 
+ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON = Tuple[List[List[int]], Dict[str, List[int]], List[int], List[int]]
+
 
 class ItemRomData:
     player: Final[int]
@@ -357,6 +361,45 @@ class ItemRomData:
 
         return tr
 
+    def get_jsonable_data(self) -> ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON:
+        """ data that can be encoded to json, and can be passed to `patch_from_json` """
+        item_names_after_constants, item_table, player_names, sorted_player_ids = self._make_tables()
+
+        return (
+            [list(item_name) for item_name in item_names_after_constants],
+            {str(loc_id): list(entry.to_bytes()) for loc_id, entry in item_table.items()},
+            list(player_names),
+            sorted_player_ids
+        )
+
+    @staticmethod
+    def patch_from_json(
+        rom: Union[bytes, bytearray],
+        json_result: ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON
+    ) -> bytearray:
+        tr = bytearray(rom)
+        item_names_after_constants, item_table, player_names, sorted_player_ids = json_result
+
+        item_names_offset = offset_from_symbol("item_names") + 64 * NUM_ITEMS_WITH_ICONS
+        concat_bytes = bytes(chain.from_iterable(item_names_after_constants))
+        tr[item_names_offset:item_names_offset + len(concat_bytes)] = concat_bytes
+
+        item_table_offset = offset_from_symbol("rando_item_table")
+        for index, entry in item_table.items():
+            data = bytes(entry)
+            this_offset = item_table_offset + int(index) * len(data)
+            tr[this_offset:this_offset + len(data)] = data
+
+        player_name_offset = offset_from_symbol("rando_player_name_table")
+        tr[player_name_offset:player_name_offset + len(player_names)] = player_names
+
+        player_id_offset = offset_from_symbol("rando_player_id_table")
+        for i, id_ in enumerate(sorted_player_ids):
+            this_offset = player_id_offset + i * 2
+            tr[this_offset:this_offset + 2] = id_.to_bytes(2, "little")
+
+        return tr
+
 
 def ips_patch_from_file(ips_file_name: Union[str, Path], input_bytes: Union[bytes, bytearray]) -> bytearray:
     with open_file_apworld_compatible(ips_file_name, "rb") as ips_file:
@@ -368,3 +411,33 @@ def get_multi_patch_path() -> Path:
     """ multiworld-basepatch.ips """
     path = Path(__file__).parent.resolve()
     return path.joinpath("data", "ap_subversion_patch", "multiworld-basepatch.ips")
+
+
+@dataclass
+class GenData:
+    item_rom_data: ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON
+    sv_game: SvGame
+    player: int
+    game_name_in_rom: Union[bytes, bytearray]
+
+
+def make_gen_data(data: GenData) -> str:
+    """ serialized data from generation needed to patch rom """
+    jsonable = {
+        "item_rom_data": data.item_rom_data,
+        "sv_game": data.sv_game.to_jsonable(),
+        "player": data.player,
+        "game_name_in_rom": list(data.game_name_in_rom)
+    }
+    return json.dumps(jsonable)
+
+
+def get_gen_data(gen_data_str: str) -> GenData:
+    """ the reverse of `make_gen_data` """
+    from_json = json.loads(gen_data_str)
+    return GenData(
+        from_json["item_rom_data"],
+        SvGame.from_jsonable(from_json["sv_game"]),
+        from_json["player"],
+        bytes(from_json["game_name_in_rom"])
+    )
