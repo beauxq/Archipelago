@@ -50,7 +50,7 @@ box_blue_tbl = {
     ",": 0xACDC,
     ".": 0x2CDA,
     "-": 0x2CDD,
-    "_": 0x2CDD,
+    "_": 0x000E,  # character used for edges of screen during text box
     "1": 0x2C01,
     "2": 0x2C02,
     "3": 0x2C03,
