@@ -87,6 +87,14 @@ name_to_id = {
     for id_, item in id_to_sv_item.items()
 }
 
+# This is an item that should never be in the item pool or placed in any locations.
+# It's used only to hide the name of items in hints.
+IMPORTANT_ITEM_NAME = "Important Item"
+name_to_id[IMPORTANT_ITEM_NAME] = max(name_to_id.values()) + 1
+IMPORTANT_ITEM_ID = name_to_id[IMPORTANT_ITEM_NAME]
+id_to_sv_item[IMPORTANT_ITEM_ID] = Items.Refuel  # This is so unit tests don't crash when they try to create this item.
+# TODO: add API in AP to hide item name in hint
+
 
 def names_for_item_pool() -> Iterator[str]:
     sv_fill = FillAssumed(DoorPairs([]))

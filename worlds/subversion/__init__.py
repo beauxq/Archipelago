@@ -10,7 +10,7 @@ from BaseClasses import CollectionState, Item, ItemClassification, Location, \
 from NetUtils import Hint
 from worlds.AutoWorld import WebWorld, World
 from .client import SubversionSNIClient
-from .item import SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
+from .item import IMPORTANT_ITEM_ID, SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
 from .location import SubversionLocation, name_to_id as _loc_name_to_id
 from .logic import choose_torpedo_bay, cs_to_loadout
 from .options import SubversionAutoHints, SubversionShortGame, make_sv_game, subversion_options
@@ -67,13 +67,16 @@ class SubversionWorld(World):
     logger: logging.Logger
     sv_game: Optional[SvGame] = None
     torpedo_bay_item: Optional[str] = None
-    spaceport_excluded_locs: List[str] = []
+    spaceport_excluded_locs: List[str]
+    early_hints_from_option: List[str]
 
     def __init__(self, multiworld: MultiWorld, player: int):
         super().__init__(multiworld, player)
         self.rom_name = b""
         self.rom_name_available_event = Event()
         self.logger = logging.getLogger("Subversion")
+        self.spaceport_excluded_locs = []
+        self.early_hints_from_option = []
 
     def create_item(self, name: str) -> SubversionItem:
         return SubversionItem(name, self.player)
@@ -236,14 +239,17 @@ class SubversionWorld(World):
                     return minimize(items_picked_up)
         return minimize(items_picked_up)
 
-    def generate_output(self, output_directory: str) -> None:
-        assert self.sv_game, "can't call generate_output without create_regions"
+    def _set_early_hints_from_options(self, sv_game: SvGame) -> None:
         auto_hints_option: SubversionAutoHints = getattr(self.multiworld, "auto_hints")[self.player]
         if auto_hints_option.value:
-            hint_items = self.first_progression_items(self.sv_game, auto_hints_option)
+            hint_items = self.first_progression_items(sv_game, auto_hints_option)
             self.logger.debug(f"{hint_items=}")
-            for item_name in hint_items:
-                self.multiworld.start_hints[self.player].value.add(item_name)
+            self.early_hints_from_option = hint_items
+
+    def generate_output(self, output_directory: str) -> None:
+        assert self.sv_game, "can't call generate_output without create_regions"
+
+        self._set_early_hints_from_options(self.sv_game)
 
         troll_ammo: bool = getattr(self.multiworld, "troll_ammo")[self.player].value
         item_rom_data = ItemRomData(self.player, troll_ammo, self.multiworld.player_name)
@@ -300,14 +306,13 @@ class SubversionWorld(World):
         new_name = base64.b64encode(rom_name).decode()
         multidata["connect_names"][new_name] = multidata["connect_names"][self.multiworld.player_name[self.player]]
 
-        # there is no hook between progression balancing and `write_multidata` for `start_hints`
-        # so I'm copying code from `write_multidata` to here
         precollected_hints: Dict[int, Set[Hint]] = multidata["precollected_hints"]
 
         def precollect_hint(location: Location) -> None:
-            assert location.item and location.address and location.item.code
+            """ This is mostly copied from `write_multidata` but with ID for hidden item name. """
+            assert location.item and location.address
             hint = Hint(location.item.player, location.player, location.address,
-                        location.item.code, False, "", location.item.flags)
+                        IMPORTANT_ITEM_ID, False, "", location.item.flags)
             precollected_hints[location.player].add(hint)
             if location.item.player not in self.multiworld.groups:
                 precollected_hints[location.item.player].add(hint)
@@ -317,12 +322,16 @@ class SubversionWorld(World):
                 for player in players_in_group:
                     precollected_hints[player].add(hint)
 
+        hidden_item_name_hints = frozenset(self.early_hints_from_option)
         for location in self.multiworld.get_filled_locations():
-            if isinstance(location.address, int):
-                assert not (location.item is None or location.item.code is None), (
-                    f"item code None should be event, location.address should then also be None. {location=}"
-                )
-                if location.item.name in self.multiworld.start_hints[location.item.player]:
+            item = location.item
+            # TODO: this probably won't work for item links
+            if item and item.player == self.player:
+                # my item is in this location
+                if (
+                    item.name not in self.multiworld.start_hints[self.player] and
+                    item.name in hidden_item_name_hints
+                ):
                     precollect_hint(location)
 
     def get_filler_item_name(self) -> str:
