@@ -1,8 +1,9 @@
 import hashlib
-import os
+from typing import Any
+import zipfile
 
-import Utils
-from Patch import APDeltaPatch
+from worlds.Files import APContainer, APDeltaPatch
+from .rom_writer import write_rom_from_gen_data
 
 NA10HASH = 'e986575b98300f721ce27c180264d890'
 ROM_PLAYER_LIMIT = 65535
@@ -644,14 +645,53 @@ treasure_chest_data = {
     "Zozo Esper Room Right": (0x1E48, 7, 140)
 }
 
-class FF6WCDeltaPatch(APDeltaPatch):
+
+# SNIClient assumes that the patch it gets is an APDeltaPatch
+# Otherwise, it might be better to inherit from APContainer instead of APDeltaPatch.
+# So in some places, instead of calling `super()`, we jump over APDeltaPatch to APContainer
+# because we don't have a bs4diff.
+
+class FF6WCPatch(APDeltaPatch):
     hash = NA10HASH
     game = "Final Fantasy 6 Worlds Collide"
     patch_file_ending = ".apff6wc"
 
+    placements: str
+    """ JSON encoded """
+
+    wc_args: str
+    """ JSON encoded """
+
+    def __init__(self,
+                 *args: Any,
+                 placements: str = "",
+                 wc_args: str = "",
+                 **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.placements = placements
+        self.wc_args = wc_args
+
     @classmethod
     def get_source_data(cls) -> bytes:
         return get_base_rom_bytes()
+
+    def write_contents(self, opened_zipfile: zipfile.ZipFile) -> None:
+        APContainer.write_contents(self, opened_zipfile)
+        opened_zipfile.writestr("placements.json",
+                                self.placements,
+                                compress_type=zipfile.ZIP_DEFLATED)
+        opened_zipfile.writestr("wc_args.json",
+                                self.wc_args,
+                                compress_type=zipfile.ZIP_DEFLATED)
+
+    def read_contents(self, opened_zipfile: zipfile.ZipFile):
+        APContainer.read_contents(self, opened_zipfile)
+        self.placements = opened_zipfile.read("placements.json").decode()
+        self.wc_args = opened_zipfile.read("wc_args.json").decode()
+
+    def patch(self, target: str) -> None:
+        self.read()
+        write_rom_from_gen_data(self.placements, self.wc_args, target)
 
 
 def get_base_rom_bytes(file_name: str = "") -> bytes:
@@ -667,15 +707,6 @@ def get_base_rom_bytes(file_name: str = "") -> bytes:
                             'Get the correct game and version, then dump it')
         get_base_rom_bytes.base_rom_bytes = base_rom_bytes
     return base_rom_bytes
-
-
-def get_base_rom_path(file_name: str = "") -> str:
-    options = Utils.get_options()
-    if not file_name:
-        file_name = options["ff6wc_options"]["rom_file"]
-    if not os.path.exists(file_name):
-        file_name = Utils.local_path(file_name)
-    return file_name
 
 
 def get_event_flag_value(event_id):

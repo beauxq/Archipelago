@@ -1,8 +1,11 @@
+import json
+import os
 import typing
 import logging
 from logging import Logger
 
 from NetUtils import ClientStatus, color
+from settings import get_settings
 from worlds.AutoSNIClient import SNIClient
 
 if typing.TYPE_CHECKING:
@@ -18,13 +21,14 @@ class FF6WCClient(SNIClient):
     game: str = "Final Fantasy 6 Worlds Collide"
     location_names: typing.List = list(Rom.event_flag_location_names)
     location_ids = None
-    dialog_ids = dict()
+    dialog_ids: typing.Mapping[str, int] = dict()
 
     def __init__(self):
         super()
 
     async def validate_rom(self, ctx: SNIContext) -> bool:
         from SNIClient import snes_read
+        from . import FF6WCSettings
 
         rom_name: bytes = await snes_read(ctx, Rom.ROM_NAME, 20)
         if rom_name is None or rom_name[:3] != b"6WC":
@@ -37,7 +41,12 @@ class FF6WCClient(SNIClient):
 
         ctx.rom = rom_name
 
-        ctx
+        ff6wc_settings: FF6WCSettings = get_settings()["ff6wc_options"]
+        dialog_data_file_name = os.path.join(ff6wc_settings.dialog_data, rom_name.strip(b"\x00").decode() + ".BIN")
+        if not os.path.exists(dialog_data_file_name):
+            raise RuntimeError(f"patching process didn't give dialog data: {dialog_data_file_name=}")
+        with open(dialog_data_file_name) as file:
+            self.dialog_ids = json.load(file)
 
         return True
 
@@ -288,7 +297,7 @@ class FF6WCClient(SNIClient):
         items_received_amount += 1
         snes_buffered_write(ctx, Rom.items_received_address, items_received_amount.to_bytes(2, 'little'))
 
-    def set_dialogue_byte(self, ctx: SNIContext, item):
+    def set_dialogue_byte(self, ctx: SNIContext, item: str) -> None:
         from SNIClient import snes_buffered_write
-        dialog_id = ctx.slot_data["dialogs"][item]
+        dialog_id = self.dialog_ids[item]
         snes_buffered_write(ctx, Rom.event_dialog_byte, dialog_id.to_bytes(2, 'little'))

@@ -1,29 +1,26 @@
-import importlib
 import json
 import os
 import random
-import shutil
 import string
-import subprocess
 import threading
 import traceback
-from typing import NamedTuple, Union, ClassVar, Dict
+from typing import Union, ClassVar, Dict
 import logging
 
 from BaseClasses import Item, Location, Region, Entrance, MultiWorld, ItemClassification, Tutorial
 from . import Logic
-from .Rom import FF6WCDeltaPatch, NA10HASH, get_base_rom_path
+from . import Rom
+from .Rom import FF6WCPatch, NA10HASH
 from .Client import FF6WCClient
 from worlds.generic.Rules import add_rule, set_rule, forbid_item, add_item_rule
 from worlds.AutoWorld import World, LogicMixin, WebWorld
-from NetUtils import SlotType
+from . import Locations
 from .Locations import location_table
-from .Items import item_table, items, good_items
+from .Items import item_table
 from .Options import ff6wc_options, generate_flagstring
 import Utils
 import settings
 
-from .WorldsCollide.wc import WC
 
 class FF6WCSettings(settings.Group):
     class RomFile(settings.SNESRomPath):
@@ -32,6 +29,14 @@ class FF6WCSettings(settings.Group):
         copy_to = "Final Fantasy III (USA).sfc"
         md5s = [NA10HASH]
     rom_file: RomFile = RomFile(RomFile.copy_to)
+
+    class DialogDataDirectory(settings.UserFolderPath):
+        """
+        This is used to pass FF6 seed dialog data from the patcher to the client.
+        """
+        description = "a directory to store FF6 seed data"
+
+    dialog_data: DialogDataDirectory = DialogDataDirectory(Utils.user_path("ff6_seed_data"))
 
 
 class FF6WCWeb(WebWorld):
@@ -136,15 +141,7 @@ class FF6WCWorld(World):
         self.no_exp_eggs = False
         self.generator_in_use = threading.Event()
         self.wc = None
-        self.wc_complete = threading.Event()
         self.rom_name_available_event = threading.Event()
-        self.dialog_id_file = ""
-
-    @classmethod
-    def stage_assert_generate(cls, multiworld: MultiWorld) -> None:
-        rom_file: str = get_base_rom_path()
-        if not os.path.exists(rom_file):
-            raise FileNotFoundError(f"Could not find base ROM for {cls.game}: {rom_file}")
 
     def create_item(self, name: str):
         return FF6WCItem(name, ItemClassification.progression, self.item_name_to_id[name], self.player)
@@ -561,17 +558,8 @@ class FF6WCWorld(World):
             item.classification = ItemClassification.useful
         return
 
-    def fill_slot_data(self):
-        slot_data = dict()
-        self.wc_complete.wait()
-        with open(self.dialog_id_file) as file:
-            slot_data["dialogs"] = json.load(file)
-            return slot_data
-
-
     def generate_output(self, output_directory: str):
-        locations = dict()
-        locations["output directory"] = output_directory
+        locations: Dict[Union[str, int], str] = dict()
         # get all locations
         for region in self.multiworld.regions:
             if region.player == self.player:
@@ -592,40 +580,28 @@ class FF6WCWorld(World):
         self.romName.extend([0] * (20 - len(self.romName)))
         self.rom_name = self.romName
         locations["RomName"] = self.rom_name_text
-        placement_file = os.path.join(output_directory,
-                                      f'{self.multiworld.get_out_file_name_base(self.player)}' + '.applacements')
-        with open(placement_file, "w") as file:
-            json.dump(locations, file, indent=2)
-        output_file = os.path.join(output_directory, f"{self.multiworld.get_out_file_name_base(self.player)}.sfc")
-        wc_args = ["-i", f"{get_base_rom_path()}", "-o", f"{output_file}", "-ap", placement_file]
-        wc_args.extend(generate_flagstring(self.multiworld, self.player, self.starting_characters))
-        print(wc_args)
+        patch_file_name = os.path.join(
+            output_directory,
+            f"{self.multiworld.get_out_file_name_base(self.player)}{FF6WCPatch.patch_file_ending}"
+        )
         with FF6WCWorld.wc_ready:
             try:
-                import sys
-                from copy import deepcopy
-                module_keys = deepcopy(list(sys.modules.keys()))
-                for module in module_keys:
-                    if str(module).startswith("worlds.ff6wc.WorldsCollide"):
-                        del sys.modules[module]
-                wc = WC()
-                wc.main(wc_args)
-                patch = FF6WCDeltaPatch(
-                    os.path.splitext(output_file)[0] + FF6WCDeltaPatch.patch_file_ending,
+                placements_json = json.dumps(locations, indent=2)
+                wc_args_json = json.dumps(generate_flagstring(self.multiworld, self.player, self.starting_characters))
+                print(wc_args_json)
+                patch = FF6WCPatch(
+                    patch_file_name,
                     player=self.player,
                     player_name=self.multiworld.player_name[self.player],
-                    patched_path=output_file)
-                self.dialog_id_file = os.path.join(output_directory, "dialogs.txt")
+                    placements=placements_json,
+                    wc_args=wc_args_json)
                 patch.write()
-                os.remove(output_file)
-                os.remove(placement_file)
-                self.rom_name_available_event.set()
             except Exception as ex:
                 print(''.join(traceback.format_tb(ex.__traceback__)))
                 print(ex)
                 raise ex
             finally:
-                self.wc_complete.set()
+                self.rom_name_available_event.set()
 
     def modify_multidata(self, multidata: dict):
         import base64
