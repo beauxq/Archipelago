@@ -82,13 +82,15 @@ def exists_apworld_compatible(resource: str) -> bool:
 
 
 def load_library() -> None:
+    from Utils import user_path
+
     (zip_file, _stem) = _get_zip_file()
     logging.info("loading subversion_rando library...")
     for file in zip_file.namelist():
         if file.startswith('subversion/subversion_rando/'):
             new_path = file[11:]
             zip_file.getinfo(file).filename = new_path
-            zip_file.extract(file, 'lib')
+            zip_file.extract(file, user_path('lib'))
 
 
 if is_apworld():
