@@ -19,7 +19,7 @@ from zilliandomizer.options import Chars
 from zilliandomizer.patch import RescueInfo
 
 from worlds.zillion.id_maps import make_id_to_others
-from worlds.zillion.config import base_id, zillion_map
+from worlds.zillion.config import base_id
 
 
 class ZillionCommandProcessor(ClientCommandProcessor):
@@ -140,6 +140,7 @@ class ZillionContext(CommonContext):
         from kvui import GameManager
         from kivy.core.text import Label as CoreLabel
         from kivy.graphics import Ellipse, Color, Rectangle
+        from kivy.graphics.texture import Texture
         from kivy.uix.layout import Layout
         from kivy.uix.widget import Widget
 
@@ -152,11 +153,23 @@ class ZillionContext(CommonContext):
             class MapPanel(Widget):
                 MAP_WIDTH: ClassVar[int] = 281
 
+                map_texture: Texture
                 _number_textures: List[Any] = []
                 rooms: List[List[int]] = []
 
+                @staticmethod
+                def get_map_texture() -> Texture:
+                    import io
+                    from kivy.uix.image import CoreImage
+                    from worlds.zillion.map_texture import png_b64
+                    binary_data = base64.b64decode(png_b64)
+                    data = io.BytesIO(binary_data)
+                    return CoreImage(data, ext="png").texture
+
                 def __init__(self, **kwargs: Any) -> None:
                     super().__init__(**kwargs)
+
+                    self.map_texture = ZillionManager.MapPanel.get_map_texture()
 
                     self.rooms = [[0 for _ in range(8)] for _ in range(16)]
 
@@ -178,7 +191,7 @@ class ZillionContext(CommonContext):
 
                     with self.canvas:
                         Color(1, 1, 1, 1)
-                        Rectangle(source=zillion_map,
+                        Rectangle(texture=self.map_texture,
                                   pos=self.pos,
                                   size=(ZillionManager.MapPanel.MAP_WIDTH,
                                         int(ZillionManager.MapPanel.MAP_WIDTH * 1.456)))  # aspect ratio of that image
