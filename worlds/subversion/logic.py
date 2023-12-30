@@ -60,7 +60,7 @@ def item_counts(cs: CollectionState, p: int) -> Iterator[Tuple[str, int]]:
 
     ((item_name, count), (item_name, count), ...)
     """
-    return ((item_name, cs.item_count(item_name, p)) for item_name in item_name_to_id)
+    return ((item_name, cs.count(item_name, p)) for item_name in item_name_to_id)
 
 
 def cs_to_loadout(sv_game: Game, collection_state: CollectionState, player: int) -> Loadout:
