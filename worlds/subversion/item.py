@@ -10,13 +10,13 @@ from subversion_rando.fillAssumed import FillAssumed
 
 classifications: Dict[str, IC] = defaultdict(lambda: IC.progression)
 classifications.update({
-    Items.Refuel[0]: IC.filler,
-    Items.SmallAmmo[0]: IC.filler,
+    Items.Refuel.name: IC.filler,
+    Items.SmallAmmo.name: IC.filler,
 
-    Items.DamageAmp[0]: IC.useful,
-    Items.AccelCharge[0]: IC.useful,
-    Items.SpaceJumpBoost[0]: IC.useful,  # 1 progression set by create_items
-    Items.LargeAmmo[0]: IC.useful  # 10 progression set by create_items
+    Items.DamageAmp.name: IC.useful,
+    Items.AccelCharge.name: IC.useful,
+    Items.SpaceJumpBoost.name: IC.useful,  # 1 progression set by create_items
+    Items.LargeAmmo.name: IC.useful  # 10 progression set by create_items
 })
 
 
@@ -68,9 +68,9 @@ local_id_to_sv_item: Dict[int, SvItem] = {
 """ starting from 0 """
 
 sv_item_name_to_sm_item_id = {
-    Items.Refuel[0]: len(local_id_to_sv_item) + 0,
-    Items.Aqua[0]: len(local_id_to_sv_item) + 1,
-    Items.Speedball[0]: len(local_id_to_sv_item) + 2,
+    Items.Refuel.name: len(local_id_to_sv_item) + 0,
+    Items.Aqua.name: len(local_id_to_sv_item) + 1,
+    Items.Speedball.name: len(local_id_to_sv_item) + 2,
 }
 """
 in `itemnames.asm` after all of the subversion items,
@@ -83,7 +83,7 @@ id_to_sv_item = {
 }
 
 name_to_id = {
-    item[0]: id_
+    item.name: id_
     for id_, item in id_to_sv_item.items()
 }
 
@@ -99,6 +99,6 @@ id_to_sv_item[IMPORTANT_ITEM_ID] = Items.Refuel  # This is so unit tests don't c
 def names_for_item_pool() -> Iterator[str]:
     sv_fill = FillAssumed(DoorPairs([]))
     for sv_item in sv_fill.prog_items:
-        yield sv_item[0]
+        yield sv_item.name
     for sv_item in sv_fill.extra_items:
-        yield sv_item[0]
+        yield sv_item.name

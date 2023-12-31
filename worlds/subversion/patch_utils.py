@@ -159,27 +159,27 @@ _SMZ3_name_to_SM_name: Dict[str, str] = {
 }
 
 _SM_name_to_subversion_name: Dict[str, str] = {
-    "Energy Tank": Items.Energy[0],
-    "Missile": Items.Missile[0],
-    "Super Missile": Items.Super[0],
-    "Power Bomb": Items.PowerBomb[0],
-    "Bomb": Items.Bombs[0],
-    "Charge Beam": Items.Charge[0],
-    "Ice Beam": Items.Ice[0],
-    "Hi-Jump Boots": Items.HiJump[0],
-    "Speed Booster": Items.SpeedBooster[0],
-    "Wave Beam": Items.Wave[0],
-    "Spazer": Items.Spazer[0],
-    "Spring Ball": Items.Speedball[0],
-    "Varia Suit": Items.Varia[0],
-    "Plasma Beam": Items.Plasma[0],
-    "Grappling Beam": Items.Grapple[0],
-    "Morph Ball": Items.Morph[0],
-    "Reserve Tank": Items.Refuel[0],
-    "Gravity Suit": Items.Aqua[0],
-    "X-Ray Scope": Items.Xray[0],
-    "Space Jump": Items.SpaceJump[0],
-    "Screw Attack": Items.Screw[0],
+    "Energy Tank": Items.Energy.name,
+    "Missile": Items.Missile.name,
+    "Super Missile": Items.Super.name,
+    "Power Bomb": Items.PowerBomb.name,
+    "Bomb": Items.Bombs.name,
+    "Charge Beam": Items.Charge.name,
+    "Ice Beam": Items.Ice.name,
+    "Hi-Jump Boots": Items.HiJump.name,
+    "Speed Booster": Items.SpeedBooster.name,
+    "Wave Beam": Items.Wave.name,
+    "Spazer": Items.Spazer.name,
+    "Spring Ball": Items.Speedball.name,
+    "Varia Suit": Items.Varia.name,
+    "Plasma Beam": Items.Plasma.name,
+    "Grappling Beam": Items.Grapple.name,
+    "Morph Ball": Items.Morph.name,
+    "Reserve Tank": Items.Refuel.name,
+    "Gravity Suit": Items.Aqua.name,
+    "X-Ray Scope": Items.Xray.name,
+    "Space Jump": Items.SpaceJump.name,
+    "Screw Attack": Items.Screw.name,
 }
 """ for sprites that look the same """
 
@@ -294,14 +294,14 @@ class ItemRomData:
                 if loc.item.game == SMZ3_ITEM_GAME_NAME and loc.item.name in _SMZ3_name_to_SM_name:
                     sm_name = _SMZ3_name_to_SM_name[loc.item.name]
                     sv_name = _SM_name_to_subversion_name[sm_name]
-                    if self.troll_ammo or (sv_name not in (Items.Missile[0], Items.Super[0], Items.PowerBomb[0])):
+                    if self.troll_ammo or (sv_name not in (Items.Missile.name, Items.Super.name, Items.PowerBomb.name)):
                         item_id = name_to_id[sv_name] - base_id
                         if sv_name in sv_item_name_to_sm_item_id:
                             # reserve tank or gravity suit or spring ball, because of the different names
                             item_id = sv_item_name_to_sm_item_id[sv_name]
                 elif loc.item.game == SM_ITEM_GAME_NAME and loc.item.name in _SM_name_to_subversion_name:
                     sv_name = _SM_name_to_subversion_name[loc.item.name]
-                    if self.troll_ammo or (sv_name not in (Items.Missile[0], Items.Super[0], Items.PowerBomb[0])):
+                    if self.troll_ammo or (sv_name not in (Items.Missile.name, Items.Super.name, Items.PowerBomb.name)):
                         item_id = name_to_id[sv_name] - base_id
                         if sv_name in sv_item_name_to_sm_item_id:
                             # reserve tank or gravity suit or spring ball, because of the different names

@@ -97,8 +97,8 @@ class SubversionWorld(World):
         self.torpedo_bay_item = tb_item
         self.spaceport_excluded_locs = exc_locs
 
-        if tb_item != Items.GravityBoots[0]:
-            self.multiworld.early_items[self.player][Items.GravityBoots[0]] = 1
+        if tb_item != Items.GravityBoots.name:
+            self.multiworld.early_items[self.player][Items.GravityBoots.name] = 1
 
         for loc_name in _loc_name_to_id:
             loc = SubversionLocation(self.player, loc_name, menu)
@@ -142,11 +142,11 @@ class SubversionWorld(World):
                 excluded_tb_item = True
                 continue
             this_item = self.create_item(name)
-            if name == Items.SpaceJumpBoost[0]:
+            if name == Items.SpaceJumpBoost.name:
                 if count_sjb == 0:
                     this_item.classification = ItemClassification.progression
                 count_sjb += 1
-            elif name == Items.LargeAmmo[0]:
+            elif name == Items.LargeAmmo.name:
                 if count_la < 10:
                     this_item.classification = ItemClassification.progression
                 count_la += 1
@@ -164,9 +164,9 @@ class SubversionWorld(World):
         super_i = -1
         missile_i = -1
         for i, item in enumerate(progitempool):
-            if item.name == Items.Super[0] and item.player == self.player:
+            if item.name == Items.Super.name and item.player == self.player:
                 super_i = i
-            if item.name == Items.Missile[0] and item.player == self.player:
+            if item.name == Items.Missile.name and item.player == self.player:
                 missile_i = i
 
         if super_i == -1 or missile_i == -1:
@@ -209,7 +209,7 @@ class SubversionWorld(World):
                 if sum(loc["inlogic"] for loc in locs) < target_location_count:
                     # can't exclude that item because it lowers the location count too low
                     items_excluded.remove(item)
-            minimized = [item[0] for item in items if item in unique_items and item not in items_excluded]
+            minimized = [item.name for item in items if item in unique_items and item not in items_excluded]
             self.logger.debug(f"{minimized=}")
             minimized = [item_name for item_name in minimized if item_name not in items_in_my_own_locations]
             self.logger.debug(f"not in my locations: {minimized}")
@@ -227,7 +227,7 @@ class SubversionWorld(World):
                 ):
                     my_items_in_this_sphere.append(loc.item.sv_item)
                     if loc.player == self.player:
-                        items_in_my_own_locations.add(loc.item.sv_item[0])
+                        items_in_my_own_locations.add(loc.item.sv_item.name)
             my_items_in_this_sphere.sort()  # there's a PR to do this inside get_spheres, then won't need it here
             self.random.shuffle(my_items_in_this_sphere)
             for item in my_items_in_this_sphere:
@@ -235,7 +235,7 @@ class SubversionWorld(World):
                 loadout.append(item)
                 updateLogic(unused_locations, loadout)
                 if sum(loc["inlogic"] for loc in unused_locations) >= target_location_count:
-                    self.logger.debug(f"early items: {[it[0] for it in items_picked_up]}")
+                    self.logger.debug(f"early items: {[it.name for it in items_picked_up]}")
                     return minimize(items_picked_up)
         return minimize(items_picked_up)
 
