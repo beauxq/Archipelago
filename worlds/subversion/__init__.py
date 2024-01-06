@@ -13,7 +13,7 @@ from .client import SubversionSNIClient
 from .item import IMPORTANT_ITEM_ID, SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
 from .location import SubversionLocation, name_to_id as _loc_name_to_id
 from .logic import choose_torpedo_bay, cs_to_loadout
-from .options import SubversionAutoHints, SubversionShortGame, make_sv_game, subversion_options
+from .options import SubversionAutoHints, SubversionOptions, SubversionShortGame, make_sv_game
 from .patch_utils import GenData, ItemRomData, make_gen_data
 from .rom import SubversionDeltaPatch
 
@@ -57,7 +57,11 @@ class SubversionWorld(World):
     game = "Subversion"
     data_version = 0  # TODO: change to 1 before release
     web = SubversionWebWorld()
-    option_definitions = subversion_options
+
+    options_dataclass = SubversionOptions
+    options: SubversionOptions  # type: ignore [Overridden symbol]
+    # this type: ignore is because of this issue: https://github.com/python/typing/discussions/1486
+
     location_name_to_id = _loc_name_to_id
     item_name_to_id = _item_name_to_id
 
@@ -82,13 +86,12 @@ class SubversionWorld(World):
         return SubversionItem(name, self.player)
 
     def create_regions(self) -> None:
-        progression_items_option: SubversionShortGame = getattr(self.multiworld, "progression_items")[self.player]
-        excludes = frozenset(SubversionShortGame.location_lists[progression_items_option.value])
+        excludes = frozenset(SubversionShortGame.location_lists[self.options.progression_items.value])
 
         menu = Region("Menu", self.player, self.multiworld)
         self.multiworld.regions.append(menu)
 
-        sv_game = make_sv_game(self.multiworld, self.player)
+        sv_game = make_sv_game(self.options, self.multiworld.seed)
         self.sv_game = sv_game
 
         tb_item, exc_locs = choose_torpedo_bay(sv_game, self.random)
@@ -121,7 +124,7 @@ class SubversionWorld(World):
                 loc.place_locked_item(self.create_item(self.torpedo_bay_item))
             if (loc_name in self.spaceport_excluded_locs) or (loc_name in excludes):
                 loc.progress_type = LocationProgressType.EXCLUDED
-                self.multiworld.exclude_locations[self.player].value.add(loc.name)
+                self.options.exclude_locations.value.add(loc.name)
 
         # completion condition
         def completion_wrapped(local_sv_game: SvGame,
@@ -240,7 +243,7 @@ class SubversionWorld(World):
         return minimize(items_picked_up)
 
     def _set_early_hints_from_options(self, sv_game: SvGame) -> None:
-        auto_hints_option: SubversionAutoHints = getattr(self.multiworld, "auto_hints")[self.player]
+        auto_hints_option = self.options.auto_hints
         if auto_hints_option.value:
             hint_items = self.first_progression_items(sv_game, auto_hints_option)
             self.logger.debug(f"{hint_items=}")
@@ -251,7 +254,7 @@ class SubversionWorld(World):
 
         self._set_early_hints_from_options(self.sv_game)
 
-        troll_ammo: bool = getattr(self.multiworld, "troll_ammo")[self.player].value
+        troll_ammo = bool(self.options.troll_ammo.value)
         item_rom_data = ItemRomData(self.player, troll_ammo, self.multiworld.player_name)
         for loc in self.multiworld.get_locations():
             item_rom_data.register(loc)
@@ -329,7 +332,7 @@ class SubversionWorld(World):
             if item and item.player == self.player:
                 # my item is in this location
                 if (
-                    item.name not in self.multiworld.start_hints[self.player] and
+                    item.name not in self.options.start_hints and
                     item.name in hidden_item_name_hints
                 ):
                     precollect_hint(location)

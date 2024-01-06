@@ -1,8 +1,9 @@
+from dataclasses import dataclass
 import logging
-from typing import Any, ClassVar, Dict, FrozenSet, List, cast
+from typing import Any, ClassVar, Dict, FrozenSet, List, Union
 
-from BaseClasses import MultiWorld
-from Options import AssembleOptions, DefaultOnToggle, FreeText, Range, Toggle, Choice
+from Options import Choice, DefaultOnToggle, FreeText, PerGameCommonOptions, Range, Toggle
+
 from .location import location_data
 
 from subversion_rando.areaRando import RandomizeAreas
@@ -141,7 +142,7 @@ class SubversionAutoHints(Choice):
     # this is for backwards compatibility with old yamls
     # (can be removed after some time passes)
     @classmethod
-    def from_text(cls, text: str) -> "SubversionAutoHints":
+    def from_text(cls, text: str) -> Choice:  # TODO: fix typing to Self in core
         text = text.lower()
         if text == "true":
             assert isinstance(SubversionAutoHints.default, int)
@@ -181,18 +182,18 @@ class SubversionObjectiveRando(Range):
     range_end = 10
 
 
-subversion_options: Dict[str, AssembleOptions] = {
-    "logic_preset": SubversionLogic,
-    "custom_logic": SubversionCustomLogic,
-    "area_rando": SubversionAreaRando,
-    "small_spaceport": SubversionSmallSpaceport,
-    "escape_shortcuts": SubversionEscapeShortcuts,
-    "daphne_gate": SubversionDaphne,
-    "progression_items": SubversionShortGame,
-    "auto_hints": SubversionAutoHints,
-    "troll_ammo": SubversionTrollAmmo,
-    "objective_rando": SubversionObjectiveRando
-}
+@dataclass
+class SubversionOptions(PerGameCommonOptions):
+    logic_preset: SubversionLogic
+    custom_logic: SubversionCustomLogic
+    area_rando: SubversionAreaRando
+    small_spaceport: SubversionSmallSpaceport
+    escape_shortcuts: SubversionEscapeShortcuts
+    daphne_gate: SubversionDaphne
+    progression_items: SubversionShortGame
+    auto_hints: SubversionAutoHints
+    troll_ammo: SubversionTrollAmmo
+    objective_rando: SubversionObjectiveRando
 
 
 def _make_custom(data: str) -> FrozenSet[Trick]:
@@ -204,34 +205,28 @@ def _make_custom(data: str) -> FrozenSet[Trick]:
     return casual
 
 
-def make_sv_game(mw: MultiWorld, p: int) -> Game:
-    mwa: Any = mw  # PR 993 PLS!!
-    logic_preset = cast(SubversionLogic, mwa.logic_preset[p])
-
+def make_sv_game(options: SubversionOptions, seed: Union[int, None]) -> Game:
     logics = {
         SubversionLogic.option_casual: casual,
         SubversionLogic.option_expert: expert,
         SubversionLogic.option_medium: medium,
-        SubversionLogic.option_custom: _make_custom(mwa.custom_logic[p].value)
+        SubversionLogic.option_custom: _make_custom(options.custom_logic.value)
     }
 
-    objective_rando = cast(SubversionObjectiveRando, mwa.objective_rando[p])
-
-    progression_items = cast(SubversionShortGame, mwa.progression_items[p])
-    cypher_option = SubversionShortGame.cypher_options[progression_items.value]
+    cypher_option = SubversionShortGame.cypher_options[options.progression_items.value]
 
     sv_options = GameOptions(
-        logics[logic_preset.value],
-        bool(cast(SubversionAreaRando, mwa.area_rando[p]).value),
+        logics[options.logic_preset.value],
+        bool(options.area_rando.value),
         "D",  # unused
-        bool(cast(SubversionSmallSpaceport, mwa.small_spaceport[p]).value),
-        bool(cast(SubversionEscapeShortcuts, mwa.escape_shortcuts[p]).value),
+        bool(options.small_spaceport.value),
+        bool(options.escape_shortcuts.value),
         cypher_option,  # used only for objective rando, not for fill
-        bool(cast(SubversionDaphne, mwa.daphne_gate[p]).value),
-        objective_rando.value
+        bool(options.daphne_gate.value),
+        options.objective_rando.value
     )
 
-    seed = mw.seed or 0
+    seed = seed or 0
 
     connections = RandomizeAreas(False, seed) if sv_options.area_rando else vanilla_areas()
 
