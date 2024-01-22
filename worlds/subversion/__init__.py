@@ -20,8 +20,9 @@ from .rom import SubversionDeltaPatch
 from subversion_rando.connection_data import area_doors
 from subversion_rando.game import Game as SvGame
 from subversion_rando.item_data import Item as SvItem, Items, unique_items
+from subversion_rando.item_marker import ItemMarker
 from subversion_rando.loadout import Loadout
-from subversion_rando.location_data import pullCSV
+from subversion_rando.location_data import get_location_ids, pullCSV
 from subversion_rando.logic_locations import location_logic
 from subversion_rando.logic_goal import can_win
 from subversion_rando.logic_updater import updateLogic
@@ -256,8 +257,20 @@ class SubversionWorld(World):
 
         troll_ammo = bool(self.options.troll_ammo.value)
         item_rom_data = ItemRomData(self.player, troll_ammo, self.multiworld.player_name)
+        item_markers: Dict[int, ItemMarker] = {}
         for loc in self.multiworld.get_locations():
             item_rom_data.register(loc)
+
+            if loc.player == self.player:
+                assert isinstance(loc, SubversionLocation), f"{loc=}"
+                item = loc.item
+                assert isinstance(item, Item)
+                marker = self.options.item_markers.get_marker(item)
+                sv_loc_ids = get_location_ids(loc.sv_loc)
+                for loc_id in sv_loc_ids:
+                    item_markers[loc_id] = marker
+        assert len(item_markers) == 131, f"{len(item_markers)=}"
+        self.sv_game.item_markers = item_markers
 
         # set rom name
         from Utils import __version__

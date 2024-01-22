@@ -45,7 +45,7 @@ class SubversionDeltaPatch(APDeltaPatch):
                                 self.gen_data,
                                 compress_type=zipfile.ZIP_DEFLATED)
 
-    def read_contents(self, opened_zipfile: zipfile.ZipFile):
+    def read_contents(self, opened_zipfile: zipfile.ZipFile) -> None:
         APContainer.read_contents(self, opened_zipfile)
         self.gen_data = opened_zipfile.read("rom_data.json").decode()
 

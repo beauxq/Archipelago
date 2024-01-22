@@ -2,8 +2,10 @@ from dataclasses import dataclass
 import logging
 from typing import Any, ClassVar, Dict, FrozenSet, List, Union
 
+from BaseClasses import Item, ItemClassification as IC
 from Options import Choice, DefaultOnToggle, FreeText, PerGameCommonOptions, Range, Toggle
 
+from .item import SubversionItem
 from .location import location_data
 
 from subversion_rando.areaRando import RandomizeAreas
@@ -11,6 +13,8 @@ from subversion_rando.connection_data import vanilla_areas
 from subversion_rando.daphne_gate import get_daphne_gate
 from subversion_rando.game import CypherItems, Game, GameOptions
 from subversion_rando.goal import generate_goals
+from subversion_rando.item_data import unique_items
+from subversion_rando.item_marker import ItemMarker, ItemMarkersOption
 from subversion_rando.logic_presets import casual, expert, medium, custom_logic_tricks_from_str
 from subversion_rando.trick import Trick
 
@@ -163,6 +167,46 @@ class SubversionTrollAmmo(Toggle):
     display_name = "troll ammo"
 
 
+class SubversionItemMarkers(Choice):
+    """
+    Simple - Items are marked on the map as large hollow dots.
+
+    3-Tiered - Unique items are marked with large solid dots.
+    Ammo tanks are marked with small dots.
+    Everything else is marked with large hollow dots.
+    """
+    display_name = "item markers"
+    option_simple = 0
+    option_three_tiered = 3
+    default = 0
+
+    marker_options: ClassVar[Dict[int, ItemMarkersOption]] = {
+        option_simple: ItemMarkersOption.Simple,
+        option_three_tiered: ItemMarkersOption.ThreeTiered,
+    }
+
+    def get_marker(self, item: Item) -> ItemMarker:
+        if self.value == SubversionItemMarkers.option_simple:
+            return ItemMarker.circle
+
+        assert self.value == SubversionItemMarkers.option_three_tiered, f"{self.value=}"
+        if isinstance(item, SubversionItem):
+            sv_item = item.sv_item
+            if sv_item in unique_items:
+                return ItemMarker.big_dot
+            elif sv_item.ammo_qty != b"\x00":
+                return ItemMarker.small_dot
+            else:
+                return ItemMarker.circle
+        else:
+            if item.classification & IC.progression == IC.progression:
+                return ItemMarker.big_dot
+            if item.classification & IC.useful == IC.useful:
+                return ItemMarker.circle
+            else:
+                return ItemMarker.small_dot
+
+
 class SubversionObjectiveRando(Range):
     """
     Choose the number of random objectives.
@@ -193,6 +237,7 @@ class SubversionOptions(PerGameCommonOptions):
     progression_items: SubversionShortGame
     auto_hints: SubversionAutoHints
     troll_ammo: SubversionTrollAmmo
+    item_markers: SubversionItemMarkers
     objective_rando: SubversionObjectiveRando
 
 
@@ -223,6 +268,7 @@ def make_sv_game(options: SubversionOptions, seed: Union[int, None]) -> Game:
         bool(options.escape_shortcuts.value),
         cypher_option,  # used only for objective rando, not for fill
         bool(options.daphne_gate.value),
+        SubversionItemMarkers.marker_options[options.item_markers.value],
         options.objective_rando.value
     )
 
