@@ -77,6 +77,7 @@ def make_item_name_for_rom(item_name: str) -> bytearray:
 
     item_name = item_name.upper()[:26]
     item_name = item_name.strip()
+    item_name = item_name.replace("_", " ")
     item_name = item_name.center(26, " ")
     item_name = "___" + item_name + "___"
     assert len(item_name) == 32, f"{len(item_name)=}"
