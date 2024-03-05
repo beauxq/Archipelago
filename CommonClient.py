@@ -71,8 +71,8 @@ class ClientCommandProcessor(CommandProcessor):
         return True
 
     @mark_raw
-    def _cmd_received(self, filter_text = "") -> bool:
-        """List all received items
+    def _cmd_received(self, filter_text: str = "") -> bool:
+        """List all received items.
         Can be given text, which will be used as filter."""
         count = 0
         if filter_text:
@@ -89,9 +89,9 @@ class ClientCommandProcessor(CommandProcessor):
         else:
             self.output(f"Found {count} {'matching ' if filter_text else ''}received items")
         return True
-    
+
     @mark_raw
-    def _cmd_missing(self, filter_text = "") -> bool:
+    def _cmd_missing(self, filter_text: str = "") -> bool:
         """List all missing location checks from your local game state.
         Can be given text, which will be used as filter."""
         if not self.ctx.game:
@@ -115,14 +115,15 @@ class ClientCommandProcessor(CommandProcessor):
                     total_count += 1
                 elif location_id in self.ctx.checked_locations:
                     total_count += 1
-        
+
         if count:
             self.output(f"Found {count}/{total_count} {'matching ' if filter_text else ''}missing checks")
         else:
-            self.output("No missing checks found.")
+            self.output("No missing checks found")
         return True
+
     @mark_raw
-    def _cmd_checked(self, filter_text = "") -> bool:
+    def _cmd_checked(self, filter_text: str = "") -> bool:
         """List all checked location checks from your local game state.
         Can be given text, which will be used as filter."""
         if not self.ctx.game:
@@ -146,15 +147,15 @@ class ClientCommandProcessor(CommandProcessor):
                     self.output('Checked: ' + location)
                     count += 1
                     total_count += 1
-        
+
         if count:
             self.output(f"Found {count}/{total_count} {'matching ' if filter_text else ''}checked locations")
         else:
-            self.output("No checked locations found.")
+            self.output("No checked locations found")
         return True
 
     @mark_raw
-    def _cmd_items(self, filter_text = ""):
+    def _cmd_items(self, filter_text: str = ""):
         """List all item names for the currently running game.
         Can be given text, which will be used as filter."""
         if not self.ctx.game:
@@ -164,13 +165,13 @@ class ClientCommandProcessor(CommandProcessor):
             self.output(f"Item Names for {self.ctx.game} matching '{filter_text}':")
         else:
             self.output(f"Item Names for {self.ctx.game}:")
-        self.output(f"")
+        self.output("")
         for item_name in AutoWorldRegister.world_types[self.ctx.game].item_name_to_id:
             if not filter_text or filter_text.lower() in item_name.lower():
                 self.output(item_name)
 
     @mark_raw
-    def _cmd_locations(self, filter_text = ""):
+    def _cmd_locations(self, filter_text: str = ""):
         """List all location names for the currently running game.
         Can be given text, which will be used as filter."""
         if not self.ctx.game:
