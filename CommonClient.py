@@ -85,10 +85,7 @@ class ClientCommandProcessor(CommandProcessor):
             if not filter_text or filter_text.lower() in item_name.lower():
                 count += 1
                 self.output(f"{item_name} from {self.ctx.player_names[item.player]}")
-        if count == 0:
-            self.output("No received items found")
-        else:
-            self.output(f"Found {count} {'matching ' if filter_text else ''}received items")
+        self.output(f"Found {count} {'matching ' if filter_text else ''}received items")
         return True
 
     @mark_raw
@@ -117,10 +114,7 @@ class ClientCommandProcessor(CommandProcessor):
                 elif location_id in self.ctx.checked_locations:
                     total_count += 1
 
-        if count:
-            self.output(f"Found {count}/{total_count} {'matching ' if filter_text else ''}missing checks")
-        else:
-            self.output("No missing checks found")
+        self.output(f"Found {count}/{total_count} {'matching ' if filter_text else ''}missing checks")
         return True
 
     @mark_raw
@@ -150,10 +144,7 @@ class ClientCommandProcessor(CommandProcessor):
                     count += 1
                     total_count += 1
 
-        if count:
-            self.output(f"Found {count}/{total_count} {'matching ' if filter_text else ''}checked locations")
-        else:
-            self.output("No checked locations found")
+        self.output(f"Found {count}/{total_count} {'matching ' if filter_text else ''}checked locations")
         return True
 
     @mark_raw
