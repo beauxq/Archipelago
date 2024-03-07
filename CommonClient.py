@@ -79,6 +79,7 @@ class ClientCommandProcessor(CommandProcessor):
             self.output(f"Received items matching '{filter_text}':")
         else:
             self.output("Received items:")
+        self.output("")
         for item in self.ctx.items_received:
             item_name = self.ctx.item_names[item.item]
             if not filter_text or filter_text.lower() in item_name.lower():
@@ -133,6 +134,7 @@ class ClientCommandProcessor(CommandProcessor):
             self.output(f"Checked locations matching '{filter_text}':")
         else:
             self.output("Checked locations:")
+        self.output("")
         count = 0
         total_count = 0
         for location, location_id in AutoWorldRegister.world_types[self.ctx.game].location_name_to_id.items():
@@ -181,6 +183,7 @@ class ClientCommandProcessor(CommandProcessor):
             self.output(f"Location Names for {self.ctx.game} matching '{filter_text}':")
         else:
             self.output(f"Location Names for {self.ctx.game}:")
+        self.output("")
         for location_name in AutoWorldRegister.world_types[self.ctx.game].location_name_to_id:
             if not filter_text or filter_text.lower() in location_name.lower():
                 self.output(location_name)
