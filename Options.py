@@ -32,11 +32,6 @@ class AssembleOptions(abc.ABCMeta):
         new_options = {name[7:].lower(): option_id for name, option_id in attrs.items() if
                        name.startswith("option_")}
 
-        assert (
-            name in {"Option", "VerifyKeys"} or  # base abstract classes don't need default
-            "default" in attrs or
-            any(hasattr(base, "default") for base in bases)
-        ), f"Option class {name} needs default value"
         assert "random" not in new_options, "Choice option 'random' cannot be manually assigned."
         assert len(new_options) == len(set(new_options.values())), "same ID cannot be used twice. Try alias?"
 
@@ -170,7 +165,6 @@ class Option(typing.Generic[T], metaclass=AssembleOptions):
 class FreeText(Option[str]):
     """Text option that allows users to enter strings.
     Needs to be validated by the world or option definition."""
-    default = ""
 
     default = ""
 
