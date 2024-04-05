@@ -118,7 +118,6 @@ class FF6WCWorld(World):
     item_name_groups = {
         'characters': all_characters,
         'espers': all_espers,
-        "dragons": all_dragon_clears
     }
 
     for k, v in item_name_to_id.items():
@@ -364,17 +363,11 @@ class FF6WCWorld(World):
             else:
                 world_map.locations.append(self.create_location(name, id, world_map))
 
-        airship = Entrance(self.player, "Airship", menu)
-        final_dungeon_entrance = Entrance(self.player, "Kefka's Tower Landing", world_map)
-        # airship.connect(menu)
-        airship.connect(world_map)
-        menu.exits.append(airship)
-        world_map.exits.append(airship)
+        menu.connect(world_map)
+        world_map.connect(final_dungeon)
+        final_dungeon.connect(world_map)
+
         self.multiworld.regions.append(menu)
-        final_dungeon_entrance.connect(world_map)
-        final_dungeon_entrance.connect(final_dungeon)
-        world_map.exits.append(final_dungeon_entrance)
-        final_dungeon.exits.append(final_dungeon_entrance)
         self.multiworld.regions.append(world_map)
         self.multiworld.regions.append(final_dungeon)
 
