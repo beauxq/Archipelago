@@ -158,7 +158,8 @@ class SubversionSNIClient(SNIClient):
             # print(f"{item_out_ptr=} < {len(ctx.items_received)=}")
             item = ctx.items_received[item_out_ptr]
             item_id = item.item - base_id
-            if bool(ctx.items_handling and (ctx.items_handling & 0b010)):
+            #                                                               item.location < 0 for !getitem to work
+            if bool(ctx.items_handling and (ctx.items_handling & 0b010)) or item.location < 0:
                 location_id = (item.location - base_id) if (item.location >= 0 and item.player == ctx.slot) else 0xFF
             else:
                 location_id = 0x00  # backward compat
