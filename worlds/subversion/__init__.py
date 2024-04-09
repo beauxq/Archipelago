@@ -95,7 +95,9 @@ class SubversionWorld(World):
         sv_game = make_sv_game(self.options, self.multiworld.seed)
         self.sv_game = sv_game
 
-        tb_item, exc_locs = choose_torpedo_bay(sv_game, self.random)
+        tb_item, exc_locs = choose_torpedo_bay(
+            sv_game, self.options.auto_hints.value != SubversionAutoHints.option_none, self.random
+        )
         self.logger.debug(f"Subversion player {self.player} chose torpedo bay item {tb_item}")
         self.logger.debug(f"and excluded locations: {exc_locs}")
         self.torpedo_bay_item = tb_item

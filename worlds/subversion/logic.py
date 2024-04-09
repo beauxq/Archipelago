@@ -18,19 +18,36 @@ _excluded_after_torpedo_bay = {
     "Grapple Beam": ["Docking Port 3", "Docking Port 4"],
 }
 
-_casual_distribution = [
-    "Missile", "Missile", "Missile", "Missile", "Missile", "Missile", "Missile", "Missile", "Missile", "Missile",
-    "Missile", "Missile", "Morph Ball", "Morph Ball", "Morph Ball", "Morph Ball", "Morph Ball", "Morph Ball",
-    "Super Missile", "Wave Beam"
-]
+_casual_area = {
+    Items.Missile: 1,
+}
 
-_expert_distribution = [
-    "Missile", "Missile", "Missile", "Missile", "Missile", "Missile",
-    "Gravity Boots", "Gravity Boots", "Gravity Boots"
-]
+_casual_early = {
+    Items.Missile: 12,
+    Items.Morph: 6,
+    Items.Super: 1,
+}
+
+_casual_extra = {
+    Items.Wave: 1,
+}
+
+_expert_area = {
+    Items.Missile: 6,
+    Items.GravityBoots: 3,
+}
+
+_expert_early = {
+    Items.Missile: 10,
+    Items.GravityBoots: 5,
+    Items.Morph: 3,
+    Items.Super: 1,
+    Items.Bombs: 2,
+    Items.PowerBomb: 1,
+}
 
 
-def choose_torpedo_bay(sv_game: Game, rand: Random) -> Tuple[str, List[str]]:
+def choose_torpedo_bay(sv_game: Game, auto_hints: bool, rand: Random) -> Tuple[str, List[str]]:
     """
     The beginning logic is very restrictive,
     so we place the first item in the first location manually before the fill algorithm.
@@ -39,16 +56,25 @@ def choose_torpedo_bay(sv_game: Game, rand: Random) -> Tuple[str, List[str]]:
     and the names of the locations that will be excluded from progression with this placement.
     """
     if Tricks.wave_gate_glitch in sv_game.options.logic:  # not casual logic
-        dist = _expert_distribution.copy()
-        if not sv_game.options.area_rando:
-            dist.append("Morph Ball")
-            dist.extend(item_name_to_id.keys())
-    else:
         if sv_game.options.area_rando:
-            dist = ["Missile"]
+            dist = _expert_area.copy()
         else:
-            dist = _casual_distribution.copy()
-    item_choice = rand.choice(dist)
+            dist = _expert_early.copy()
+            if not auto_hints:
+                for _item_name, item_id in item_name_to_id.items():
+                    item = id_to_sv_item[item_id]
+                    if item not in dist:
+                        dist[item] = 1
+    else:  # casual, no gate glitch
+        if sv_game.options.area_rando:
+            dist = _casual_area.copy()
+        else:
+            dist = _casual_early.copy()
+            if not auto_hints:
+                dist.update(_casual_extra)
+    dist_items = tuple(dist.keys())
+    dist_weights = tuple(dist.values())
+    item_choice = rand.choices(dist_items, dist_weights)[0].name
     excluded_locations = _excluded_after_torpedo_bay.get(item_choice, [])
 
     return item_choice, excluded_locations
