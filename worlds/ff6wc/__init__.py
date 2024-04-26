@@ -20,7 +20,7 @@ from .Options import FF6WCOptions, generate_flagstring
 import Utils
 import settings
 
-importlib.import_module("Client", ".")  # register with SNIClient
+importlib.import_module(".Client", "worlds.ff6wc")  # register with SNIClient
 
 BASE_ID = 6000
 
@@ -159,11 +159,11 @@ class FF6WCWorld(World):
         return return_location
 
     def generate_early(self):
-        if (self.options.Flagstring.value).capitalize() != "False":
+        if (self.options.flagstring.value).capitalize() != "False":
 
             self.starting_characters = []
             character_list: List[str] = []
-            flags = self.options.Flagstring.value
+            flags = self.options.flagstring.value
             # Determining Starting Characters
             flags_list = flags.split(" ")
             sc1_index = flags_list.index("-sc1") + 1
@@ -203,18 +203,18 @@ class FF6WCWorld(World):
                 if x == 3:
                     flags_list[sc4_index] = character_list[x]
 
-            self.options.StartingCharacterCount.value = len(character_list)
-            starting_character_options = list(self.options.StartingCharacter1.name_lookup.values())
-            self.options.StartingCharacter1.value = starting_character_options.index(character_list[0])
-            self.options.StartingCharacter2.value = 14
-            self.options.StartingCharacter3.value = 14
-            self.options.StartingCharacter4.value = 14
+            self.options.starting_character_count.value = len(character_list)
+            starting_char_options = list(self.options.starting_character_1.name_lookup.values())
+            self.options.starting_character_1.value = starting_char_options.index(character_list[0])
+            self.options.starting_character_2.value = 14
+            self.options.starting_character_3.value = 14
+            self.options.starting_character_4.value = 14
             if len(character_list) > 1:
-                self.options.StartingCharacter2.value = starting_character_options.index(character_list[1])
+                self.options.starting_character_2.value = starting_char_options.index(character_list[1])
             if len(character_list) > 2:
-                self.options.StartingCharacter3.value = starting_character_options.index(character_list[2])
+                self.options.starting_character_3.value = starting_char_options.index(character_list[2])
             if len(character_list) > 3:
-                self.options.StartingCharacter4.value = starting_character_options.index(character_list[3])
+                self.options.starting_character_4.value = starting_char_options.index(character_list[3])
 
             proper_names = " ".join(character_list)
             proper_names = proper_names.title()
@@ -288,21 +288,21 @@ class FF6WCWorld(World):
             kt_obj_list_string = ".".join(kt_obj_list)
             flags_list[kt_obj_code_index] = kt_obj_list_string
 
-            self.options.Flagstring.value = " ".join(flags_list)
-            self.options.CharacterCount.value = character_count
-            self.options.EsperCount.value = esper_count
-            self.options.DragonCount.value = dragon_count
-            self.options.BossCount.value = boss_count
+            self.options.flagstring.value = " ".join(flags_list)
+            self.options.character_count.value = character_count
+            self.options.esper_count.value = esper_count
+            self.options.dragon_count.value = dragon_count
+            self.options.boss_count.value = boss_count
 
         else:
             starting_characters = [
-                (self.options.StartingCharacter1.current_key).capitalize(),
-                (self.options.StartingCharacter2.current_key).capitalize(),
-                (self.options.StartingCharacter3.current_key).capitalize(),
-                (self.options.StartingCharacter4.current_key).capitalize()
+                (self.options.starting_character_1.current_key).capitalize(),
+                (self.options.starting_character_2.current_key).capitalize(),
+                (self.options.starting_character_3.current_key).capitalize(),
+                (self.options.starting_character_4.current_key).capitalize()
             ]
             character_count = len(starting_characters) - starting_characters.count("None")
-            self.options.StartingCharacterCount.value = character_count
+            self.options.starting_character_count.value = character_count
 
             starting_characters.sort(key=lambda character: character == "None")
             starting_characters = starting_characters[0:character_count]
@@ -323,18 +323,18 @@ class FF6WCWorld(World):
                     filtered_starting_characters.append(character)
             starting_characters = filtered_starting_characters
 
-            starting_character_options = list(self.options.StartingCharacter1.name_lookup.values())
-            self.options.StartingCharacter1.value = starting_character_options.index(starting_characters[0].lower())
-            self.options.StartingCharacter2.value = 14
-            self.options.StartingCharacter3.value = 14
-            self.options.StartingCharacter4.value = 14
-            starting_character_options = list(self.options.StartingCharacter2.name_lookup.values())
+            starting_char_options = list(self.options.starting_character_1.name_lookup.values())
+            self.options.starting_character_1.value = starting_char_options.index(starting_characters[0].lower())
+            self.options.starting_character_2.value = 14
+            self.options.starting_character_3.value = 14
+            self.options.starting_character_4.value = 14
+            starting_char_options = list(self.options.starting_character_2.name_lookup.values())
             if character_count > 1:
-                self.options.StartingCharacter2.value = starting_character_options.index(starting_characters[1].lower())
+                self.options.starting_character_2.value = starting_char_options.index(starting_characters[1].lower())
             if character_count > 2:
-                self.options.StartingCharacter3.value = starting_character_options.index(starting_characters[2].lower())
+                self.options.starting_character_3.value = starting_char_options.index(starting_characters[2].lower())
             if character_count > 3:
-                self.options.StartingCharacter4.value = starting_character_options.index(starting_characters[3].lower())
+                self.options.starting_character_4.value = starting_char_options.index(starting_characters[3].lower())
 
             self.starting_characters = starting_characters
 
@@ -344,7 +344,7 @@ class FF6WCWorld(World):
         final_dungeon = Region("Kefka's Tower", self.player, self.multiworld)
 
         for name, id in self.location_name_to_id.items():
-            if self.options.Treasuresanity.value == 0:
+            if self.options.treasuresanity.value == 0:
                 if name in Locations.all_minor_checks:
                     continue
             if name in Locations.dragon_events:
@@ -368,15 +368,15 @@ class FF6WCWorld(World):
 
     def create_items(self) -> None:
         # Setting variables for item restrictions based on custom flagstring or AllowStrongestItems value
-        if (self.options.Flagstring.value).capitalize() != "False":
-            if "-nfps" in self.options.Flagstring.value.split(" "):
+        if (self.options.flagstring.value).capitalize() != "False":
+            if "-nfps" in self.options.flagstring.value.split(" "):
                 self.no_paladin_shields = True
-            if "-nee" in self.options.Flagstring.value.split(" "):
+            if "-nee" in self.options.flagstring.value.split(" "):
                 self.no_exp_eggs = True
-            if "-nil" in self.options.Flagstring.value.split(" "):
+            if "-nil" in self.options.flagstring.value.split(" "):
                 self.no_illuminas = True
         else:
-            if not self.options.AllowStrongestItems.value:
+            if not self.options.allow_strongest_items.value:
                 self.no_paladin_shields = True
                 self.no_exp_eggs = True
                 self.no_illuminas = True
@@ -427,7 +427,7 @@ class FF6WCWorld(World):
         major_items = len([location for location in Locations.major_checks if "(Boss)" not in location and "Status"
                            not in location])
         progression_items = len(item_pool)
-        if not self.options.Treasuresanity.value:
+        if not self.options.treasuresanity.value:
             major_items = major_items - progression_items
             for _ in range(major_items):
                 item_pool.append(self.create_good_filler_item(self.multiworld.random.choice(good_filler_pool)))
@@ -467,12 +467,12 @@ class FF6WCWorld(World):
                 set_rule(self.multiworld.get_location(check, self.player),
                          lambda state, character=check_name: state.has(character, self.player))
             # Minor checks. These are only on if Treasuresanity is on.
-            if self.options.Treasuresanity.value != 0:
+            if self.options.treasuresanity.value != 0:
                 for check in checks[1]:
                     set_rule(self.multiworld.get_location(check, self.player),
                              lambda state, character=check_name: state.has(character, self.player))
             # Minor extended gating checks. These are on if Treasuresanity are on, but can be character gated.
-            if self.options.Treasuresanity.value == 2:
+            if self.options.treasuresanity.value == 2:
                 for check in checks[2]:
                     set_rule(self.multiworld.get_location(check, self.player),
                              lambda state, character=check_name: state.has(character, self.player))
@@ -487,7 +487,7 @@ class FF6WCWorld(World):
                           lambda item: item.name not in Items.okay_items)
 
         for check in Locations.item_only_checks:
-            if self.options.Treasuresanity.value != 0 or (
+            if self.options.treasuresanity.value != 0 or (
                     check not in Locations.minor_checks and check not in Locations.minor_ext_checks):
                 add_item_rule(self.multiworld.get_location(check, self.player),
                               lambda item: (item.name not in self.item_name_groups["characters"]
@@ -505,7 +505,7 @@ class FF6WCWorld(World):
                      lambda state: state.can_reach(str(dragon), 'Location', self.player))
 
         for location in Locations.fanatics_tower_checks:
-            if self.options.Treasuresanity.value != 0 or location not in Locations.all_minor_checks:
+            if self.options.treasuresanity.value != 0 or location not in Locations.all_minor_checks:
                 add_rule(self.multiworld.get_location(location, self.player),
                          lambda state: state.has_group("espers", self.player, 4))
 

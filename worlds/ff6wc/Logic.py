@@ -15,7 +15,7 @@ def has_dragons(prog_items_player: Counter[str], number: int) -> bool:
 
 
 def can_beat_final_kefka(options: FF6WCOptions, player: int, cs: CollectionState) -> bool:
-    return (cs.has_group("characters", player, options.CharacterCount.value)
-            and cs.has_group("espers", player, options.EsperCount.value)
-            and has_dragons(cs.prog_items[player], options.DragonCount.value)
-            and cs.has("Busted!", player, options.BossCount.value))
+    return (cs.has_group("characters", player, options.character_count.value)
+            and cs.has_group("espers", player, options.esper_count.value)
+            and has_dragons(cs.prog_items[player], options.dragon_count.value)
+            and cs.has("Busted!", player, options.boss_count.value))
