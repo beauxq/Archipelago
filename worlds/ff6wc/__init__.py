@@ -1,25 +1,24 @@
+import functools
 import importlib
-import json
+import logging
 import os
 import random
 import string
 import threading
-import traceback
 from typing import Any, Dict, List, Union
 
 from BaseClasses import Item, Location, Region, MultiWorld, ItemClassification, Tutorial
+from .gen_data import GenData
 from . import Rom
-from .Rom import FF6WCDeltaPatch, NA10HASH, get_base_rom_path
+from .patch import FF6WCPatch, NA10HASH
 from worlds.generic.Rules import add_rule, set_rule, add_item_rule
 from worlds.AutoWorld import World, WebWorld
 from . import Locations
 from . import Items
-from .Logic import LogicFunctions
+from .Logic import can_beat_final_kefka
 from .Options import FF6WCOptions, generate_flagstring
 import Utils
 import settings
-
-from .WorldsCollide.wc import WC
 
 importlib.import_module("Client", ".")  # register with SNIClient
 
@@ -143,12 +142,6 @@ class FF6WCWorld(World):
         self.wc = None
         self.rom_name_available_event = threading.Event()
 
-    @classmethod
-    def stage_assert_generate(cls, multiworld: MultiWorld) -> None:
-        rom_file: str = get_base_rom_path()
-        if not os.path.exists(rom_file):
-            raise FileNotFoundError(f"Could not find base ROM for {cls.game}: {rom_file}")
-
     def create_item(self, name: str):
         return FF6WCItem(name, ItemClassification.progression, self.item_name_to_id[name], self.player)
 
@@ -161,9 +154,8 @@ class FF6WCWorld(World):
     def create_event(self, event: str):
         return FF6WCItem(event, ItemClassification.progression, None, self.player)
 
-    def create_location(self, name: str, id: Union[int, None], parent: Region, event: bool = False) -> FF6WCLocation:
+    def create_location(self, name: str, id: Union[int, None], parent: Region) -> FF6WCLocation:
         return_location = FF6WCLocation(self.player, name, id, parent)
-        return_location.event = event
         return return_location
 
     def generate_early(self):
@@ -362,7 +354,7 @@ class FF6WCWorld(World):
             if name in Locations.kefka_checks:
                 final_dungeon.locations.append(self.create_location(name, id, final_dungeon))
             elif name in Locations.accomplishment_data:
-                final_dungeon.locations.append(self.create_location(name, None, final_dungeon, True))
+                final_dungeon.locations.append(self.create_location(name, None, final_dungeon))
             else:
                 world_map.locations.append(self.create_location(name, id, world_map))
 
@@ -518,10 +510,7 @@ class FF6WCWorld(World):
                          lambda state: state.has_group("espers", self.player, 4))
 
         set_rule(self.multiworld.get_location("Beat Final Kefka", self.player),
-                 lambda state: (LogicFunctions.has_enough_characters(state, self.options, self.player)
-                                and LogicFunctions.has_enough_espers(state, self.options, self.player)
-                                and LogicFunctions.has_enough_dragons(state, self.options, self.player)
-                                and LogicFunctions.has_enough_bosses(state, self.options, self.player)))
+                 functools.partial(can_beat_final_kefka, self.options, self.player))
 
     def post_fill(self) -> None:
         spheres = list(self.multiworld.get_spheres())
@@ -562,7 +551,7 @@ class FF6WCWorld(World):
         return
 
     def generate_output(self, output_directory: str):
-        locations: Dict[Union[str, int], str] = dict()
+        locations: Dict[str, str] = dict()
         # get all locations
         for region in self.multiworld.regions:
             if region.player == self.player:
@@ -574,6 +563,7 @@ class FF6WCWorld(World):
                         location_name = Rom.treasure_chest_data[location.name][2]
                     else:
                         location_name = location.name
+                    location_name = str(location_name)  # dict needs str keys
                     locations[location_name] = "Archipelago Item"
                     if location.item.player == self.player:
                         if location_name in Locations.major_checks or location.item.name in Items.items:
@@ -583,39 +573,21 @@ class FF6WCWorld(World):
         self.romName = bytearray(self.rom_name_text, 'utf-8')
         self.romName.extend([0] * (20 - len(self.romName)))
         self.rom_name = self.romName
+        self.rom_name_available_event.set()
         locations["RomName"] = self.rom_name_text
-        placement_file = os.path.join(output_directory,
-                                      f'{self.multiworld.get_out_file_name_base(self.player)}' + '.applacements')
-        with open(placement_file, "w") as file:
-            json.dump(locations, file, indent=2)
-        output_file = os.path.join(output_directory, f"{self.multiworld.get_out_file_name_base(self.player)}.sfc")
-        wc_args = ["-i", f"{get_base_rom_path()}", "-o", f"{output_file}", "-ap", placement_file]
         assert not (self.starting_characters is None), "didn't get starting characters yet"
-        wc_args.extend(generate_flagstring(self.options, self.starting_characters))
-        print(wc_args)
-        with FF6WCWorld.wc_ready:
-            try:
-                import sys
-                from copy import deepcopy
-                module_keys = deepcopy(list(sys.modules.keys()))
-                for module in module_keys:
-                    if str(module).startswith("worlds.ff6wc.WorldsCollide"):
-                        del sys.modules[module]
-                wc = WC()
-                wc.main(wc_args)
-                patch = FF6WCDeltaPatch(
-                    os.path.splitext(output_file)[0] + FF6WCDeltaPatch.patch_file_ending,
-                    player=self.player,
-                    player_name=self.multiworld.player_name[self.player],
-                    patched_path=output_file)
-                patch.write()
-                os.remove(output_file)
-                os.remove(placement_file)
-                self.rom_name_available_event.set()
-            except Exception as ex:
-                print(''.join(traceback.format_tb(ex.__traceback__)))
-                print(ex)
-                raise ex
+        flagstring = generate_flagstring(self.options, self.starting_characters)
+
+        gen_data = GenData(locations, flagstring)
+        out_file_base = self.multiworld.get_out_file_name_base(self.player)
+        patch_file_name = os.path.join(output_directory, f"{out_file_base}{FF6WCPatch.patch_file_ending}")
+        patch = FF6WCPatch(patch_file_name,
+                           player=self.player,
+                           player_name=self.multiworld.player_name[self.player],
+                           gen_data_str=gen_data.to_json())
+        patch.write()
+
+        logging.debug(f"FF6WC player {self.player} finished generate_output")
 
     def modify_multidata(self, multidata: Dict[str, Any]) -> None:
         import base64

@@ -14,19 +14,8 @@ def has_dragons(prog_items_player: Counter[str], number: int) -> bool:
     return False
 
 
-class LogicFunctions:
-    @staticmethod
-    def has_enough_characters(cs: CollectionState, options: FF6WCOptions, player: int):
-        return cs.has_group("characters", player, options.CharacterCount.value)
-
-    @staticmethod
-    def has_enough_espers(cs: CollectionState, options: FF6WCOptions, player: int):
-        return cs.has_group("espers", player, options.EsperCount.value)
-
-    @staticmethod
-    def has_enough_dragons(cs: CollectionState, options: FF6WCOptions, player: int):
-        return has_dragons(cs.prog_items[player], options.DragonCount.value)
-
-    @staticmethod
-    def has_enough_bosses(cs: CollectionState, options: FF6WCOptions, player: int):
-        return cs.has("Busted!", player, options.BossCount.value)
+def can_beat_final_kefka(options: FF6WCOptions, player: int, cs: CollectionState) -> bool:
+    return (cs.has_group("characters", player, options.CharacterCount.value)
+            and cs.has_group("espers", player, options.EsperCount.value)
+            and has_dragons(cs.prog_items[player], options.DragonCount.value)
+            and cs.has("Busted!", player, options.BossCount.value))

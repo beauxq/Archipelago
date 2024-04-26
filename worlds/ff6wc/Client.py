@@ -5,11 +5,13 @@ from logging import Logger
 from NetUtils import ClientStatus
 from worlds.AutoSNIClient import SNIClient
 
+from . import Rom, Locations
+from .patch import FF6WCPatch
+
 if typing.TYPE_CHECKING:
     from SNIClient import SNIContext
 else:
     SNIContext = typing.Any
-from . import Rom, Locations
 
 snes_logger: Logger = logging.getLogger("SNES")
 
@@ -18,6 +20,7 @@ class FF6WCClient(SNIClient):
     game: str = "Final Fantasy 6 Worlds Collide"
     location_names: typing.List[str] = list(Rom.event_flag_location_names)
     location_ids = None
+    patch_suffix = FF6WCPatch.patch_file_ending
 
     def __init__(self):
         super()
