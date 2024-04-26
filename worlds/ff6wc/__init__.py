@@ -2,28 +2,37 @@ import importlib
 import json
 import os
 import random
-import shutil
 import string
-import subprocess
 import threading
 import traceback
-from typing import NamedTuple, Union, ClassVar
-import logging
+from typing import Any, Dict, List, Union
 
-from BaseClasses import Item, Location, Region, Entrance, MultiWorld, ItemClassification, Tutorial
-from . import Logic
+from BaseClasses import Item, Location, Region, MultiWorld, ItemClassification, Tutorial
+from . import Rom
 from .Rom import FF6WCDeltaPatch, NA10HASH, get_base_rom_path
-from .Client import FF6WCClient
-from worlds.generic.Rules import add_rule, set_rule, forbid_item, add_item_rule
-from worlds.AutoWorld import World, LogicMixin, WebWorld
-from NetUtils import SlotType
-from .Locations import location_table
-from .Items import item_table, items, good_items
-from .Options import ff6wc_options, generate_flagstring
+from worlds.generic.Rules import add_rule, set_rule, add_item_rule
+from worlds.AutoWorld import World, WebWorld
+from . import Locations
+from . import Items
+from .Logic import LogicFunctions
+from .Options import FF6WCOptions, generate_flagstring
 import Utils
 import settings
 
 from .WorldsCollide.wc import WC
+
+importlib.import_module("Client", ".")  # register with SNIClient
+
+BASE_ID = 6000
+
+
+class FF6WCItem(Item):
+    game = 'Final Fantasy 6 Worlds Collide'
+
+
+class FF6WCLocation(Location):
+    game = 'Final Fantasy 6 Worlds Collide'
+
 
 class FF6WCSettings(settings.Group):
     class RomFile(settings.SNESRomPath):
@@ -48,10 +57,15 @@ class FF6WCWeb(WebWorld):
 
 
 class FF6WCWorld(World):
-    """Final Fantasy VI, initially called Final Fantasy III on the Super Nintendo in North America, is a role-playing game and the last in the series to feature 2D sprite based graphics. Worlds Collide is an open-world randomizer for Final Fantasy VI. Players begin aboard the airship and can travel freely between the World of Balance and the World of Ruin to discover characters and espers. Once you've gathered enough, you can face off against Kefka. Currently based on Worlds Collide version 1.2.2."""
-    settings: ClassVar[FF6WCSettings]
-
-    option_definitions = ff6wc_options
+    """
+    Final Fantasy VI, initially called Final Fantasy III on the Super Nintendo in North America,
+    is a role-playing game and the last in the series to feature 2D sprite based graphics.
+    Worlds Collide is an open-world randomizer for Final Fantasy VI. Players begin aboard the airship
+    and can travel freely between the World of Balance and the World of Ruin to discover characters and espers.
+    Once you've gathered enough, you can face off against Kefka. Currently based on Worlds Collide version 1.2.2.
+    """
+    options_dataclass = FF6WCOptions
+    options: FF6WCOptions  # type: ignore
     game = "Final Fantasy 6 Worlds Collide"
     location_name_groups = {
         "Terra Major": {*Locations.major_terra_checks},
@@ -89,11 +103,10 @@ class FF6WCWorld(World):
     }
     topology_present = False
     data_version = 0
-    base_id = 6000
     web = FF6WCWeb()
     wc_ready = threading.Lock()
-    item_name_to_id = {name: index for index, name in enumerate(item_table)}
-    location_name_to_id = {name: index for index, name in enumerate(location_table)}
+    item_name_to_id = {name: index + BASE_ID for index, name in enumerate(Items.item_table)}
+    location_name_to_id = {name: index + BASE_ID for index, name in enumerate(Locations.location_table)}
 
     all_characters = [
         'Terra', 'Locke', 'Cyan', 'Shadow', 'Edgar',
@@ -116,16 +129,9 @@ class FF6WCWorld(World):
     ]
 
     item_name_groups = {
-        'characters': all_characters,
-        'espers': all_espers,
+        'characters': set(all_characters),
+        'espers': set(all_espers),
     }
-
-    for k, v in item_name_to_id.items():
-        item_name_to_id[k] = v + base_id
-
-    for k, v in location_name_to_id.items():
-        if v is not None:
-            location_name_to_id[k] = v + base_id
 
     def __init__(self, world: MultiWorld, player: int):
         super().__init__(world, player)
@@ -155,21 +161,22 @@ class FF6WCWorld(World):
     def create_event(self, event: str):
         return FF6WCItem(event, ItemClassification.progression, None, self.player)
 
-    def create_location(self, name, id, parent, event=False):
+    def create_location(self, name: str, id: Union[int, None], parent: Region, event: bool = False) -> FF6WCLocation:
         return_location = FF6WCLocation(self.player, name, id, parent)
         return_location.event = event
         return return_location
 
     def generate_early(self):
-        if (self.multiworld.Flagstring[self.player].value).capitalize() != "False":
+        if (self.options.Flagstring.value).capitalize() != "False":
 
             self.starting_characters = []
-            character_list = []
-            flags = self.multiworld.Flagstring[self.player].value
+            character_list: List[str] = []
+            flags = self.options.Flagstring.value
             # Determining Starting Characters
             flags_list = flags.split(" ")
             sc1_index = flags_list.index("-sc1") + 1
             character_list.append(flags_list[sc1_index])
+            sc2_index = sc3_index = sc4_index = len(flags_list)
             if "-sc2" in flags_list:
                 sc2_index = flags_list.index("-sc2") + 1
                 character_list.append(flags_list[sc2_index])
@@ -204,21 +211,18 @@ class FF6WCWorld(World):
                 if x == 3:
                     flags_list[sc4_index] = character_list[x]
 
-            self.multiworld.StartingCharacterCount[self.player].value = len(character_list)
-            starting_character_options = list(self.multiworld.StartingCharacter1[self.player].name_lookup.values())
-            self.multiworld.StartingCharacter1[self.player].value = starting_character_options.index(character_list[0])
-            self.multiworld.StartingCharacter2[self.player].value = 14
-            self.multiworld.StartingCharacter3[self.player].value = 14
-            self.multiworld.StartingCharacter4[self.player].value = 14
+            self.options.StartingCharacterCount.value = len(character_list)
+            starting_character_options = list(self.options.StartingCharacter1.name_lookup.values())
+            self.options.StartingCharacter1.value = starting_character_options.index(character_list[0])
+            self.options.StartingCharacter2.value = 14
+            self.options.StartingCharacter3.value = 14
+            self.options.StartingCharacter4.value = 14
             if len(character_list) > 1:
-                self.multiworld.StartingCharacter2[self.player].value = \
-                    starting_character_options.index(character_list[1])
+                self.options.StartingCharacter2.value = starting_character_options.index(character_list[1])
             if len(character_list) > 2:
-                self.multiworld.StartingCharacter3[self.player].value = \
-                    starting_character_options.index(character_list[2])
+                self.options.StartingCharacter3.value = starting_character_options.index(character_list[2])
             if len(character_list) > 3:
-                self.multiworld.StartingCharacter4[self.player].value = \
-                    starting_character_options.index(character_list[3])
+                self.options.StartingCharacter4.value = starting_character_options.index(character_list[3])
 
             proper_names = " ".join(character_list)
             proper_names = proper_names.title()
@@ -232,6 +236,8 @@ class FF6WCWorld(World):
             dragon_count = 0
             boss_count = 0
 
+            kt_obj_list: List[str] = []
+            kt_obj_code_index = len(flags_list)
             alphabet = string.ascii_lowercase
             for letter in range(len(alphabet)):
                 objective_list = ["-o", alphabet[letter]]
@@ -240,7 +246,7 @@ class FF6WCWorld(World):
                     objective_code = flags_list[flags_list.index(objective) + 1]
                     objective_code_list = objective_code.split(".")
                     if objective_code_list[0] == "2":
-                        kt_obj_code = objective_code
+                        # kt_obj_code = objective_code
                         kt_obj_list = objective_code_list
                         kt_obj_code_index = flags_list.index(objective) + 1
                         break
@@ -290,28 +296,28 @@ class FF6WCWorld(World):
             kt_obj_list_string = ".".join(kt_obj_list)
             flags_list[kt_obj_code_index] = kt_obj_list_string
 
-            self.multiworld.Flagstring[self.player].value = " ".join(flags_list)
-            self.multiworld.CharacterCount[self.player].value = character_count
-            self.multiworld.EsperCount[self.player].value = esper_count
-            self.multiworld.DragonCount[self.player].value = dragon_count
-            self.multiworld.BossCount[self.player].value = boss_count
+            self.options.Flagstring.value = " ".join(flags_list)
+            self.options.CharacterCount.value = character_count
+            self.options.EsperCount.value = esper_count
+            self.options.DragonCount.value = dragon_count
+            self.options.BossCount.value = boss_count
 
         else:
             starting_characters = [
-                (self.multiworld.StartingCharacter1[self.player].current_key).capitalize(),
-                (self.multiworld.StartingCharacter2[self.player].current_key).capitalize(),
-                (self.multiworld.StartingCharacter3[self.player].current_key).capitalize(),
-                (self.multiworld.StartingCharacter4[self.player].current_key).capitalize()
+                (self.options.StartingCharacter1.current_key).capitalize(),
+                (self.options.StartingCharacter2.current_key).capitalize(),
+                (self.options.StartingCharacter3.current_key).capitalize(),
+                (self.options.StartingCharacter4.current_key).capitalize()
             ]
             character_count = len(starting_characters) - starting_characters.count("None")
-            self.multiworld.StartingCharacterCount[self.player].value = character_count
+            self.options.StartingCharacterCount.value = character_count
 
             starting_characters.sort(key=lambda character: character == "None")
             starting_characters = starting_characters[0:character_count]
 
             starting_characters.sort(key=lambda character: character == "Random_with_no_gogo_or_umaro")
 
-            filtered_starting_characters = []
+            filtered_starting_characters: List[str] = []
             for character in starting_characters:
                 if character != "Random_with_no_gogo_or_umaro" and character in filtered_starting_characters:
                     character = random.choice(Rom.characters[:14])
@@ -325,21 +331,18 @@ class FF6WCWorld(World):
                     filtered_starting_characters.append(character)
             starting_characters = filtered_starting_characters
 
-            starting_character_options = list(self.multiworld.StartingCharacter1[self.player].name_lookup.values())
-            self.multiworld.StartingCharacter1[self.player].value = starting_character_options.index(starting_characters[0].lower())
-            self.multiworld.StartingCharacter2[self.player].value = 14
-            self.multiworld.StartingCharacter3[self.player].value = 14
-            self.multiworld.StartingCharacter4[self.player].value = 14
-            starting_character_options = list(self.multiworld.StartingCharacter2[self.player].name_lookup.values())
+            starting_character_options = list(self.options.StartingCharacter1.name_lookup.values())
+            self.options.StartingCharacter1.value = starting_character_options.index(starting_characters[0].lower())
+            self.options.StartingCharacter2.value = 14
+            self.options.StartingCharacter3.value = 14
+            self.options.StartingCharacter4.value = 14
+            starting_character_options = list(self.options.StartingCharacter2.name_lookup.values())
             if character_count > 1:
-                self.multiworld.StartingCharacter2[self.player].value = \
-                    starting_character_options.index(starting_characters[1].lower())
+                self.options.StartingCharacter2.value = starting_character_options.index(starting_characters[1].lower())
             if character_count > 2:
-                self.multiworld.StartingCharacter3[self.player].value = \
-                    starting_character_options.index(starting_characters[2].lower())
+                self.options.StartingCharacter3.value = starting_character_options.index(starting_characters[2].lower())
             if character_count > 3:
-                self.multiworld.StartingCharacter4[self.player].value = \
-                    starting_character_options.index(starting_characters[3].lower())
+                self.options.StartingCharacter4.value = starting_character_options.index(starting_characters[3].lower())
 
             self.starting_characters = starting_characters
 
@@ -349,7 +352,7 @@ class FF6WCWorld(World):
         final_dungeon = Region("Kefka's Tower", self.player, self.multiworld)
 
         for name, id in self.location_name_to_id.items():
-            if self.multiworld.Treasuresanity[self.player] == 0:
+            if self.options.Treasuresanity.value == 0:
                 if name in Locations.all_minor_checks:
                     continue
             if name in Locations.dragon_events:
@@ -371,21 +374,22 @@ class FF6WCWorld(World):
         self.multiworld.regions.append(world_map)
         self.multiworld.regions.append(final_dungeon)
 
-    def create_items(self):
+    def create_items(self) -> None:
         # Setting variables for item restrictions based on custom flagstring or AllowStrongestItems value
-        if (self.multiworld.Flagstring[self.player].value).capitalize() != "False":
-            if "-nfps" in self.multiworld.Flagstring[self.player].value.split(" "):
+        if (self.options.Flagstring.value).capitalize() != "False":
+            if "-nfps" in self.options.Flagstring.value.split(" "):
                 self.no_paladin_shields = True
-            if "-nee" in self.multiworld.Flagstring[self.player].value.split(" "):
+            if "-nee" in self.options.Flagstring.value.split(" "):
                 self.no_exp_eggs = True
-            if "-nil" in self.multiworld.Flagstring[self.player].value.split(" "):
+            if "-nil" in self.options.Flagstring.value.split(" "):
                 self.no_illuminas = True
         else:
-            if not self.multiworld.AllowStrongestItems[self.player]:
+            if not self.options.AllowStrongestItems.value:
                 self.no_paladin_shields = True
                 self.no_exp_eggs = True
                 self.no_illuminas = True
-        item_pool = []
+        item_pool: List[FF6WCItem] = []
+        assert self.starting_characters
         for item in map(self.create_item, self.item_name_to_id):
             if item.name in self.starting_characters:
                 self.multiworld.push_precollected(item)
@@ -406,10 +410,10 @@ class FF6WCWorld(World):
             self.create_event("Victory"))
         self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)
 
-        filler_pool = []
+        filler_pool: List[str] = []
         # Each filler item has a chest item tier weight
-        filler_pool_weights = []
-        good_filler_pool = []
+        filler_pool_weights: List[int] = []
+        good_filler_pool: List[str] = []
 
         for item in Items.items:
             # Skips adding an item to filler_pool and good_filler_pool if item restrictions are in place
@@ -422,14 +426,16 @@ class FF6WCWorld(World):
             if item != "ArchplgoItem":
                 filler_pool.append(item)
                 # Each filler item has a chest item tier weight
-                filler_pool_weights.append(Items.item_name_weight.get(item))
+                weight = Items.item_name_weight.get(item)
+                assert not (weight is None)
+                filler_pool_weights.append(weight)
             if item in Items.good_items:
                 good_filler_pool.append(item)
 
         major_items = len([location for location in Locations.major_checks if "(Boss)" not in location and "Status"
                            not in location])
         progression_items = len(item_pool)
-        if not self.multiworld.Treasuresanity[self.player]:
+        if not self.options.Treasuresanity.value:
             major_items = major_items - progression_items
             for _ in range(major_items):
                 item_pool.append(self.create_good_filler_item(self.multiworld.random.choice(good_filler_pool)))
@@ -440,7 +446,9 @@ class FF6WCWorld(World):
             minor_items = len(Locations.all_minor_checks) - progression_items
             for _ in range(minor_items):
                 # random filler item, but use chest item tier weights
-                item_pool.append(self.create_filler_item(self.multiworld.random.choices(filler_pool, filler_pool_weights)[0]))
+                item_pool.append(self.create_filler_item(
+                    self.multiworld.random.choices(filler_pool, filler_pool_weights)[0]
+                ))
             self.multiworld.itempool += item_pool
 
     def set_rules(self):
@@ -467,12 +475,12 @@ class FF6WCWorld(World):
                 set_rule(self.multiworld.get_location(check, self.player),
                          lambda state, character=check_name: state.has(character, self.player))
             # Minor checks. These are only on if Treasuresanity is on.
-            if self.multiworld.Treasuresanity[self.player] != 0:
+            if self.options.Treasuresanity.value != 0:
                 for check in checks[1]:
                     set_rule(self.multiworld.get_location(check, self.player),
                              lambda state, character=check_name: state.has(character, self.player))
             # Minor extended gating checks. These are on if Treasuresanity are on, but can be character gated.
-            if self.multiworld.Treasuresanity[self.player] == 2:
+            if self.options.Treasuresanity.value == 2:
                 for check in checks[2]:
                     set_rule(self.multiworld.get_location(check, self.player),
                              lambda state, character=check_name: state.has(character, self.player))
@@ -487,33 +495,33 @@ class FF6WCWorld(World):
                           lambda item: item.name not in Items.okay_items)
 
         for check in Locations.item_only_checks:
-            if self.multiworld.Treasuresanity[self.player] != 0 or (
+            if self.options.Treasuresanity.value != 0 or (
                     check not in Locations.minor_checks and check not in Locations.minor_ext_checks):
                 add_item_rule(self.multiworld.get_location(check, self.player),
-                              lambda item: item.name not in self.item_name_groups["characters"]
-                                           and item.name not in self.item_name_groups['espers']
-                                           or item.player != self.player)
+                              lambda item: (item.name not in self.item_name_groups["characters"]
+                                            and item.name not in self.item_name_groups['espers']
+                                            or item.player != self.player))
 
         for check in Locations.no_character_checks:
             add_item_rule(self.multiworld.get_location(check, self.player),
-                          lambda item: item.name not in self.item_name_groups["characters"]
-                                       or item.player != self.player)
+                          lambda item: (item.name not in self.item_name_groups["characters"]
+                                        or item.player != self.player))
 
         for dragon in Locations.dragons:
             dragon_event = Locations.dragon_events_link[dragon]
             add_rule(self.multiworld.get_location(dragon_event, self.player),
-                          lambda state: state.can_reach(str(dragon), 'Location', self.player))
+                     lambda state: state.can_reach(str(dragon), 'Location', self.player))
 
         for location in Locations.fanatics_tower_checks:
-            if self.multiworld.Treasuresanity[self.player] != 0 or location not in Locations.all_minor_checks:
+            if self.options.Treasuresanity.value != 0 or location not in Locations.all_minor_checks:
                 add_rule(self.multiworld.get_location(location, self.player),
                          lambda state: state.has_group("espers", self.player, 4))
 
         set_rule(self.multiworld.get_location("Beat Final Kefka", self.player),
-                 lambda state: state._ff6wc_has_enough_characters(self.multiworld, self.player)
-                               and state._ff6wc_has_enough_espers(self.multiworld, self.player)
-                               and state._ff6wc_has_enough_dragons(self.multiworld, self.player)
-                               and state._ff6wc_has_enough_bosses(self.multiworld, self.player))
+                 lambda state: (LogicFunctions.has_enough_characters(state, self.options, self.player)
+                                and LogicFunctions.has_enough_espers(state, self.options, self.player)
+                                and LogicFunctions.has_enough_dragons(state, self.options, self.player)
+                                and LogicFunctions.has_enough_bosses(state, self.options, self.player)))
 
     def post_fill(self) -> None:
         spheres = list(self.multiworld.get_spheres())
@@ -521,15 +529,15 @@ class FF6WCWorld(World):
         upgrade_base = sphere_count * 2
         for current_sphere_count, sphere in enumerate(spheres):
             for location in sphere:
-                if location.item.player == self.player:
+                if location.item and location.item.player == self.player:
                     if self.multiworld.random.randint(0, upgrade_base) < current_sphere_count:
                         self.upgrade_item(location.item)
-        return
 
     def upgrade_item(self, item: Item):
         if item.name in Items.okay_items:
             # Prevents upgrades to restricted items based on flags or AllowStrongestItems value
             nfps = nee = nil = 1
+            temp_new_item = ""
             while (nfps or nee or nil) == 1:
                 temp_new_item = self.multiworld.random.choice(Items.good_items)
                 if self.no_paladin_shields is True and (temp_new_item == "Paladin Shld"
@@ -545,6 +553,7 @@ class FF6WCWorld(World):
                     nil = 1
                 else:
                     nil = 0
+            assert temp_new_item
             new_item = temp_new_item
             new_item_id = self.item_name_to_id[new_item]
             item.name = new_item
@@ -553,11 +562,12 @@ class FF6WCWorld(World):
         return
 
     def generate_output(self, output_directory: str):
-        locations = dict()
+        locations: Dict[Union[str, int], str] = dict()
         # get all locations
         for region in self.multiworld.regions:
             if region.player == self.player:
                 for location in region.locations:
+                    assert location.item
                     if location.name in Locations.minor_checks:
                         location_name = Rom.treasure_chest_data[location.name][2]
                     elif location.name in Locations.minor_ext_checks:
@@ -580,7 +590,8 @@ class FF6WCWorld(World):
             json.dump(locations, file, indent=2)
         output_file = os.path.join(output_directory, f"{self.multiworld.get_out_file_name_base(self.player)}.sfc")
         wc_args = ["-i", f"{get_base_rom_path()}", "-o", f"{output_file}", "-ap", placement_file]
-        wc_args.extend(generate_flagstring(self.multiworld, self.player, self.starting_characters))
+        assert not (self.starting_characters is None), "didn't get starting characters yet"
+        wc_args.extend(generate_flagstring(self.options, self.starting_characters))
         print(wc_args)
         with FF6WCWorld.wc_ready:
             try:
@@ -606,7 +617,7 @@ class FF6WCWorld(World):
                 print(ex)
                 raise ex
 
-    def modify_multidata(self, multidata: dict):
+    def modify_multidata(self, multidata: Dict[str, Any]) -> None:
         import base64
         # wait for self.rom_name to be available.
         self.rom_name_available_event.wait()
@@ -615,11 +626,3 @@ class FF6WCWorld(World):
         if rom_name:
             new_name = base64.b64encode(bytes(self.rom_name)).decode()
             multidata["connect_names"][new_name] = multidata["connect_names"][self.multiworld.player_name[self.player]]
-
-
-class FF6WCItem(Item):
-    game = 'Final Fantasy 6 Worlds Collide'
-
-
-class FF6WCLocation(Location):
-    game = 'Final Fantasy 6 Worlds Collide'

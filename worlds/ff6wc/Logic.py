@@ -1,7 +1,7 @@
 from typing import Counter
-from worlds.AutoWorld import LogicMixin, World
-from . import Locations
-from .Locations import dragons
+
+from BaseClasses import CollectionState
+from .Options import FF6WCOptions
 
 
 def has_dragons(prog_items_player: Counter[str], number: int) -> bool:
@@ -14,15 +14,19 @@ def has_dragons(prog_items_player: Counter[str], number: int) -> bool:
     return False
 
 
-class LogicFunctions(LogicMixin):
-    def _ff6wc_has_enough_characters(self, world, player):
-        return self.has_group("characters", player, world.CharacterCount[player])
+class LogicFunctions:
+    @staticmethod
+    def has_enough_characters(cs: CollectionState, options: FF6WCOptions, player: int):
+        return cs.has_group("characters", player, options.CharacterCount.value)
 
-    def _ff6wc_has_enough_espers(self, world, player):
-        return self.has_group("espers", player, world.EsperCount[player])
+    @staticmethod
+    def has_enough_espers(cs: CollectionState, options: FF6WCOptions, player: int):
+        return cs.has_group("espers", player, options.EsperCount.value)
 
-    def _ff6wc_has_enough_dragons(self, world, player):
-        return has_dragons(self.prog_items[player], world.DragonCount[player])
+    @staticmethod
+    def has_enough_dragons(cs: CollectionState, options: FF6WCOptions, player: int):
+        return has_dragons(cs.prog_items[player], options.DragonCount.value)
 
-    def _ff6wc_has_enough_bosses(self, world, player):
-        return self.has("Busted!", player, world.BossCount[player])
+    @staticmethod
+    def has_enough_bosses(cs: CollectionState, options: FF6WCOptions, player: int):
+        return cs.has("Busted!", player, options.BossCount.value)

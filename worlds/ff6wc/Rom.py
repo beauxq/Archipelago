@@ -1,5 +1,7 @@
 import hashlib
+import logging
 import os
+from typing import Dict, Tuple
 
 import Utils
 from worlds.Files import APDeltaPatch
@@ -44,7 +46,7 @@ characters = [  # Same here.
     "Relm", "Setzer", "Mog", "Gau", "Gogo", "Umaro"
 ]
 
-item_id_name_weight = { # second element is the chest item tier weight
+item_id_name_weight = {  # second element is the chest item tier weight
     0: ("Dirk", 143),
     1: ("MithrilKnife", 143),
     2: ("Guardian", 291),
@@ -344,7 +346,7 @@ event_flag_location_names = {
     "Burning House": 0x090,
     "Ebot's Rock": 0x19c,
     "MagiMaster": 0x0ba,
-    "Gem Box": 0x2da, # Stepped in front of the chest, triggering boss fight.
+    "Gem Box": 0x2da,  # Stepped in front of the chest, triggering boss fight.
     "Esper Mountain": 0x095,
     "Owzer Mansion": 0x253,
     "Kohlingen": 0x18e,
@@ -379,7 +381,7 @@ additional_event_flags = {
     "Narshe Weapon Shop Both Rewards Picked": 0x0b7
 }
 
-treasure_chest_data = {
+treasure_chest_data: Dict[str, Tuple[int, int, int]] = {
     "Narshe Arvis's Clock": (0x1E40, 2, 1),
     "Narshe Elder's Clock": (0x1E41, 2, 9),
     "Narshe Adventuring School Advanced Battle Tactics Chest": (0x1E51, 4, 74),
@@ -641,6 +643,7 @@ treasure_chest_data = {
     "Zozo Esper Room Right": (0x1E48, 7, 140)
 }
 
+
 class FF6WCDeltaPatch(APDeltaPatch):
     hash = NA10HASH
     game = "Final Fantasy 6 Worlds Collide"
@@ -662,7 +665,7 @@ def get_base_rom_bytes(file_name: str = "") -> bytes:
         if NA10HASH != basemd5.hexdigest():
             raise Exception('Supplied Base Rom does not match known MD5 for NA (1.0) release. '
                             'Get the correct game and version, then dump it')
-        get_base_rom_bytes.base_rom_bytes = base_rom_bytes
+        setattr(get_base_rom_bytes, "base_rom_bytes", base_rom_bytes)
     return base_rom_bytes
 
 
@@ -675,46 +678,49 @@ def get_base_rom_path(file_name: str = "") -> str:
     return file_name
 
 
-def get_event_flag_value(event_id):
+def get_event_flag_value(event_id: int) -> Tuple[int, int]:
     event_byte = event_flag_base_address + (event_id // 8)
     event_bit = event_id % 8
     hbyte = hex(event_byte)
     bbyte = bin(event_byte)
     hbit = hex(bit_positions[event_bit])
     bbit = bin(bit_positions[event_bit])
+    logging.debug(f"{hbyte=} {bbyte=} {hbit=} {bbit=}")
     return event_byte, bit_positions[event_bit]
 
 
-def get_obtained_esper_bit(esper_name):
+def get_obtained_esper_bit(esper_name: int) -> Tuple[int, int]:
     esper_index = esper_name
     esper_byte = esper_bit_base_address + (esper_index // 8)
     esper_bit = esper_index % 8
     return esper_byte, bit_positions[esper_bit]
 
 
-def add_esper(initial, esper_name):
-    byte, bit = get_obtained_esper_bit(esper_name)
+def add_esper(initial: int, esper_name: int) -> int:
+    _byte, bit = get_obtained_esper_bit(esper_name)
     return initial | bit
 
 
-def get_character_bit(character, address):
+def get_character_bit(character: int, address: int) -> Tuple[int, int]:
     character_index = character
     character_byte = address + character_index // 8
     character_bit = character_index % 8
     return character_byte, bit_positions[character_bit]
 
 
-def get_character_initialized_bit(character_name):
+def get_character_initialized_bit(character_name: int) -> Tuple[int, int]:
     return get_character_bit(character_name, character_intialized_bit_base_address)
 
 
-def get_character_recruited_bit(character_name):
+def get_character_recruited_bit(character_name: int) -> Tuple[int, int]:
     return get_character_bit(character_name, character_recruited_bit_base_address)
 
-def get_treasure_chest_bit(treasure_chest):
+
+def get_treasure_chest_bit(treasure_chest: str) -> Tuple[int, int]:
     treasure_byte = treasure_chest_data[treasure_chest][0] - 0x1E40
     treasure_bit = bit_positions[treasure_chest_data[treasure_chest][1]]
     return treasure_byte, treasure_bit
 
-def get_map_index(map_byte):
+
+def get_map_index(map_byte: int) -> int:
     return map_byte & 0x01FF
