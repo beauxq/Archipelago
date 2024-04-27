@@ -2,22 +2,25 @@ import typing
 import logging
 from logging import Logger
 
-from NetUtils import ClientStatus, color
+from NetUtils import ClientStatus
 from worlds.AutoSNIClient import SNIClient
+
+from . import Rom, Locations
+from .patch import FF6WCPatch
 
 if typing.TYPE_CHECKING:
     from SNIClient import SNIContext
 else:
     SNIContext = typing.Any
-from . import Rom, Locations
 
 snes_logger: Logger = logging.getLogger("SNES")
 
 
 class FF6WCClient(SNIClient):
     game: str = "Final Fantasy 6 Worlds Collide"
-    location_names: typing.List = list(Rom.event_flag_location_names)
+    location_names: typing.List[str] = list(Rom.event_flag_location_names)
     location_ids = None
+    patch_suffix = FF6WCPatch.patch_file_ending
 
     def __init__(self):
         super()
@@ -25,7 +28,7 @@ class FF6WCClient(SNIClient):
     async def validate_rom(self, ctx: SNIContext) -> bool:
         from SNIClient import snes_read
 
-        rom_name: bytes = await snes_read(ctx, Rom.ROM_NAME, 20)
+        rom_name = await snes_read(ctx, Rom.ROM_NAME, 20)
         if rom_name is None or rom_name[:3] != b"6WC":
             return False
 
@@ -39,8 +42,8 @@ class FF6WCClient(SNIClient):
         return True
 
     async def game_watcher(self, ctx: SNIContext) -> None:
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
-        if await self.connection_check(ctx) == False:
+        from SNIClient import snes_flush_writes
+        if await self.connection_check(ctx) is False:
             return
         await self.location_check(ctx)
         await self.treasure_check(ctx)
@@ -48,9 +51,9 @@ class FF6WCClient(SNIClient):
         await self.check_victory2(ctx)
         await snes_flush_writes(ctx)
 
-    async def connection_check(self, ctx):
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
-        rom: bytes = await snes_read(ctx, Rom.ROM_NAME, 20)
+    async def connection_check(self, ctx: SNIContext) -> bool:
+        from SNIClient import snes_read
+        rom = await snes_read(ctx, Rom.ROM_NAME, 20)
         if rom != ctx.rom:
             ctx.rom = None
             return False
@@ -79,8 +82,9 @@ class FF6WCClient(SNIClient):
             return False
         return True
 
-    async def location_check(self, ctx):
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
+    async def location_check(self, ctx: SNIContext) -> None:
+        from SNIClient import snes_read
+        assert self.location_ids
         for location_index in range(len(Rom.event_flag_location_names)):
             location_name = self.location_names[location_index]
             location_id = self.location_ids[location_name]
@@ -115,7 +119,7 @@ class FF6WCClient(SNIClient):
                         both_rewards_status = both_rewards_data[0] & both_rewards_bit
                         if initial_event_status or both_rewards_status:
                             first_reward_status = first_reward_data[0] & first_reward_bit
-                            locations_cleared = []
+                            locations_cleared: typing.List[str] = []
                             if first_reward_status:
                                 locations_cleared.append(location_one)
                             else:
@@ -127,7 +131,9 @@ class FF6WCClient(SNIClient):
                                 if location_id not in ctx.locations_checked:
                                     ctx.locations_checked.add(location_id)
                                     snes_logger.info(
-                                        f'New Check: {location_name} ({len(ctx.locations_checked)}/{len(ctx.missing_locations) + len(ctx.checked_locations)})')
+                                        f'New Check: {location_name} ({len(ctx.locations_checked)}/'
+                                        f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
+                                    )
                                     await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
                 else:
                     event_done = event_data[0] & event_bit
@@ -139,17 +145,22 @@ class FF6WCClient(SNIClient):
                                 if passed_id not in ctx.locations_checked:
                                     ctx.locations_checked.add(passed_id)
                                     snes_logger.info(
-                                        f'New Check: {passed_location} ({len(ctx.locations_checked)}/{len(ctx.missing_locations) + len(ctx.checked_locations)})')
+                                        f'New Check: {passed_location} ({len(ctx.locations_checked)}/'
+                                        f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
+                                    )
                                     await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [passed_id]}])
                         snes_logger.info(
-                            f'New Check: {location_name} ({len(ctx.locations_checked)}/{len(ctx.missing_locations) + len(ctx.checked_locations)})')
+                            f'New Check: {location_name} ({len(ctx.locations_checked)}/'
+                            f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
+                        )
                         await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
 
-    async def treasure_check(self, ctx):
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
+    async def treasure_check(self, ctx: SNIContext) -> None:
+        from SNIClient import snes_read
         treasure_data = await snes_read(ctx, Rom.treasure_chest_base_address, 40)
 
         if treasure_data is not None:
+            assert self.location_ids
             for chest in Rom.treasure_chest_data.keys():
                 treasure_byte, treasure_bit = Rom.get_treasure_chest_bit(chest)
                 treasure_found = treasure_data[treasure_byte] & treasure_bit
@@ -157,11 +168,13 @@ class FF6WCClient(SNIClient):
                 if treasure_found and treasure_id not in ctx.locations_checked:
                     ctx.locations_checked.add(treasure_id)
                     snes_logger.info(
-                        f'New Check: {chest} ({len(ctx.locations_checked)}/{len(ctx.missing_locations) + len(ctx.checked_locations)})')
+                        f'New Check: {chest} ({len(ctx.locations_checked)}/'
+                        f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
+                    )
                     await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [treasure_id]}])
 
-    async def received_items_check(self, ctx):
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
+    async def received_items_check(self, ctx: SNIContext) -> None:
+        from SNIClient import snes_buffered_write, snes_read
         items_received_data = await snes_read(ctx, Rom.items_received_address, 2)
         if items_received_data is None:
             return
@@ -174,6 +187,7 @@ class FF6WCClient(SNIClient):
             item_id = item.item
             allow_local_network_item = False
             if item.player == ctx.slot:
+                assert self.location_ids
                 if item.location == self.location_ids["Veldt"]:
                     allow_local_network_item = True
                 elif item_name not in Rom.item_name_id.keys():
@@ -209,9 +223,9 @@ class FF6WCClient(SNIClient):
                 character_initialized = character_init_data[0] & character_init_bit
                 character_recruited = character_recruit_data[0] & character_recruit_bit
                 character_name = Rom.characters[character_index]
+                logging.debug(f"{character_initialized=} {character_recruited=} {character_name=}")
                 character_ap_id = item_id
-                character_item = next((item for item in ctx.items_received if item.item == character_ap_id),
-                                         None)
+                character_item = next((item for item in ctx.items_received if item.item == character_ap_id), None)
                 if character_item is not None:
                     new_init_data = character_init_data[0] | character_init_bit
                     if new_init_data == character_init_data[0]:
@@ -257,7 +271,7 @@ class FF6WCClient(SNIClient):
                 item_quantities_data = await snes_read(ctx, Rom.item_quantities_base_address, 255)
                 if item_types_data is None or item_quantities_data is None:
                     return
-                reserved_slots = []
+                reserved_slots: typing.List[int] = []
                 # Field items
                 for i in range(0, 255):
                     slot = item_types_data[i]
@@ -265,7 +279,7 @@ class FF6WCClient(SNIClient):
                     exists = False
                     if slot == Rom.item_name_id[item_name]:
                         exists = True
-                    if (slot == 255 or quantity == 0 or exists == True):
+                    if (slot == 255 or quantity == 0 or exists is True):
                         reserved_slots.append(i)
                         type_destination = Rom.item_types_base_address + i
                         amount_destination = Rom.item_quantities_base_address + i
@@ -280,8 +294,8 @@ class FF6WCClient(SNIClient):
                             ctx.location_names[item.location]))
                         break
 
-    async def check_victory1(self, ctx):
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
+    async def check_victory1(self, ctx: SNIContext) -> None:
+        from SNIClient import snes_read
         formation_data = await snes_read(ctx, Rom.formation_id, 2)
         if formation_data is None:
             return
@@ -290,24 +304,24 @@ class FF6WCClient(SNIClient):
             return
         formation_value = int.from_bytes(formation_data, "little")
         animation_value = animation_data[0]
-        #for now
+        # for now
         if formation_value == 0x0202 and animation_value == 0x01:
             await ctx.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
             ctx.finished_game = True
 
-    async def check_victory2(self, ctx):
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
+    async def check_victory2(self, ctx: SNIContext) -> None:
+        from SNIClient import snes_read
         victory_data = await snes_read(ctx, Rom.victory_address, 1)
         if victory_data is None:
             return
 
         victory_value = victory_data[0]
-        #for now
+        # for now
         if victory_value & 0x02:
             await ctx.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
             ctx.finished_game = True
 
-    def increment_items_received(self, ctx, items_received_amount):
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
+    def increment_items_received(self, ctx: SNIContext, items_received_amount: int) -> None:
+        from SNIClient import snes_buffered_write
         items_received_amount += 1
         snes_buffered_write(ctx, Rom.items_received_address, items_received_amount.to_bytes(2, 'little'))
