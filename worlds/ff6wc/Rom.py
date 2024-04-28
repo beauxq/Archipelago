@@ -639,13 +639,9 @@ treasure_chest_data: Dict[str, Tuple[int, int, int]] = {
 
 
 def get_event_flag_value(event_id: int) -> Tuple[int, int]:
-    event_byte = event_flag_base_address + (event_id // 8)
+    """ returns (address offset from `event_flag_base_address`, bit mask) """
+    event_byte = event_id // 8
     event_bit = event_id % 8
-    hbyte = hex(event_byte)
-    bbyte = bin(event_byte)
-    hbit = hex(bit_positions[event_bit])
-    bbit = bin(bit_positions[event_bit])
-    logging.debug(f"{hbyte=} {bbyte=} {hbit=} {bbit=}")
     return event_byte, bit_positions[event_bit]
 
 
