@@ -1,4 +1,3 @@
-import logging
 from typing import Dict, Tuple
 
 ROM_PLAYER_LIMIT = 65535
