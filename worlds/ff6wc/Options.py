@@ -293,37 +293,37 @@ class Flagstring(FreeText):
 
 @dataclass
 class FF6WCOptions(PerGameCommonOptions):
-    character_count: CharacterCount
-    esper_count: EsperCount
-    dragon_count: DragonCount
-    boss_count: BossCount
-    starting_character_count: StartingCharacterCount
-    starting_character_1: StartingCharacter1
-    starting_character_2: StartingCharacter2
-    starting_character_3: StartingCharacter3
-    starting_character_4: StartingCharacter4
-    randomized_stats: RandomizedStats
-    randomized_commands: RandomizedCommands
-    battle_reward_multiplier: BattleRewardMultiplier
-    randomized_bosses: RandomizedBosses
-    random_encounters: RandomEncounters
-    esper_spells: EsperSpells
-    esper_bonuses: EsperBonuses
-    esper_equipability: EsperEquipability
-    natural_magic: NaturalMagic
-    starting_gp: StartingGP
-    randomized_shops: RandomizedShops
-    spellcasting_items: SpellcastingItems
-    equipment: Equipment
-    allow_strongest_items: AllowStrongestItems
-    randomize_zozo_clock: RandomizeZozoClock
-    treasuresanity: Treasuresanity
-    flagstring: Flagstring
+    CharacterCount: CharacterCount
+    EsperCount: EsperCount
+    DragonCount: DragonCount
+    BossCount: BossCount
+    StartingCharacterCount: StartingCharacterCount
+    StartingCharacter1: StartingCharacter1
+    StartingCharacter2: StartingCharacter2
+    StartingCharacter3: StartingCharacter3
+    StartingCharacter4: StartingCharacter4
+    RandomizedStats: RandomizedStats
+    RandomizedCommands: RandomizedCommands
+    BattleRewardMultiplier: BattleRewardMultiplier
+    RandomizedBosses: RandomizedBosses
+    RandomEncounters: RandomEncounters
+    EsperSpells: EsperSpells
+    EsperBonuses: EsperBonuses
+    EsperEquipability: EsperEquipability
+    NaturalMagic: NaturalMagic
+    StartingGP: StartingGP
+    RandomizedShops: RandomizedShops
+    SpellcastingItems: SpellcastingItems
+    Equipment: Equipment
+    AllowStrongestItems: AllowStrongestItems
+    RandomizeZozoClock: RandomizeZozoClock
+    Treasuresanity: Treasuresanity
+    Flagstring: Flagstring
 
 
 def generate_flagstring(options: FF6WCOptions, starting_characters: List[str]) -> List[str]:
-    if (options.flagstring.value).capitalize() != 'False':
-        flags = options.flagstring.value.split(" ")
+    if (options.Flagstring.value).capitalize() != 'False':
+        flags = options.Flagstring.value.split(" ")
     else:
         flags = [
             *generate_settings_string(),
@@ -348,10 +348,10 @@ def generate_settings_string() -> List[str]:
 
 
 def generate_objectives_string(options: FF6WCOptions) -> List[str]:
-    character_count = options.character_count
-    esper_count = options.esper_count
-    dragon_count = options.dragon_count
-    boss_count = options.boss_count
+    character_count = options.CharacterCount
+    esper_count = options.EsperCount
+    dragon_count = options.DragonCount
+    boss_count = options.BossCount
 
     # fb = final battle unlock
     fb_character_string = f".2.{character_count}.{character_count}" if character_count > 0 else ""
@@ -390,7 +390,7 @@ def generate_objectives_string(options: FF6WCOptions) -> List[str]:
 
 
 def generate_party_string(options: FF6WCOptions, starting_characters: List[str]) -> List[str]:
-    character_count = options.starting_character_count.value
+    character_count = options.StartingCharacterCount.value
 
     if character_count < 4:
         starting_characters.extend(["", "", ""])
@@ -407,16 +407,16 @@ def generate_party_string(options: FF6WCOptions, starting_characters: List[str])
 
     stat_min = 100
     stat_max = 100
-    if options.randomized_stats == 1:  # Light
+    if options.RandomizedStats == 1:  # Light
         stat_min = 85
         stat_max = 125
-    elif options.randomized_stats == 2:  # Moderate
+    elif options.RandomizedStats == 2:  # Moderate
         stat_min = 50
         stat_max = 150
-    elif options.randomized_stats == 3:  # Boosted
+    elif options.RandomizedStats == 3:  # Boosted
         stat_min = 100
         stat_max = 175
-    elif options.randomized_stats == 4:  # Wild
+    elif options.RandomizedStats == 4:  # Wild
         stat_min = 0
         stat_max = 200
 
@@ -429,13 +429,13 @@ def generate_party_string(options: FF6WCOptions, starting_characters: List[str])
 
 def generate_commands_string(options: FF6WCOptions) -> List[str]:
     command_strings = []
-    if options.randomized_commands.value == RandomizedCommands.option_vanilla:
+    if options.RandomizedCommands.value == RandomizedCommands.option_vanilla:
         command_strings = ["-com=03050708091011121315191629"]
-    if options.randomized_commands.value == RandomizedCommands.option_random_vanilla:
+    if options.RandomizedCommands.value == RandomizedCommands.option_random_vanilla:
         command_strings = ["-com=03050708091011121315191629", "-scc"]
-    if options.randomized_commands.value >= 2:  # Random Most/Random All
+    if options.RandomizedCommands.value >= 2:  # Random Most/Random All
         forbid_commands_strings = (
-            ["-rec1=28", "-rec2=27", "-rec3=26"] if options.randomized_commands.value == 3 else ""
+            ["-rec1=28", "-rec2=27", "-rec3=26"] if options.RandomizedCommands.value == 3 else ""
         )
         command_strings = ["-com=98989898989898989898989898", *forbid_commands_strings]
 
@@ -457,13 +457,13 @@ def generate_commands_string(options: FF6WCOptions) -> List[str]:
 
 
 def generate_battle_string(options: FF6WCOptions) -> List[str]:
-    reward_value = options.battle_reward_multiplier + 1
+    reward_value = options.BattleRewardMultiplier + 1
     rewards_strings = [f"-xpm={reward_value}", f"-mpm={reward_value}", f"-gpm={reward_value}", "-be", "-nxppd"]
 
     boss_string = ""
-    if options.randomized_bosses == 1:
+    if options.RandomizedBosses == 1:
         boss_string = "-bbs"
-    elif options.randomized_bosses == 2:
+    elif options.RandomizedBosses == 2:
         boss_string = "-bbr"
 
     statue_string = "-stloc=mix"  # Mix statues into the general pool
@@ -480,31 +480,31 @@ def generate_magic_string(options: FF6WCOptions) -> List[str]:
     spell_strings = ["-mmprp", "75", "125"]  # Spell cost +/- 25%
 
     esper_spells_strings = [""]
-    if options.esper_spells == 1:
+    if options.EsperSpells == 1:
         esper_spells_strings = ["-ess"]  # Shuffle Esper spells
-    elif options.esper_spells == 2:
+    elif options.EsperSpells == 2:
         esper_spells_strings = ["-esr", "1", "5"]  # Fully randomize Esper spells
-    elif options.esper_spells == 3:
+    elif options.EsperSpells == 3:
         esper_spells_strings = ["-esrt"]  # Randomize Esper spells with tiered weighting
 
     esper_bonuses_string = ""
-    if options.esper_bonuses == 1:  # Shuffled bonuses
+    if options.EsperBonuses == 1:  # Shuffled bonuses
         esper_bonuses_string = "-ebs"
-    elif options.esper_bonuses == 2:  # Random bonuses
+    elif options.EsperBonuses == 2:  # Random bonuses
         esper_bonuses_string = "-ebr=70"
 
     esper_equipability_string = ""
-    if options.esper_equipability == 1:  # Random equipability
+    if options.EsperEquipability == 1:  # Random equipability
         esper_equipability_string = ["-eer", "1", "12"]
-    elif options.esper_equipability == 2:  # Balanced random equipability
+    elif options.EsperEquipability == 2:  # Balanced random equipability
         esper_equipability_string = ["-eebr", "6"]
 
     multi_summon_string = "-ems"
 
     natural_magic_strings = ["-nmmi"]  # Show who has Natural Magic
-    if options.natural_magic == 1 or options.natural_magic == 3:  # Random characters
+    if options.NaturalMagic == 1 or options.NaturalMagic == 3:  # Random characters
         natural_magic_strings.extend(["-nm1=random", "-nm2=random"])
-    if options.natural_magic == 2 or options.natural_magic == 3:  # Random learnsets
+    if options.NaturalMagic == 2 or options.NaturalMagic == 3:  # Random learnsets
         natural_magic_strings.extend(["-rns1", "-rns2", "-rnl1", "-rnl2"])
 
     return [*spell_strings, *esper_spells_strings, esper_bonuses_string, *esper_equipability_string,
@@ -512,33 +512,33 @@ def generate_magic_string(options: FF6WCOptions) -> List[str]:
 
 
 def generate_items_string(options: FF6WCOptions) -> List[str]:
-    starting_gp_string = f"-gp={options.starting_gp}"
+    starting_gp_string = f"-gp={options.StartingGP}"
     # Three Moogle Charms, a Warp Stone, and five Fenix Downs
     starting_items_strings = ["-smc=3", "-sws=1", "-sfd=5"]
 
     # 75-125% shop prices, five Dried Meat shops, no priceless items
     shops_strings = ["-sprp", "75", "125", "-sdm", "5", "-npi"]
-    if options.randomized_shops == 1:  # Shuffled shops
+    if options.RandomizedShops == 1:  # Shuffled shops
         shops_strings.extend(["-slsr"])
-    elif options.randomized_shops == 2:  # Randomized Shops
+    elif options.RandomizedShops == 2:  # Randomized Shops
         shops_strings.extend(["-sirt"])
 
     spellcasting_items_string = []
-    if options.spellcasting_items == 1:  # Limited
+    if options.SpellcastingItems == 1:  # Limited
         spellcasting_items_string = ["-sebr", "-sesb", "-snes"]
-    elif options.spellcasting_items == 2:  # None
+    elif options.SpellcastingItems == 2:  # None
         spellcasting_items_string = ["-snbr", "-snsb", "-snes"]
 
     # Moogle Charms equipable by all, no Moogle Charms in item pool, no Sprint Shoes in pool
     # Stronger Atma Weapon, 8-32 battles to uncurse Cursed Shield
     equipability_strings = ["-mca", "-nmc", "-noshoes", "-saw", "-csb", "8", "32"]
-    if not options.allow_strongest_items.value:
+    if not options.AllowStrongestItems.value:
         equipability_strings.extend(["-nee", "-nil", "-nfps"])
-    if options.equipment == 1:  # Shuffled
+    if options.Equipment == 1:  # Shuffled
         equipability_strings.extend(["-iesr=0", "-iersr=0"])
-    elif options.equipment == 2:  # Random
+    elif options.Equipment == 2:  # Random
         equipability_strings.extend(["-ier", "1", "14", "-ierr", "1", "14"])
-    elif options.equipment == 3:  # Balanced Random
+    elif options.Equipment == 3:  # Balanced Random
         equipability_strings.extend(["-iebr=6", "-ierbr=6"])
     chest_randomization = ["-ccsr", "20"]  # Default shuffle + 20% random. Only applies if Treasuresanity = off
     return [starting_gp_string, *starting_items_strings, *shops_strings,
@@ -548,9 +548,9 @@ def generate_items_string(options: FF6WCOptions) -> List[str]:
 def generate_gameplay_string(options: FF6WCOptions) -> List[str]:
     # B Dash, randomized Coliseum rewards and enemies, randomize Auction House minor items
     gameplay_strings = ["-move=bd", "-cor", "-crr", "-crvr", "50", "250", "-crm", "-ari"]
-    if not options.allow_strongest_items.value:
+    if not options.AllowStrongestItems.value:
         gameplay_strings.extend(["-cnee", "-cnil"])
-    if options.randomize_zozo_clock.value:
+    if options.RandomizeZozoClock.value:
         gameplay_strings.extend(["-rc"])
     return gameplay_strings
 
