@@ -43,6 +43,9 @@ copytree(subversion_rando_dir, os.path.join(TEMP, "subversion_rando"))
 if os.path.exists(os.path.join(TEMP, "subversion_rando", "__pycache__")):
     rmtree(os.path.join(TEMP, "subversion_rando", "__pycache__"))
 
+if os.path.exists(os.path.join(TEMP, "subversion_rando", "subversion.1.2.ips")):
+    rmtree(os.path.join(TEMP, "subversion_rando", "subversion.1.2.ips"))
+
 
 def lib_crc() -> int:
     crc = 0

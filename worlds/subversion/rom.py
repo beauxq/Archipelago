@@ -80,9 +80,12 @@ def get_base_rom_path(file_name: str = "") -> str:
 
 def write_rom_from_gen_data(gen_data_str: str, output_rom_file_name: str) -> None:
     """ take the output of `make_gen_data`, and create rom from it """
+    from Utils import user_path
+
     gen_data = get_gen_data(gen_data_str)
 
     base_rom_path = get_base_rom_path()
+    RomWriter.patch_cache_dir = user_path('lib')
     rom_writer = RomWriter.fromFilePaths(base_rom_path)  # this patches SM to Subversion 1.2
     logger = getLogger("Subversion")
     logger.debug("patched Super Metroid to Subversion")
