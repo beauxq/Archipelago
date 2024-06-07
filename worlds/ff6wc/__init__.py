@@ -16,7 +16,7 @@ from worlds.AutoWorld import World, WebWorld
 from . import Locations
 from . import Items
 from .Logic import can_beat_final_kefka
-from .Options import FF6WCOptions, generate_flagstring
+from .Options import FF6WCOptions, Treasuresanity, generate_flagstring
 import Utils
 import settings
 
@@ -395,15 +395,15 @@ class FF6WCWorld(World):
 
         for index, dragon in enumerate(Locations.dragons):
             dragon_event = Locations.dragon_events_link[dragon]
-            self.multiworld.get_location(dragon_event, self.player).place_locked_item(
+            self.get_location(dragon_event).place_locked_item(
                 self.create_event(self.all_dragon_clears[index]))
 
         for boss in [location for location in Locations.major_checks if "(Boss)" in location]:
-            self.multiworld.get_location(boss, self.player).place_locked_item(self.create_event("Busted!"))
+            self.get_location(boss).place_locked_item(self.create_event("Busted!"))
 
-        self.multiworld.get_location("Kefka's Tower", self.player).place_locked_item(
+        self.get_location("Kefka's Tower").place_locked_item(
             self.create_event("Kefka's Tower Access"))
-        self.multiworld.get_location("Beat Final Kefka", self.player).place_locked_item(
+        self.get_location("Beat Final Kefka").place_locked_item(
             self.create_event("Victory"))
         self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)
 
@@ -465,56 +465,60 @@ class FF6WCWorld(World):
             "Gogo": (Locations.major_gogo_checks, Locations.minor_gogo_checks, Locations.minor_gogo_ext_checks),
             "Umaro": (Locations.major_umaro_checks, Locations.minor_umaro_checks, Locations.minor_umaro_ext_checks),
         }
+
+        treasuresanity = self.options.Treasuresanity.value != Treasuresanity.option_off
+
         # Set every character locked check to require that character.
         for check_name, checks in check_list.items():
             # Major checks. These are always on.
             for check in checks[0]:
-                set_rule(self.multiworld.get_location(check, self.player),
+                set_rule(self.get_location(check),
                          lambda state, character=check_name: state.has(character, self.player))
             # Minor checks. These are only on if Treasuresanity is on.
-            if self.options.Treasuresanity.value != 0:
+            if treasuresanity:
                 for check in checks[1]:
-                    set_rule(self.multiworld.get_location(check, self.player),
+                    set_rule(self.get_location(check),
                              lambda state, character=check_name: state.has(character, self.player))
             # Minor extended gating checks. These are on if Treasuresanity are on, but can be character gated.
             if self.options.Treasuresanity.value == 2:
                 for check in checks[2]:
-                    set_rule(self.multiworld.get_location(check, self.player),
+                    set_rule(self.get_location(check),
                              lambda state, character=check_name: state.has(character, self.player))
 
         # Lock (ha!) these behind Terra as well as Locke, since whatever isn't chosen is put behind Whelk
         for check_name in ["Narshe Weapon Shop 1", "Narshe Weapon Shop 2"]:
-            add_rule(self.multiworld.get_location(check_name, self.player),
+            add_rule(self.get_location(check_name),
                      lambda state: state.has("Terra", self.player))
 
         for check in Locations.major_checks:
-            add_item_rule(self.multiworld.get_location(check, self.player),
+            add_item_rule(self.get_location(check),
                           lambda item: item.name not in Items.okay_items)
 
         for check in Locations.item_only_checks:
-            if self.options.Treasuresanity.value != 0 or (
-                    check not in Locations.minor_checks and check not in Locations.minor_ext_checks):
-                add_item_rule(self.multiworld.get_location(check, self.player),
+            if treasuresanity or (
+                check not in Locations.minor_checks and check not in Locations.minor_ext_checks
+            ):
+                add_item_rule(self.get_location(check),
                               lambda item: (item.name not in self.item_name_groups["characters"]
                                             and item.name not in self.item_name_groups['espers']
                                             or item.player != self.player))
 
         for check in Locations.no_character_checks:
-            add_item_rule(self.multiworld.get_location(check, self.player),
+            add_item_rule(self.get_location(check),
                           lambda item: (item.name not in self.item_name_groups["characters"]
                                         or item.player != self.player))
 
         for dragon in Locations.dragons:
             dragon_event = Locations.dragon_events_link[dragon]
-            add_rule(self.multiworld.get_location(dragon_event, self.player),
+            add_rule(self.get_location(dragon_event),
                      lambda state: state.can_reach(str(dragon), 'Location', self.player))
 
         for location in Locations.fanatics_tower_checks:
-            if self.options.Treasuresanity.value != 0 or location not in Locations.all_minor_checks:
-                add_rule(self.multiworld.get_location(location, self.player),
+            if treasuresanity or location not in Locations.all_minor_checks:
+                add_rule(self.get_location(location),
                          lambda state: state.has_group("espers", self.player, 4))
 
-        set_rule(self.multiworld.get_location("Beat Final Kefka", self.player),
+        set_rule(self.get_location("Beat Final Kefka"),
                  functools.partial(can_beat_final_kefka, self.options, self.player))
 
         assert not (self.starting_characters is None), "need starting characters from generate_early"
