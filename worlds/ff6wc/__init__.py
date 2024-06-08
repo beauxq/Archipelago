@@ -17,7 +17,7 @@ from worlds.AutoWorld import World, WebWorld
 from . import Locations
 from . import Items
 from .Logic import can_beat_final_kefka
-from .Options import FF6WCOptions, Treasuresanity, generate_flagstring
+from .Options import FF6WCOptions, Treasuresanity, generate_flagstring, resolve_character_options
 import Utils
 import settings
 
@@ -301,48 +301,7 @@ class FF6WCWorld(World):
             self.options.BossCount.value = boss_count
 
         else:
-            starting_characters = [
-                (self.options.StartingCharacter1.current_key).capitalize(),
-                (self.options.StartingCharacter2.current_key).capitalize(),
-                (self.options.StartingCharacter3.current_key).capitalize(),
-                (self.options.StartingCharacter4.current_key).capitalize()
-            ]
-            character_count = len(starting_characters) - starting_characters.count("None")
-            self.options.StartingCharacterCount.value = character_count
-
-            starting_characters.sort(key=lambda character: character == "None")
-            starting_characters = starting_characters[0:character_count]
-
-            starting_characters.sort(key=lambda character: character == "Random_with_no_gogo_or_umaro")
-
-            filtered_starting_characters: List[str] = []
-            for character in starting_characters:
-                if character != "Random_with_no_gogo_or_umaro" and character in filtered_starting_characters:
-                    character = random.choice(Rom.characters[:14])
-                    while character in filtered_starting_characters:
-                        character = random.choice(Rom.characters[:14])
-                elif character == "Random_with_no_gogo_or_umaro":
-                    character = random.choice(Rom.characters[:12])
-                    while character in filtered_starting_characters:
-                        character = random.choice(Rom.characters[:12])
-                if character not in filtered_starting_characters:
-                    filtered_starting_characters.append(character)
-            starting_characters = filtered_starting_characters
-
-            starting_char_options = list(self.options.StartingCharacter1.name_lookup.values())
-            self.options.StartingCharacter1.value = starting_char_options.index(starting_characters[0].lower())
-            self.options.StartingCharacter2.value = 14
-            self.options.StartingCharacter3.value = 14
-            self.options.StartingCharacter4.value = 14
-            starting_char_options = list(self.options.StartingCharacter2.name_lookup.values())
-            if character_count > 1:
-                self.options.StartingCharacter2.value = starting_char_options.index(starting_characters[1].lower())
-            if character_count > 2:
-                self.options.StartingCharacter3.value = starting_char_options.index(starting_characters[2].lower())
-            if character_count > 3:
-                self.options.StartingCharacter4.value = starting_char_options.index(starting_characters[3].lower())
-
-            self.starting_characters = starting_characters
+            self.starting_characters = resolve_character_options(self.options, self.random)
 
     def create_regions(self):
         menu = Region("Menu", self.player, self.multiworld)
