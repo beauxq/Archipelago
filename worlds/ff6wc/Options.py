@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 import math
-from typing import List, Sequence
+from random import Random
+import random
+from typing import Any, List, Sequence
+
+from typing_extensions import override
 
 from Options import DefaultOnToggle, PerGameCommonOptions, Range, Choice, FreeText
 
@@ -64,6 +68,22 @@ class StartingCharacter1(Choice):
     option_umaro = 13
     option_random_with_no_gogo_or_umaro = 14
     default = 14
+
+    @override
+    @classmethod
+    def from_any(cls, data: Any) -> Choice:
+        """
+        random doesn't allow gogo or umaro in slot 1
+        because if it did allow it, we wouldn't have a good way
+        to prevent random making possible unbeatable seeds
+        """
+        # TODO: if core gives us the source of the option
+        # so we know whether Gogo/Umaro was chosen from "random"
+        # then we can remove this restriction
+        # TODO: return type is `Self` after it's fixed in base class
+        if data == "random":
+            return super().from_any(random.randrange(1, 12))
+        return super().from_any(data)
 
 
 class StartingCharacter2(Choice):
