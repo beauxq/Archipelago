@@ -1,5 +1,6 @@
 import functools
 import importlib
+import itertools
 import logging
 import os
 import random
@@ -517,6 +518,17 @@ class FF6WCWorld(World):
             if treasuresanity or location not in Locations.all_minor_checks:
                 add_rule(self.get_location(location),
                          lambda state: state.has_group("espers", self.player, 4))
+
+        # TODO: This might be better on the region entrance to final dungeon
+        kefka_tower = itertools.chain(
+            Locations.major_kefka_checks,
+            Locations.minor_kefka_checks if treasuresanity else ()
+        )
+        for location_name in kefka_tower:
+            # TODO: maybe this should be has_group_unique
+            # I don't know what happens if you get more than 1 of a character
+            add_rule(self.get_location(location_name),
+                     lambda state: state.has_group("characters", self.player, 3))
 
         set_rule(self.get_location("Beat Final Kefka"),
                  functools.partial(can_beat_final_kefka, self.options, self.player))
