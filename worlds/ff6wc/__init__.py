@@ -489,6 +489,17 @@ class FF6WCWorld(World):
             add_rule(self.get_location(location_name),
                      lambda state: state.has_group("characters", self.player, 3))
 
+        two_players_required = itertools.chain(
+            Locations.phoenix_cave_major_checks,
+            Locations.phoenix_cave_minor_ext_checks if treasuresanity else (),
+            ("Kefka at Narshe", "Kefka at Narshe (Boss)")
+        )
+        for location_name in two_players_required:
+            # TODO: maybe this should be has_group_unique
+            # I don't know what happens if you get more than 1 of a character
+            add_rule(self.get_location(location_name),
+                     lambda state: state.has_group("characters", self.player, 2))
+
         set_rule(self.get_location("Beat Final Kefka"),
                  functools.partial(can_beat_final_kefka, self.options, self.player))
 
