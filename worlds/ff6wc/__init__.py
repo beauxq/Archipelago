@@ -62,7 +62,7 @@ class FF6WCWorld(World):
     is a role-playing game and the last in the series to feature 2D sprite based graphics.
     Worlds Collide is an open-world randomizer for Final Fantasy VI. Players begin aboard the airship
     and can travel freely between the World of Balance and the World of Ruin to discover characters and espers.
-    Once you've gathered enough, you can face off against Kefka. Currently based on Worlds Collide version 1.2.2.
+    Once you've gathered enough, you can face off against Kefka. Currently based on Worlds Collide version 1.4.2.
     """
     options_dataclass = FF6WCOptions
     options: FF6WCOptions  # type: ignore

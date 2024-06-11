@@ -591,8 +591,9 @@ def generate_gameplay_string(options: FF6WCOptions) -> List[str]:
     gameplay_strings = ["-move=bd", "-cor", "-crr", "-crvr", "50", "250", "-crm", "-ari"]
     if not options.AllowStrongestItems.value:
         gameplay_strings.extend(["-cnee", "-cnil"])
-    if options.RandomizeZozoClock.value:
-        gameplay_strings.extend(["-rc"])
+    # Zozo Clock is always randomized as of version 1.4.2, so do not need to add this into flagstring anymore
+    # if options.RandomizeZozoClock.value:
+    #    gameplay_strings.extend(["-rc"])
     return gameplay_strings
 
 

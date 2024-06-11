@@ -215,12 +215,13 @@ class FloatingContinent(Event):
         )
 
     def ground_item_mod(self, item):
-        self.ground_shadow_npc.sprite = 91
-        self.ground_shadow_npc.palette = 2
+        # use sparkle as NPC for item (or AP item)
+        self.ground_shadow_npc.sprite = 106
+        self.ground_shadow_npc.palette = 6
         self.ground_shadow_npc.split_sprite = 1
-        self.ground_shadow_npc.direction = direction.UP
+        self.ground_shadow_npc.direction = direction.DOWN
 
-        space = Reserve(0xad9b1, 0xad9ed, "floating continent add esper on ground", field.NOP())
+        space = Reserve(0xad9b1, 0xad9ed, "floating continent add item on ground", field.NOP())
         space.write(
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
