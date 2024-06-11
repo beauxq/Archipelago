@@ -183,8 +183,8 @@ class Dialogs():
     def mod(self):
         self.move_battle_messages()
         self.objectives_mod()
-
-        import args
+        
+        from ... import args as args
         if args.npc_dialog_tips:
 
             # clear out vanilla dialog to make room for tips
