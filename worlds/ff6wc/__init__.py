@@ -248,6 +248,9 @@ class FF6WCWorld(World):
                         kt_obj_list = objective_code_list
                         kt_obj_code_index = flags_list.index(objective) + 1
                         break
+            if kt_obj_code_index == len(flags_list):
+                # TODO: use yaml options instead?
+                raise ValueError("kt objective code not found in flags")
             # Determining Character, Esper, Dragon and Boss Counts
             # Since AP only (currently) takes in counts for bosses, espers, characters, and dragons, this code
             # identifies the root objective number/prefix, parses the ranges/values, and then tells the loop to skip to
