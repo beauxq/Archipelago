@@ -360,7 +360,7 @@ class EnemyPacks():
 
     def pad_enemy_packs(self):
         # add more random groups to the otherwise limited event battle groups
-        from data.enemy_battle_groups import unused_event_battle_groups
+        from ..data.enemy_battle_groups import unused_event_battle_groups
         for pack in self.packs:
             if pack.FORMATION_COUNT == 2:
                 # pack formation 0, 0 is Lobo -- it fills out unused spaces. Id 0, though, is MIAB Lobo, which we want to keep.

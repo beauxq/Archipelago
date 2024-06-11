@@ -72,6 +72,11 @@ class Characters():
         random_character = random.choice(possible_characters)
         self.set_unavailable(random_character)
         return random_character
+    
+    def get_specific_character(self, name):
+        character = int(self.get_by_name(name).id)
+        self.set_unavailable(character)
+        return character
 
     def set_character_path(self, character, required_character):
         if required_character is not None:

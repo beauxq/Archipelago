@@ -46,7 +46,7 @@ class Coliseum():
         for match_index, match in enumerate(self.matches):
             match.reward = rewards[match_index]
 
-    def randomize_rewards(self):
+    def randomize_rewards(self, random_reward_percent = None):
         import random
 
         for match in self.matches:

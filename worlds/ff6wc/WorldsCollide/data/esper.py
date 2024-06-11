@@ -133,7 +133,7 @@ class Esper(AbilityData):
 
     def randomize_rates_tiered(self):
         import random
-        from data.esper_spell_tiers import tiers
+        from ..data.esper_spell_tiers import tiers
         for spell_index in range(self.spell_count):
             if self.spells[spell_index].id in tiers[0]:
                 self.spells[spell_index].rate = random.choice([10, 15, 16, 20])

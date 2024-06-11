@@ -227,7 +227,7 @@ class ScalingFunctions():
     def bosses_dragons_mod(self):
         # output: 16 bit a = bosses completed
 
-        import data.event_word as event_word
+        from ..data import event_word as event_word
         boss_complete_address = event_word.address(event_word.BOSSES_DEFEATED)
         dragons_defeated_address = event_word.address(event_word.DRAGONS_DEFEATED)
 

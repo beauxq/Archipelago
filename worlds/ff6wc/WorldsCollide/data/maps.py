@@ -233,9 +233,9 @@ class Maps():
         self.rom.set_bytes(tilemaps_start + tilemap_addr, compressed)
 
     def _fix_Cid_timer_glitch(self):
-        from memory.space import Bank, Write
-        import instruction.field as field
-        from event.event import EVENT_CODE_START
+        from ..memory.space import Bank, Write
+        from ..instruction import field as field
+        from ..event.event import EVENT_CODE_START
         # If you start Cid's timer and then leave, the timer can affect event tile, NPC and objective triggering
         # Write some LongMapEvents to turn off the Cid timer when exiting to the world map.
         HORIZ = 0

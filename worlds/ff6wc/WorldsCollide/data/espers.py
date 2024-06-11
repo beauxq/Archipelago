@@ -347,6 +347,15 @@ class Espers():
         rand_esper = random.sample(self.available_espers, 1)[0]
         self.available_espers.remove(rand_esper)
         return rand_esper
+    
+    def get_specific_esper(self, name):
+        chosen_esper = None
+        for index, esper in enumerate(self.espers):
+            if esper.name == name:
+                chosen_esper = esper
+                break
+        self.available_espers.remove(index)
+        return index
 
     def get_receive_esper_dialog(self, esper):
         return self.receive_dialogs[esper]
