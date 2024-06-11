@@ -143,7 +143,7 @@ class FanaticsTower(Event):
         )
 
     def character_music_mod(self, character):
-        from music.song_utils import get_character_theme
+        from ..music.song_utils import get_character_theme
 
         space = Reserve(0xc5327, 0xc5328, "Play Song Relm")
         space.write([

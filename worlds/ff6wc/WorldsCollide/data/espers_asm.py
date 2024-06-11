@@ -7,7 +7,7 @@ def mastered_mod(espers):
     #   1. Rather than using the space at the right, I replace the ... before the MP
     #   2. Using F0 freespace
     #   3. Displaced code is different to deconflict with equipable_mod
-    from data.text.text2 import text_value
+    from ..data.text.text2 import text_value
     space = Reserve(0x487b0, 0x487be, "add star icon for text2 to unused space")
     space.write(
         0x18,0x00,0x3C,0x18,0xFF,0x18,0xFF,0x7E,0x7E,0x3C,0xFF,0x7E,0xFF,0x66 # raw hex for star icon

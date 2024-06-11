@@ -124,7 +124,6 @@ def _format_spells_log_entries(spell_ids):
     return spell_entries
 
 def _format_spells_log_entries(spell_ids):
-    from constants.spells import id_spell
     from ..constants.spells import id_spell
     spell_entries = []
     for spell_id in spell_ids:

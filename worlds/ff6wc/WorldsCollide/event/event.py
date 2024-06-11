@@ -83,7 +83,7 @@ class Event():
     # get_replacement_formation("Goddess")
     # if you fight Ultros in the Goddess location, return Ultros
     def get_replacement_formation(self, boss_name):
-        from data.bosses import pack_name
+        from ..data.bosses import pack_name
         replacement = self.get_boss(boss_name, False)
         location_boss = pack_name[replacement]
         formation_id = self.enemies.formations.get_id(location_boss)

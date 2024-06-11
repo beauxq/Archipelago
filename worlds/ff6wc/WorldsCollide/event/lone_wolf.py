@@ -72,7 +72,7 @@ class LoneWolf(Event):
         space.write(field.Pause(0.5)) # shorten from 2 seconds
 
     def character_music_mod(self, character):
-        from music.song_utils import get_character_theme
+        from ..music.song_utils import get_character_theme
         src = [
             field.StartSong(get_character_theme(character)),
         ]

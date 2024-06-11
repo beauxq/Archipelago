@@ -315,7 +315,7 @@ class Enemies():
 
     def shuffle_steals_drops_random(self):
         import random
-        from data.bosses import final_battle_enemy_name
+        from ..data.bosses import final_battle_enemy_name
 
         # Assemble the list of steals and drops
         steals_drops = []
