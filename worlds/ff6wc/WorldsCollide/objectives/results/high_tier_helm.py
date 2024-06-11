@@ -1,6 +1,6 @@
 from ...objectives.results._objective_result import *
 from ...constants.items import HELMETS, EMPTY
-from ...utils.intersection import intersection
+from ...ff6wcutils.intersection import intersection
 
 class Field(field_result.Result):
     def src(self, item_id):
