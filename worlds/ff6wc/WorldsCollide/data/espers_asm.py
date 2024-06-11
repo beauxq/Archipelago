@@ -107,7 +107,7 @@ def mastered_mod(espers):
         asm.LDA(MASTERED_ICON, asm.IMM8), #load our mastered icon
         asm.BRA("RETURN"),
         "NOT_MASTERED",
-        asm.LDA(text_value['…'], asm.IMM8), # load the normal icon
+        asm.LDA(text_value['â€¦'], asm.IMM8), # load the normal icon
         "RETURN",
         asm.STA(0x2180, asm.ABS), # add to string -- displaced code
         asm.RTL(),
