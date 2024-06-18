@@ -92,6 +92,3 @@ premium_items = [
     "Offering",
     "Exp. Egg",
 ]
-
-# this list will be populated in __init__.py
-item_rewards = []

@@ -346,61 +346,6 @@ class FF6WCWorld(World):
                 self.no_exp_eggs = True
                 self.no_illuminas = True
         
-        # Check to see what the Item Rewards are to populate the "dead" checks
-        # NOTE: most of this code is located in WorldsCollide/args/items.py during the process function
-        # if -ir in flagstring, then user specified item rewards
-        if "-ir" in self.options.Flagstring.value.split(" "):
-            # get the item reward string between the -ir flag & the next one
-            item_reward = " ".join(self.options.Flagstring.value.split("-ir")[1:]).split("-")[0].strip()
-            for a_item_id in item_reward.split(','):
-                # look for strings first
-                a_item_id = a_item_id.lower().strip()
-                if a_item_id == 'none':
-                    Item.item_rewards = []
-                elif a_item_id == 'standard':
-                    Item.item_rewards = Items.good_items
-                elif a_item_id == 'stronger':
-                    Item.item_rewards = Items.stronger_items
-                elif a_item_id == 'premium':
-                    Item.item_rewards = Items.premium_items
-                # else convert IDs to item names & place into reward list
-                else:
-                    a_item_id = int(a_item_id)
-                    if a_item_id < len(Item.items):
-                        Item.item_rewards.append(Item.items[a_item_id])
-            # remove duplicates and sort
-            Item.item_rewards = list(set(Item.item_rewards))
-            Item.item_rewards.sort()
-
-            # Remove Atma Weapon is it's not Stronger (-saw flag) and Atma Weapon was added to reward pool
-            if "-saw" not in self.options.Flagstring.value.split(" ") and "Atma Weapon" in Item.item_rewards:
-                Item.item_rewards.remove("Atma Weapon")
-
-            # Remove excluded items
-            # if -nee No PaladinShld specified, remove from rewards list
-            if self.no_paladin_shields and "Paladin Shld" in Item.item_rewards:
-                Item.item_rewards.remove("Paladin Shld")
-            # if -nee No ExpEgg specified, remove from rewards list
-            if self.no_exp_eggs and "Exp. Egg" in Item.item_rewards:
-                Item.item_rewards.remove("Exp. Egg")
-            # if -nil No Illumina specified, remove from rewards list
-            if self.no_illuminas and "Illumina" in Item.item_rewards:
-                Item.item_rewards.remove("Illumina")
-            # if -noshoes No SprintShoes specified, remove from rewards list
-            if "-noshoes" in self.options.Flagstring.value.split(" ") and "Sprint Shoes" in Item.item_rewards:
-                Item.item_rewards.remove("Sprint Shoes")
-            # if -nmc No MoogleCharms specified, remove from rewards list
-            if "-nmc" in self.options.Flagstring.value.split(" ") and "Moogle Charm" in Item.item_rewards:
-                Item.item_rewards.remove("Moogle Charm")
-
-            # Make dead checks award "empty" if the item reward list is empty (e.g. all items were supposed to be Illuminas and
-            # the No Illumina flag is on)
-            if len(Item.item_rewards) < 1:
-                Item.item_rewards.append("Empty")
-        # else no -ir, keep good_items as-is
-        else:
-            Item.item_rewards = Items.good_items
-
         item_pool: List[FF6WCItem] = []
         assert self.starting_characters
         for item in map(self.create_item, self.item_name_to_id):
@@ -423,6 +368,65 @@ class FF6WCWorld(World):
             self.create_event("Victory"))
         self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)
 
+        # Check to see what the Item Rewards are to populate the "dead" checks
+        # NOTE: most of this code is located in WorldsCollide/args/items.py during the process function
+        item_rewards = []
+        # if -ir in flagstring, then user specified item rewards
+        if "-ir" in self.options.Flagstring.value.split(" "):
+            # get the item reward string between the -ir flag & the next one
+            item_reward = " ".join(self.options.Flagstring.value.split("-ir")[1:]).split("-")[0].strip()
+            for a_item_id in item_reward.split(','):
+                # look for strings first
+                a_item_id = a_item_id.lower().strip()
+                if a_item_id == 'none':
+                    item_rewards = []
+                elif a_item_id == 'standard':
+                    item_rewards = Items.good_items
+                elif a_item_id == 'stronger':
+                    item_rewards = Items.stronger_items
+                elif a_item_id == 'premium':
+                    item_rewards = Items.premium_items
+                # else convert IDs to item names & place into reward list
+                else:
+                    a_item_id = int(a_item_id)
+                    all_items = list(Rom.item_name_id.keys())
+                    if a_item_id < len(all_items):
+                        item_rewards.append(all_items[a_item_id])
+            # remove duplicates and sort
+            item_rewards = list(set(item_rewards))
+            item_rewards.sort()
+
+            # Remove Atma Weapon is it's not Stronger (-saw flag) and Atma Weapon was added to reward pool
+            if "-saw" not in self.options.Flagstring.value.split(" ") and "Atma Weapon" in item_rewards:
+                item_rewards.remove("Atma Weapon")
+
+            # Remove excluded items
+            # if -nee No PaladinShld specified, remove from rewards list
+            if self.no_paladin_shields and "Paladin Shld" in item_rewards:
+                item_rewards.remove("Paladin Shld")
+            # if -nee No ExpEgg specified, remove from rewards list
+            if self.no_exp_eggs and "Exp. Egg" in item_rewards:
+                item_rewards.remove("Exp. Egg")
+            # if -nil No Illumina specified, remove from rewards list
+            if self.no_illuminas and "Illumina" in item_rewards:
+                item_rewards.remove("Illumina")
+            # if -noshoes No SprintShoes specified, remove from rewards list
+            if "-noshoes" in self.options.Flagstring.value.split(" ") and "Sprint Shoes" in item_rewards:
+                item_rewards.remove("Sprint Shoes")
+            # if -nmc No MoogleCharms specified, remove from rewards list
+            if "-nmc" in self.options.Flagstring.value.split(" ") and "Moogle Charm" in item_rewards:
+                item_rewards.remove("Moogle Charm")
+
+            # Make dead checks award "empty" if the item reward list is empty (e.g. all items were supposed to be Illuminas and
+            # the No Illumina flag is on)
+            if len(item_rewards) < 1:
+                item_rewards.append("Empty")
+        # else no -ir, keep good_items as-is
+        else:
+            item_rewards = Items.good_items
+        
+        print(item_rewards)
+
         filler_pool: List[str] = []
         # Each filler item has a chest item tier weight
         filler_pool_weights: List[int] = []
@@ -443,7 +447,7 @@ class FF6WCWorld(World):
                 assert not (weight is None)
                 filler_pool_weights.append(weight)
             # update to use item_rewards as calculated above
-            if item in Item.item_rewards:
+            if item in item_rewards:
                 good_filler_pool.append(item)
 
         major_items = len([location for location in Locations.major_checks if "(Boss)" not in location and "Status"
@@ -580,7 +584,7 @@ class FF6WCWorld(World):
             nfps = nee = nil = 1
             temp_new_item = ""
             while (nfps or nee or nil) == 1:
-                temp_new_item = self.multiworld.random.choice(Items.item_rewards)
+                temp_new_item = self.multiworld.random.choice(Items.good_items)
                 if self.no_paladin_shields is True and (temp_new_item == "Paladin Shld"
                                                         or temp_new_item == "Cursed Shld"):
                     nfps = 1
