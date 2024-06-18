@@ -295,6 +295,10 @@ class RandomizeZozoClock(DefaultOnToggle):
     """Randomize the clock puzzle in Zozo."""
     display_name = "Randomize Zozo Clock"
 
+class ZozoClockChestExclude(DefaultOnToggle):
+    """Whether to exclude the Zozo Clock Puzzle Chest from progression."""
+    display_name = "Exclude Zozo Clock Puzzle chest for possible progression"    
+
 
 class Treasuresanity(Choice):
     """Mixes all treasure chests and the like into the location pool. Not recommended for beginners.
@@ -337,6 +341,7 @@ class FF6WCOptions(PerGameCommonOptions):
     Equipment: Equipment
     AllowStrongestItems: AllowStrongestItems
     RandomizeZozoClock: RandomizeZozoClock
+    ZozoClockChestExclude: ZozoClockChestExclude
     Treasuresanity: Treasuresanity
     Flagstring: Flagstring
 
