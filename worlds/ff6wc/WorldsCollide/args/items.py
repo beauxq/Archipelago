@@ -131,6 +131,9 @@ def process(args):
     if len(args.item_rewards_ids) < 1:
         args.item_rewards_ids.append(name_id["Empty"])
 
+    # always add ArchplgoItem into reward pool so AP can process it later
+    args.item_rewards_ids.append(name_id["ArchplgoItem"])
+
     args._process_min_max("cursed_shield_battles")
     args.cursed_shield_battles_original = args.cursed_shield_battles_min == 256 and\
                                           args.cursed_shield_battles_max == 256
