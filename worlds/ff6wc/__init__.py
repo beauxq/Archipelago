@@ -426,8 +426,6 @@ class FF6WCWorld(World):
         else:
             self.item_rewards = Items.good_items
         
-        print(self.item_rewards)
-
         filler_pool: List[str] = []
         # Each filler item has a chest item tier weight
         filler_pool_weights: List[int] = []
@@ -440,6 +438,12 @@ class FF6WCWorld(World):
             if self.no_exp_eggs is True and item == "Exp. Egg":
                 continue
             if self.no_illuminas is True and item == "Illumina":
+                continue
+            # if -noshoes No SprintShoes specified, remove from list
+            if "-noshoes" in self.options.Flagstring.value.split(" ") and item == "Sprint Shoes":
+                continue
+            # if -nmc No MoogleCharms specified, remove from list
+            if "-nmc" in self.options.Flagstring.value.split(" ") and item == "Moogle Charm":
                 continue
             if item != "ArchplgoItem":
                 filler_pool.append(item)
@@ -512,9 +516,10 @@ class FF6WCWorld(World):
             add_rule(self.get_location(check_name),
                      lambda state: state.has("Terra", self.player))
 
+        item_nonrewards = [item for item in Items.items if item not in self.item_rewards or item == "Empty" or item == "ArchplgoItem"]
         for check in Locations.major_checks:
             add_item_rule(self.get_location(check),
-                          lambda item: item.name not in Items.okay_items)
+                          lambda item: item.name not in item_nonrewards)
 
         for check in Locations.item_only_checks:
             if treasuresanity or (
@@ -580,7 +585,8 @@ class FF6WCWorld(World):
                         self.upgrade_item(location.item)
 
     def upgrade_item(self, item: Item):
-        if item.name in Items.okay_items:
+        item_nonrewards = [item for item in Items.items if item not in self.item_rewards or item == "Empty" or item == "ArchplgoItem"]
+        if item.name in item_nonrewards:
             # Prevents upgrades to restricted items based on flags or AllowStrongestItems value
             nfps = nee = nil = 1
             temp_new_item = ""
