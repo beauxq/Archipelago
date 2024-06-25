@@ -168,7 +168,7 @@ class FF6WCWorld(World):
     def generate_early(self):
         # if requested to exclude the Zozo Clock Chest, add to exclude_locations
         if self.options.ZozoClockChestExclude:
-            self.options.exclude_locations.value.append("Zozo Clock Puzzle")
+            self.options.exclude_locations.value.add("Zozo Clock Puzzle")
 
         if (self.options.Flagstring.value).capitalize() != "False":
 
