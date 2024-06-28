@@ -144,6 +144,7 @@ class FF6WCWorld(World):
         self.no_paladin_shields = False
         self.no_exp_eggs = False
         self.item_rewards = []
+        self.item_nonrewards = []
         self.generator_in_use = threading.Event()
         self.wc = None
         self.rom_name_available_event = threading.Event()
@@ -378,6 +379,7 @@ class FF6WCWorld(World):
         # Check to see what the Item Rewards are to populate the "dead" checks
         # NOTE: most of this code is located in WorldsCollide/args/items.py during the process function
         self.item_rewards = []
+        self.item_nonrewards = []
         # if -ir in flagstring, then user specified item rewards
         if "-ir" in self.options.Flagstring.value.split(" "):
             # get the item reward string between the -ir flag & the next one
@@ -431,6 +433,9 @@ class FF6WCWorld(World):
         # else no -ir, keep good_items as-is
         else:
             self.item_rewards = Items.good_items
+
+        # update the non-reward items to be everything that's not in item_rewards
+        self.item_nonrewards = [item for item in Items.items if item not in self.item_rewards]    
         
         filler_pool: List[str] = []
         # Each filler item has a chest item tier weight
@@ -522,10 +527,10 @@ class FF6WCWorld(World):
             add_rule(self.get_location(check_name),
                      lambda state: state.has("Terra", self.player))
 
-        item_nonrewards = [item for item in Items.items if item not in self.item_rewards or item == "Empty" or item == "ArchplgoItem"]
+        
         for check in Locations.major_checks:
             add_item_rule(self.get_location(check),
-                          lambda item: item.name not in item_nonrewards)
+                          lambda item: item.name not in self.item_nonrewards or item.player != self.player)
 
         for check in Locations.item_only_checks:
             if treasuresanity or (
@@ -591,8 +596,7 @@ class FF6WCWorld(World):
                         self.upgrade_item(location.item)
 
     def upgrade_item(self, item: Item):
-        item_nonrewards = [item for item in Items.items if item not in self.item_rewards or item == "Empty" or item == "ArchplgoItem"]
-        if item.name in item_nonrewards:
+        if item.name in self.item_nonrewards:
             # Prevents upgrades to restricted items based on flags or AllowStrongestItems value
             nfps = nee = nil = 1
             temp_new_item = ""
