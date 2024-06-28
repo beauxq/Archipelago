@@ -18,7 +18,7 @@ class Result(ObjectiveResult):
     NAME = "High Tier Relic"
     def __init__(self):
         import random
-        from data.items import Items
+        from ...data.items import Items
 
         good_relics = intersection(Items.GOOD, RELICS)
         if len(good_relics) > 0:

@@ -95,7 +95,7 @@ class Items():
                         item.add_equipable_character(self.characters.playable[character])
 
     def equipable_tiered(self, type_condition):
-        from data.chest_item_tiers import tiers
+        from ..data.chest_item_tiers import tiers
 
         tier_mins = [13, 11, 7, 4, 1]
         tier_maxes = [14, 12, 10, 6, 3]

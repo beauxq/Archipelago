@@ -18,7 +18,7 @@ class Result(ObjectiveResult):
     NAME = "High Tier Helm"
     def __init__(self):
         import random
-        from data.items import Items
+        from ...data.items import Items
 
         good_helms = intersection(Items.GOOD, HELMETS)
         if len(good_helms) > 0:
