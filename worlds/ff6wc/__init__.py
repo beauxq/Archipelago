@@ -530,6 +530,7 @@ class FF6WCWorld(World):
         
         for check in Locations.major_checks:
             add_item_rule(self.get_location(check),
+                          # add things that are NOT in the non-rewards list or something for another player (based on their settings)
                           lambda item: item.name not in self.item_nonrewards or item.player != self.player)
 
         for check in Locations.item_only_checks:
