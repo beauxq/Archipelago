@@ -43,6 +43,20 @@ class FF6WCClient(SNIClient):
 
         return True
 
+    async def _new_location_check(self, ctx: SNIContext, location_name: str) -> None:
+        """
+        - add to `locations_checked`
+        - put message in log
+        - send location check to server
+        """
+        location_id = self.location_ids[location_name]
+        ctx.locations_checked.add(location_id)
+        snes_logger.info(
+            f'New Check: {location_name} ({len(ctx.locations_checked)}/'
+            f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
+        )
+        await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
+
     async def game_watcher(self, ctx: SNIContext) -> None:
         from SNIClient import snes_flush_writes
         if await self.connection_check(ctx) is False:
@@ -129,31 +143,16 @@ class FF6WCClient(SNIClient):
                     for location_name in locations_cleared:
                         location_id = self.location_ids[location_name]
                         if location_id not in ctx.locations_checked:
-                            ctx.locations_checked.add(location_id)
-                            snes_logger.info(
-                                f'New Check: {location_name} ({len(ctx.locations_checked)}/'
-                                f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
-                            )
-                            await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
+                            await self._new_location_check(ctx, location_name)
             else:
                 event_done = event_data & event_bit
                 if event_done and location_id not in ctx.locations_checked:
-                    ctx.locations_checked.add(location_id)
                     if location_name in Locations.point_of_no_return_checks.keys():
                         for passed_location in Locations.point_of_no_return_checks[location_name]:
                             passed_id = self.location_ids[passed_location]
                             if passed_id not in ctx.locations_checked:
-                                ctx.locations_checked.add(passed_id)
-                                snes_logger.info(
-                                    f'New Check: {passed_location} ({len(ctx.locations_checked)}/'
-                                    f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
-                                )
-                                await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [passed_id]}])
-                    snes_logger.info(
-                        f'New Check: {location_name} ({len(ctx.locations_checked)}/'
-                        f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
-                    )
-                    await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
+                                await self._new_location_check(ctx, passed_location)
+                    await self._new_location_check(ctx, location_name)
 
     async def treasure_check(self, ctx: SNIContext) -> None:
         from SNIClient import snes_read
@@ -166,12 +165,7 @@ class FF6WCClient(SNIClient):
                 treasure_found = treasure_data[treasure_byte] & treasure_bit
                 treasure_id = self.location_ids[chest]
                 if treasure_found and treasure_id not in ctx.locations_checked:
-                    ctx.locations_checked.add(treasure_id)
-                    snes_logger.info(
-                        f'New Check: {chest} ({len(ctx.locations_checked)}/'
-                        f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
-                    )
-                    await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [treasure_id]}])
+                    await self._new_location_check(ctx, chest)
 
     async def received_items_check(self, ctx: SNIContext) -> None:
         from SNIClient import snes_buffered_write, snes_read
