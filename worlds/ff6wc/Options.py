@@ -297,7 +297,7 @@ class RandomizeZozoClock(DefaultOnToggle):
 
 class ZozoClockChestExclude(DefaultOnToggle):
     """Whether to exclude the Zozo Clock Puzzle Chest from progression."""
-    display_name = "Exclude Zozo Clock Puzzle chest for possible progression"    
+    display_name = "Exclude Zozo Clock Puzzle Chest"    
 
 
 class Treasuresanity(Choice):
