@@ -51,10 +51,13 @@ class FF6WCClient(SNIClient):
         """
         location_id = self.location_ids[location_name]
         ctx.locations_checked.add(location_id)
-        snes_logger.info(
-            f'New Check: {location_name} ({len(ctx.locations_checked)}/'
-            f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
-        )
+        if location_id in ctx.missing_locations:
+            total_ap_location_count = len(ctx.missing_locations) + len(ctx.checked_locations)
+            snes_logger.info(
+                f"New Check: {location_name} ({len(ctx.checked_locations) + 1}/{total_ap_location_count})"
+            )
+        else:  # not an AP location in this seed
+            snes_logger.info(f"Picked up: {location_name}")
         await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
 
     async def game_watcher(self, ctx: SNIContext) -> None:
