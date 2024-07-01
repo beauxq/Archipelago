@@ -95,7 +95,14 @@ def load_library() -> None:
 
 if is_apworld():
     if "lib" not in sys.path:
+        # for running from source
         sys.path.append("lib")
+
+    from Utils import user_path
+    user_lib_path = os.path.join(user_path("lib"))
+    if user_lib_path not in sys.path:
+        # for running from AppImage
+        sys.path.append(user_lib_path)
 
     lib_dir = os.path.join("lib", "subversion_rando")
     lib_crc_file_name = os.path.join(lib_dir, "crc")

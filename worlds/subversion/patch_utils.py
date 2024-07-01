@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, Final, List, Mapping, Optional, Set, Tuple, Union
 
 from BaseClasses import ItemClassification, Location
-from worlds.sm.variaRandomizer.rando.Items import ItemManager
 from .config import base_id, open_file_apworld_compatible
 from .item import SubversionItem, local_id_to_sv_item, name_to_id, sv_item_name_to_sm_item_id
 from .location import SubversionLocation
@@ -154,10 +153,14 @@ _SMZ3_name_to_SM_type: Dict[str, str] = {
     "XRay": "XRayScope", "SpaceJump": "SpaceJump", "ScrewAttack": "ScrewAttack"
 }
 
-_SMZ3_name_to_SM_name: Dict[str, str] = {
-    smz3_name: ItemManager.Items[sm_type].Name
-    for smz3_name, sm_type in _SMZ3_name_to_SM_type.items()
-}
+try:
+    from worlds.sm.variaRandomizer.rando.Items import ItemManager
+    _SMZ3_name_to_SM_name: Dict[str, str] = {
+        smz3_name: ItemManager.Items[sm_type].Name
+        for smz3_name, sm_type in _SMZ3_name_to_SM_type.items()
+    }
+except ImportError:
+    _SMZ3_name_to_SM_name = {}
 
 _SM_name_to_subversion_name: Dict[str, str] = {
     "Energy Tank": Items.Energy.name,
