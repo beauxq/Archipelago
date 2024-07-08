@@ -619,7 +619,7 @@ class FF6WCWorld(World):
             assert temp_new_item
             # if Ragnarok, translate into sword for item_name_to_id dictionary
             if temp_new_item == "Ragnarok":
-                temp_new_item == "Ragnarok Sword"
+                temp_new_item = "Ragnarok Sword"
             new_item = temp_new_item
             new_item_id = self.item_name_to_id[new_item]
             item.name = new_item
