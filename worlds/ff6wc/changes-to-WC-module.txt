@@ -11,3 +11,4 @@ in args/items.py always add ArchplgoItem to the reward IDs
 in event/doom_gaze.py, event/narshe_wor.py, and event/tritoch.py, clear unknown npc bits that cause sprite glitches (#2 of https://github.com/Rosalie-A/Archipelago/issues/58)
 in event/tritoch.py, update the handling of character reward events to not load wrong map after party reform screen
 in event/floating_continent.py, update the sprite for item reward to sparkle from magicite
+in data/chests.py, only process the random monster in a chest flags (-chrm) if treasuresanity is OFF

@@ -329,7 +329,10 @@ class Chests():
                 self.clear_contents()
             else:
                 self.remove_excluded_items()
-
+            # only place monsters in chests when treasuresanity is OFF
+            self.args.chest_random_monsters_enemy = 0
+            self.args.chest_random_monsters_boss = 0
+            
         if self.args.chest_monsters_shuffle:
             self.shuffle([Chest.MONSTER])
 
