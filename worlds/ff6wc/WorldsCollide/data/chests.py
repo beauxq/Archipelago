@@ -329,6 +329,8 @@ class Chests():
                 self.clear_contents()
             else:
                 self.remove_excluded_items()
+        # treasuresanity is either on OR on_with_additional_gating
+        else:
             # only place monsters in chests when treasuresanity is OFF
             self.args.chest_random_monsters_enemy = 0
             self.args.chest_random_monsters_boss = 0
