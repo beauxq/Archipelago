@@ -52,9 +52,6 @@ good_items = [
     "Dragon Horn"
 ]
 
-# NOTE: replaced by item_nonrewards in __init__.py due to FF6WC 1.4.2 allowing custom item rewards
-okay_items = [item for item in items if item not in good_items or item == "Empty" or item == "ArchplgoItem"]
-
 stronger_items = [
     "ValiantKnife",
     "Illumina",
