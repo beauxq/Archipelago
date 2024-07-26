@@ -12,3 +12,5 @@ in event/doom_gaze.py, event/narshe_wor.py, and event/tritoch.py, clear unknown 
 in event/tritoch.py, update the handling of character reward events to not load wrong map after party reform screen
 in event/floating_continent.py, update the sprite for item reward to sparkle from magicite
 in data/chests.py, only process the random monster in a chest flags (-chrm) if treasuresanity is OFF
+
+a13856eb295804ea8fda1acdd360f4c39436fb7f remove unreachable reference to undefined variable
