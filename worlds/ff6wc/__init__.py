@@ -353,7 +353,7 @@ class FF6WCWorld(World):
                 self.no_paladin_shields = True
                 self.no_exp_eggs = True
                 self.no_illuminas = True
-        
+
         item_pool: List[FF6WCItem] = []
         assert self.starting_characters
         for item in map(self.create_item, self.item_name_to_id):
@@ -426,8 +426,8 @@ class FF6WCWorld(World):
             if "-nmc" in self.options.Flagstring.value.split(" ") and "Moogle Charm" in self.item_rewards:
                 self.item_rewards.remove("Moogle Charm")
 
-            # Make dead checks award "empty" if the item reward list is empty (e.g. all items were supposed to be Illuminas and
-            # the No Illumina flag is on)
+            # Make dead checks award "empty" if the item reward list is empty
+            # (e.g. all items were supposed to be Illuminas and the No Illumina flag is on)
             if len(self.item_rewards) < 1:
                 self.item_rewards.append("Empty")
         # else no -ir, keep good_items as-is
@@ -435,8 +435,8 @@ class FF6WCWorld(World):
             self.item_rewards = Items.good_items
 
         # update the non-reward items to be everything that's not in item_rewards
-        self.item_nonrewards = [item for item in Items.items if item not in self.item_rewards]    
-        
+        self.item_nonrewards = [item for item in Items.items if item not in self.item_rewards]
+
         filler_pool: List[str] = []
         # Each filler item has a chest item tier weight
         filler_pool_weights: List[int] = []
@@ -527,10 +527,10 @@ class FF6WCWorld(World):
             add_rule(self.get_location(check_name),
                      lambda state: state.has("Terra", self.player))
 
-        
         for check in Locations.major_checks:
             add_item_rule(self.get_location(check),
-                          # add things that are NOT in the non-rewards list or something for another player (based on their settings)
+                          # add things that are NOT in the non-rewards list
+                          # or something for another player (based on their settings)
                           lambda item: item.name not in self.item_nonrewards or item.player != self.player)
 
         for check in Locations.item_only_checks:
