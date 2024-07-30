@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 import math
 from random import Random
 import random
@@ -6,7 +7,7 @@ from typing import Any, List, Sequence
 
 from typing_extensions import override
 
-from Options import DefaultOnToggle, PerGameCommonOptions, Range, Choice, FreeText
+from Options import DefaultOnToggle, PerGameCommonOptions, Range, Choice, FreeText, Removed
 
 
 class CharacterCount(Range):
@@ -291,9 +292,17 @@ class AllowStrongestItems(DefaultOnToggle):
     display_name = "Allow Strongest Items"
 
 
-class RandomizeZozoClock(DefaultOnToggle):
-    """Randomize the clock puzzle in Zozo."""
+class RandomizeZozoClock(Removed):
+    """ This option has been removed. You can use `ZozoClockChestExclude` instead. """
     display_name = "Randomize Zozo Clock"
+
+    def __init__(self, value: str):
+        if value:
+            # TODO: after some deprecation time, change this to raise an exception
+            logging.warning("`RandomizeZozoClock` removed in WC 1.4.2, please update your options file. "
+                            "If you would like to make sure you don't have to do the clock puzzle, "
+                            "you can use `ZozoClockChestExclude`")
+        super().__init__("")
 
 
 class ZozoClockChestExclude(DefaultOnToggle):
@@ -341,7 +350,7 @@ class FF6WCOptions(PerGameCommonOptions):
     SpellcastingItems: SpellcastingItems
     Equipment: Equipment
     AllowStrongestItems: AllowStrongestItems
-    RandomizeZozoClock: RandomizeZozoClock
+    RandomizeZozoClock: RandomizeZozoClock  # TODO: some time after the above TODO raises an exception, remove this
     ZozoClockChestExclude: ZozoClockChestExclude
     Treasuresanity: Treasuresanity
     Flagstring: Flagstring
