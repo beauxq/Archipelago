@@ -85,7 +85,11 @@ class CharacterSprites:
             if self.args.portrait_ids[index] != DEFAULT_CHARACTER_PORTRAITS[index]:
                 character = PORTRAIT_CHARACTERS[index]
 
-                portrait_data = list(pkgutil.get_data(__name__, portrait_sprite_file))
+                import os
+                package_dir = os.path.dirname(__file__)
+                relative_path = os.path.relpath(portrait_sprite_file, package_dir)
+                # print(f"{relative_path=}")
+                portrait_data = list(pkgutil.get_data(__name__, relative_path))
                 self.portrait_sprites[character].data = portrait_data
 
     def mod(self):
