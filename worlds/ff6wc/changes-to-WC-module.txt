@@ -14,3 +14,5 @@ in event/floating_continent.py, update the sprite for item reward to sparkle fro
 in data/chests.py, only process the random monster in a chest flags (-chrm) if treasuresanity is OFF
 
 a13856eb295804ea8fda1acdd360f4c39436fb7f remove unreachable reference to undefined variable
+event/auction_house.py remove code for -nfp and -ame flags as they only make sense in non-multiworld environments like the base game
+event/veldt.py add an else clause for an item reward in the case of an AP item since that check can be char/esper/item reward now instead of char/esper like in base game

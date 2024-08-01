@@ -318,7 +318,6 @@ class Veldt(Event):
         # else it's an item reward (in multi-world, this would be an AP item for someone else)
         # do NOT increment either character or esper counter, see https://github.com/Rosalie-A/Archipelago/issues/38
         else:
-            espers_found_address = event_word.address(event_word.ESPERS_FOUND)
             space.write(
                 asm.LDA(ram_event_bit(event_bit.VELDT_REWARD_OBTAINED), asm.IMM8),
                 asm.TSB(ram_event_byte(event_bit.VELDT_REWARD_OBTAINED), asm.ABS),
