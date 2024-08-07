@@ -41,4 +41,4 @@ Visit the [Worlds Collide Wiki](https://wiki.ff6worldscollide.com/).
 
 ## What version of Worlds Collide is this based on?
 
-Currently, we are using version 1.2.2.
+Currently, we are using version 1.4.2.

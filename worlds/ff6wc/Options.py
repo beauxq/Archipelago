@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 import math
 from random import Random
 import random
@@ -6,7 +7,7 @@ from typing import Any, List, Sequence
 
 from typing_extensions import override
 
-from Options import DefaultOnToggle, PerGameCommonOptions, Range, Choice, FreeText
+from Options import DefaultOnToggle, PerGameCommonOptions, Range, Choice, FreeText, Removed
 
 
 class CharacterCount(Range):
@@ -291,9 +292,22 @@ class AllowStrongestItems(DefaultOnToggle):
     display_name = "Allow Strongest Items"
 
 
-class RandomizeZozoClock(DefaultOnToggle):
-    """Randomize the clock puzzle in Zozo."""
+class RandomizeZozoClock(Removed):
+    """ This option has been removed. You can use `ZozoClockChestExclude` instead. """
     display_name = "Randomize Zozo Clock"
+
+    def __init__(self, value: str):
+        if value:
+            # TODO: after some deprecation time, change this to raise an exception
+            logging.warning("`RandomizeZozoClock` removed in WC 1.4.2, please update your options file. "
+                            "If you would like to make sure you don't have to do the clock puzzle, "
+                            "you can use `ZozoClockChestExclude`")
+        super().__init__("")
+
+
+class ZozoClockChestExclude(DefaultOnToggle):
+    """Whether to exclude the Zozo Clock Puzzle Chest from progression."""
+    display_name = "Exclude Zozo Clock Puzzle Chest"
 
 
 class Treasuresanity(Choice):
@@ -336,7 +350,8 @@ class FF6WCOptions(PerGameCommonOptions):
     SpellcastingItems: SpellcastingItems
     Equipment: Equipment
     AllowStrongestItems: AllowStrongestItems
-    RandomizeZozoClock: RandomizeZozoClock
+    RandomizeZozoClock: RandomizeZozoClock  # TODO: some time after the above TODO raises an exception, remove this
+    ZozoClockChestExclude: ZozoClockChestExclude
     Treasuresanity: Treasuresanity
     Flagstring: Flagstring
 
@@ -591,8 +606,9 @@ def generate_gameplay_string(options: FF6WCOptions) -> List[str]:
     gameplay_strings = ["-move=bd", "-cor", "-crr", "-crvr", "50", "250", "-crm", "-ari"]
     if not options.AllowStrongestItems.value:
         gameplay_strings.extend(["-cnee", "-cnil"])
-    if options.RandomizeZozoClock.value:
-        gameplay_strings.extend(["-rc"])
+    # Zozo Clock is always randomized as of version 1.4.2, so do not need to add this into flagstring anymore
+    # if options.RandomizeZozoClock.value:
+    #    gameplay_strings.extend(["-rc"])
     return gameplay_strings
 
 
