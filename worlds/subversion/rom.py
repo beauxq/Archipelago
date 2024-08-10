@@ -2,6 +2,7 @@ import hashlib
 from logging import getLogger
 import os
 from typing import Any, Optional
+from typing_extensions import override
 import zipfile
 
 import Utils
@@ -35,20 +36,24 @@ class SubversionDeltaPatch(APDeltaPatch):
         super().__init__(*args, patched_path=patched_path, **kwargs)
         self.gen_data = gen_data
 
+    @override
     @classmethod
     def get_source_data(cls) -> bytes:
         return get_base_rom_bytes()
 
+    @override
     def write_contents(self, opened_zipfile: zipfile.ZipFile) -> None:
         APContainer.write_contents(self, opened_zipfile)
         opened_zipfile.writestr("rom_data.json",
                                 self.gen_data,
                                 compress_type=zipfile.ZIP_DEFLATED)
 
+    @override
     def read_contents(self, opened_zipfile: zipfile.ZipFile) -> None:
         APContainer.read_contents(self, opened_zipfile)
         self.gen_data = opened_zipfile.read("rom_data.json").decode()
 
+    @override
     def patch(self, target: str) -> None:
         self.read()
         write_rom_from_gen_data(self.gen_data, target)

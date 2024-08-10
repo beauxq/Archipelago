@@ -2,6 +2,7 @@ import logging
 import asyncio
 import time
 from typing import TYPE_CHECKING
+from typing_extensions import override
 
 from NetUtils import ClientStatus, color
 from worlds.AutoSNIClient import SNIClient
@@ -44,6 +45,7 @@ class SubversionSNIClient(SNIClient):
     game = "Subversion"
     patch_suffix = ".apsv"
 
+    @override
     async def deathlink_kill_player(self, ctx: "SNIContext") -> None:
         from SNIClient import DeathState, snes_buffered_write, snes_flush_writes, snes_read
         # set current health to 1 (to prevent saving with 0 energy)
@@ -61,6 +63,7 @@ class SubversionSNIClient(SNIClient):
         if not gamemode or gamemode[0] in SM_DEATH_MODES:
             ctx.death_state = DeathState.dead
 
+    @override
     async def validate_rom(self, ctx: "SNIContext") -> bool:
         from SNIClient import snes_read
 
@@ -97,6 +100,7 @@ class SubversionSNIClient(SNIClient):
 
         return True
 
+    @override
     async def game_watcher(self, ctx: "SNIContext") -> None:
         from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
         if ctx.server is None or ctx.slot is None:

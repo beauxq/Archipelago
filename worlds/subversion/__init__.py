@@ -4,6 +4,7 @@ import logging
 import os
 from threading import Event
 from typing import Any, Dict, Iterable, List, Optional, Set, TextIO, Union
+from typing_extensions import override
 
 from BaseClasses import CollectionState, Item, ItemClassification, Location, \
     LocationProgressType, MultiWorld, Region, Tutorial
@@ -83,9 +84,11 @@ class SubversionWorld(World):
         self.spaceport_excluded_locs = []
         self.early_hints_from_option = []
 
+    @override
     def create_item(self, name: str) -> SubversionItem:
         return SubversionItem(name, self.player)
 
+    @override
     def create_regions(self) -> None:
         excludes = frozenset(SubversionShortGame.location_lists[self.options.progression_items.value])
 
@@ -138,6 +141,7 @@ class SubversionWorld(World):
         completion = functools.partial(completion_wrapped, sv_game, self.player)
         self.multiworld.completion_condition[self.player] = completion
 
+    @override
     def create_items(self) -> None:
         count_sjb = 0  # 1 SJB is progression, the rest are not
         count_la = 0  # 10 large ammo are prog, rest not
@@ -158,6 +162,7 @@ class SubversionWorld(World):
                 count_la += 1
             self.multiworld.itempool.append(this_item)
 
+    @override
     def fill_hook(self,
                   progitempool: List[Item],
                   usefulitempool: List[Item],
@@ -252,6 +257,7 @@ class SubversionWorld(World):
             self.logger.debug(f"{hint_items=}")
             self.early_hints_from_option = hint_items
 
+    @override
     def generate_output(self, output_directory: str) -> None:
         assert self.sv_game, "can't call generate_output without create_regions"
 
@@ -298,6 +304,7 @@ class SubversionWorld(World):
 
         self.logger.debug(f"Subversion player {self.player} finished generate_output")
 
+    @override
     def write_spoiler_header(self, spoiler_handle: TextIO) -> None:
         def bool_to_text(variable: bool) -> str:
             return "Yes" if variable else "No"
@@ -315,6 +322,7 @@ class SubversionWorld(World):
 
         # TODO: area rando connections, objective rando info
 
+    @override
     def modify_multidata(self, multidata: Dict[str, Any]) -> None:
         import base64
         # wait for self.rom_name to be available.
@@ -352,5 +360,6 @@ class SubversionWorld(World):
                 ):
                     precollect_hint(location)
 
+    @override
     def get_filler_item_name(self) -> str:
         return "Small Ammo"

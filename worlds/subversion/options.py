@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import logging
 from typing import Any, ClassVar, Dict, FrozenSet, List, Union
+from typing_extensions import override
 
 from BaseClasses import Item, ItemClassification as IC
 from Options import Choice, DefaultOnToggle, FreeText, PerGameCommonOptions, Range, Toggle
@@ -43,6 +44,7 @@ class SubversionCustomLogic(FreeText):
     display_name = "custom logic string"
     default = "000000000000"
 
+    @override
     @classmethod
     def from_any(cls, data: Any) -> "SubversionCustomLogic":
         if isinstance(data, int):
@@ -145,6 +147,7 @@ class SubversionAutoHints(Choice):
 
     # this is for backwards compatibility with old yamls
     # (can be removed after some time passes)
+    @override
     @classmethod
     def from_text(cls, text: str) -> Choice:  # TODO: fix typing to Self in core
         text = text.lower()
