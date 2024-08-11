@@ -11,7 +11,7 @@ from worlds.AutoSNIClient import SNIClient
 
 from .config import base_id
 from .location import fallen_locs, id_to_name
-from .patch_utils import offset_from_symbol
+from .patch_utils import LOGIC_LENGTH, LOGIC_LOCATION, offset_from_symbol
 from .uat_server import UATServer
 
 if TYPE_CHECKING:
@@ -109,7 +109,17 @@ class SubversionSNIClient(SNIClient):
             await ctx.update_death_link(bool(death_link[0] & 0b1))
 
         if self.pop_tracker_logic_server is None:
-            self.pop_tracker_logic_server = UATServer()  # TODO: logic tricks
+            logic_str_bytes = await snes_read(ctx, LOGIC_LOCATION, LOGIC_LENGTH)
+            if logic_str_bytes is None:
+                snes_logger.warning("error reading Subversion logic")
+                logic_str_bytes = b"000000000000"
+            if any(b == 0xff for b in logic_str_bytes):
+                assert all(b == 0xff for b in logic_str_bytes), f"{logic_str_bytes=}"
+                snes_logger.warning("warning: logic not found, defaulting to casual")
+                logic_str_bytes = b"000000000000"
+            assert len(logic_str_bytes) == LOGIC_LENGTH
+            logic_str = logic_str_bytes.decode()
+            self.pop_tracker_logic_server = UATServer(logic_str)
             await self.pop_tracker_logic_server.start()
 
         def cmd_available(self: "SNIClientCommandProcessor") -> None:

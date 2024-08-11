@@ -35,11 +35,12 @@ class UATServer:
     _locations: list[str]
     _server: websockets.serve | None = None
     _tr_logic: TrackerLogic
+    # TODO: be able to change logic mid game
 
-    def __init__(self) -> None:
+    def __init__(self, logic_str: str) -> None:
         self._clients = set()
         self._locations = []
-        self._tr_logic = TrackerLogic()  # TODO: logic tricks
+        self._tr_logic = TrackerLogic(logic_str)
 
     def get_variable_data(self) -> list[VarPacket]:
         return [{

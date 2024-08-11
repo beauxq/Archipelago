@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, Final, List, Mapping, Optional, Set, Tuple, Union
 
 from BaseClasses import ItemClassification, Location
+
 from .config import base_id, open_file_apworld_compatible
 from .item import SubversionItem, local_id_to_sv_item, name_to_id, sv_item_name_to_sm_item_id
 from .location import SubversionLocation
@@ -14,6 +15,9 @@ from subversion_rando.game import Game as SvGame
 from subversion_rando.ips import patch as ips_patch
 from subversion_rando.item_data import Items
 from subversion_rando.romWriter import RomWriter
+
+LOGIC_LOCATION = 0xFEE4
+LOGIC_LENGTH = 12
 
 box_blue_tbl = {
     "A": 0x2CC0,

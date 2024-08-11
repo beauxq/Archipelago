@@ -8,10 +8,13 @@ import zipfile
 import Utils
 from Utils import read_snes_rom
 from worlds.Files import APContainer, APDeltaPatch
+
 from .patch_utils import (
+    LOGIC_LENGTH, LOGIC_LOCATION,
     ItemRomData, get_gen_data, get_multi_patch_path, ips_patch_from_file, offset_from_symbol, patch_item_sprites
 )
 
+from subversion_rando.logic_presets import custom_logic_str_from_tricks
 from subversion_rando.main_generation import apply_rom_patches
 from subversion_rando.romWriter import RomWriter
 
@@ -117,5 +120,9 @@ def write_rom_from_gen_data(gen_data_str: str, output_rom_file_name: str) -> Non
     rom_writer.writeBytes(player_id_offset, gen_data.player.to_bytes(2, "little"))
 
     rom_writer.writeBytes(0x7fc0, gen_data.game_name_in_rom)
+
+    logic = custom_logic_str_from_tricks(gen_data.sv_game.options.logic).encode()
+    assert len(logic) == LOGIC_LENGTH
+    rom_writer.writeBytes(LOGIC_LOCATION, logic)
 
     rom_writer.finalizeRom(output_rom_file_name)  # writes rom file
