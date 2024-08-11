@@ -15,7 +15,7 @@ from .patch_utils import offset_from_symbol
 from .uat_server import UATServer
 
 if TYPE_CHECKING:
-    from SNIClient import SNIContext
+    from SNIClient import SNIClientCommandProcessor, SNIContext
 
 # TODO: SubversionRando version in requirements.txt  
 
@@ -112,6 +112,24 @@ class SubversionSNIClient(SNIClient):
             self.pop_tracker_logic_server = UATServer()  # TODO: logic tricks
             await self.pop_tracker_logic_server.start()
 
+        def cmd_available(self: "SNIClientCommandProcessor") -> None:
+            client = self.ctx.client_handler
+            if isinstance(client, SubversionSNIClient) and client.pop_tracker_logic_server:
+                client._update_location_logic(self.ctx)
+                locations_in_logic = client.pop_tracker_logic_server.get_locations()
+                locations_picked_up = client.locations_picked_up(self.ctx)
+                locations_available = [loc for loc in locations_in_logic if loc not in locations_picked_up]
+                snes_logger.info("locations in logic:")
+                for loc_name in locations_available:
+                    snes_logger.info(loc_name)
+                snes_logger.info(f"{len(locations_available)} locations in logic")
+            else:
+                snes_logger.info(f"not connected: {client=}")
+
+        # TODO: fix typing in core
+        if "available" not in ctx.command_processor.commands:  # pyright: ignore[reportUnknownMemberType]
+            ctx.command_processor.commands["available"] = cmd_available  # pyright: ignore[reportUnknownMemberType]
+
         return True
 
     def locations_picked_up(self, ctx: "SNIContext") -> AbstractSet[str]:
@@ -119,9 +137,9 @@ class SubversionSNIClient(SNIClient):
         loc_names = {ctx.location_names.lookup_in_game(loc_id) for loc_id in locs}
         return loc_names
 
-    async def _update_location_logic(self, ctx: "SNIContext") -> None:
+    def _update_location_logic(self, ctx: "SNIContext") -> None:
         if len(ctx.locations_info) < 122:
-            snes_logger.info("not scouted yet...") # TODO: debug
+            snes_logger.debug("not scouted yet...")
             return
         if self.pop_tracker_logic_server is None:
             snes_logger.debug("no logic server")
@@ -139,13 +157,14 @@ class SubversionSNIClient(SNIClient):
         for item in ctx.items_received:
             items_picked_up[ctx.item_names.lookup_in_game(item.item)] += 1
 
-        snes_logger.info(f"{items_picked_up=}") # TODO: debug
-        await self.pop_tracker_logic_server.set_items(items_picked_up)
+        snes_logger.debug(f"{items_picked_up=}")
+        self.pop_tracker_logic_server.set_items(items_picked_up)
 
-        locations_in_logic = self.pop_tracker_logic_server.get_locations()
-        locations_picked_up = self.locations_picked_up(ctx)
-        locations_available = [loc for loc in locations_in_logic if loc not in locations_picked_up]
-        snes_logger.info(locations_available)
+        # TODO: /auto_available command? (make sure manual available doesn't show list twice)
+        # locations_in_logic = self.pop_tracker_logic_server.get_locations()
+        # locations_picked_up = self.locations_picked_up(ctx)
+        # locations_available = [loc for loc in locations_in_logic if loc not in locations_picked_up]
+        # snes_logger.info(locations_available)
 
     @override
     async def game_watcher(self, ctx: "SNIContext") -> None:
@@ -155,7 +174,7 @@ class SubversionSNIClient(SNIClient):
             return
 
         if len(ctx.locations_info) < 122:
-            snes_logger.info("scouting...")  #TODO: debug
+            snes_logger.debug("scouting...")
             # scouting all my locations so I know which of my locations have my items
             # so I know which of my items I've picked up locally
             await ctx.send_msgs([{
@@ -209,7 +228,7 @@ class SubversionSNIClient(SNIClient):
                 f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
             )
             await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
-            await self._update_location_logic(ctx)
+            self._update_location_logic(ctx)
 
         data = await snes_read(ctx, SM_RECV_QUEUE_WCOUNT, 2)
         if data is None:
@@ -244,6 +263,6 @@ class SubversionSNIClient(SNIClient):
                 item_out_ptr,
                 len(ctx.items_received)
             ))
-            await self._update_location_logic(ctx)
+            self._update_location_logic(ctx)
 
         await snes_flush_writes(ctx)

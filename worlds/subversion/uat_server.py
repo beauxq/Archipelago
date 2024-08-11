@@ -5,6 +5,8 @@ import websockets
 
 from subversion_rando.tracker_logic import TrackerLogic
 
+from Utils import async_start
+
 
 INFO_PACKET = info = {
     "cmd": "Info",
@@ -79,11 +81,15 @@ class UATServer:
         finally:
             self._clients.remove(client)
 
-    async def set_items(self, items: Mapping[str, int]) -> None:
+    def set_items(self, items: Mapping[str, int]) -> None:
         self._locations = self._tr_logic.item_names_to_location_names(items)
-        print(f"{self._locations=}")
-        for client in self._clients:
-            await self.send_data(client)
+        # print(f"{self._locations=}")
+
+        async def send() -> None:
+            for client in self._clients:
+                await self.send_data(client)
+
+        async_start(send())
 
     def get_locations(self) -> list[str]:
         return self._locations.copy()
