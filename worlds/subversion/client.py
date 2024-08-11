@@ -1,18 +1,23 @@
+from collections import Counter
+import itertools
 import logging
 import asyncio
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AbstractSet, Union
 from typing_extensions import override
 
 from NetUtils import ClientStatus, color
 from worlds.AutoSNIClient import SNIClient
 
 from .config import base_id
-from .location import fallen_locs
+from .location import fallen_locs, id_to_name
 from .patch_utils import offset_from_symbol
+from .uat_server import UATServer
 
 if TYPE_CHECKING:
     from SNIClient import SNIContext
+
+# TODO: SubversionRando version in requirements.txt  
 
 snes_logger = logging.getLogger("SNES")
 
@@ -44,6 +49,8 @@ SM_REMOTE_ITEM_FLAG_ADDR = ROM_START + offset_from_symbol("config_remote_items")
 class SubversionSNIClient(SNIClient):
     game = "Subversion"
     patch_suffix = ".apsv"
+
+    pop_tracker_logic_server: Union[UATServer, None] = None
 
     @override
     async def deathlink_kill_player(self, ctx: "SNIContext") -> None:
@@ -77,6 +84,9 @@ class SubversionSNIClient(SNIClient):
             rom_name[2] < ord("0") or
             rom_name[2] > ord("9")
         ):
+            if self.pop_tracker_logic_server:
+                await self.pop_tracker_logic_server.close()
+                self.pop_tracker_logic_server = None
             return False
 
         ctx.game = self.game
@@ -98,7 +108,44 @@ class SubversionSNIClient(SNIClient):
             # ctx.death_link_allow_survive = bool(death_link[0] & 0b10)
             await ctx.update_death_link(bool(death_link[0] & 0b1))
 
+        if self.pop_tracker_logic_server is None:
+            self.pop_tracker_logic_server = UATServer()  # TODO: logic tricks
+            await self.pop_tracker_logic_server.start()
+
         return True
+
+    def locations_picked_up(self, ctx: "SNIContext") -> AbstractSet[str]:
+        locs = set(ctx.checked_locations) | set(ctx.locations_checked)
+        loc_names = {ctx.location_names.lookup_in_game(loc_id) for loc_id in locs}
+        return loc_names
+
+    async def _update_location_logic(self, ctx: "SNIContext") -> None:
+        if len(ctx.locations_info) < 122:
+            snes_logger.info("not scouted yet...") # TODO: debug
+            return
+        if self.pop_tracker_logic_server is None:
+            snes_logger.debug("no logic server")
+            return
+
+        items_picked_up: Counter[str] = Counter()
+        for location_id in set(itertools.chain(ctx.locations_checked, ctx.checked_locations)):
+            item = ctx.locations_info.get(location_id)
+            if item is None:
+                raise RuntimeError(f"{len(ctx.locations_info)=}, but no {location_id=}?")
+            if item.player == ctx.slot:
+                # my local item
+                # TODO: this might be broken for remote items (double counting?)
+                items_picked_up[ctx.item_names.lookup_in_game(item.item)] += 1
+        for item in ctx.items_received:
+            items_picked_up[ctx.item_names.lookup_in_game(item.item)] += 1
+
+        snes_logger.info(f"{items_picked_up=}") # TODO: debug
+        await self.pop_tracker_logic_server.set_items(items_picked_up)
+
+        locations_in_logic = self.pop_tracker_logic_server.get_locations()
+        locations_picked_up = self.locations_picked_up(ctx)
+        locations_available = [loc for loc in locations_in_logic if loc not in locations_picked_up]
+        snes_logger.info(locations_available)
 
     @override
     async def game_watcher(self, ctx: "SNIContext") -> None:
@@ -106,6 +153,18 @@ class SubversionSNIClient(SNIClient):
         if ctx.server is None or ctx.slot is None:
             # not successfully connected to a multiworld server, cannot process the game sending items
             return
+
+        if len(ctx.locations_info) < 122:
+            snes_logger.info("scouting...")  #TODO: debug
+            # scouting all my locations so I know which of my locations have my items
+            # so I know which of my items I've picked up locally
+            await ctx.send_msgs([{
+                "cmd": "LocationScouts",
+                "locations": [id_ for id_ in id_to_name],
+                "create_as_hint": 0,
+            }])
+            # TODO: test logic map tracker reconnecting to a game where I've already picked up items
+            # maybe a setTimeout here to update logic after getting info from server.
 
         gamemode = await snes_read(ctx, WRAM_START + 0x0998, 1)
         if "DeathLink" in ctx.tags and gamemode and ctx.last_death_link + 1 < time.time():
@@ -150,6 +209,7 @@ class SubversionSNIClient(SNIClient):
                 f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
             )
             await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
+            await self._update_location_logic(ctx)
 
         data = await snes_read(ctx, SM_RECV_QUEUE_WCOUNT, 2)
         if data is None:
@@ -184,5 +244,6 @@ class SubversionSNIClient(SNIClient):
                 item_out_ptr,
                 len(ctx.items_received)
             ))
+            await self._update_location_logic(ctx)
 
         await snes_flush_writes(ctx)

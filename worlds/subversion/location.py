@@ -3,9 +3,9 @@ from typing import Optional
 from BaseClasses import Location, Region
 from .config import base_id
 
-from subversion_rando.location_data import Location as SvLocation, pullCSV
+from subversion_rando.location_data import Location as SvLocation, new_locations
 
-location_data = pullCSV()
+location_data = new_locations()
 
 id_to_name = {
     loc["plmparamlo"] + base_id: loc_name

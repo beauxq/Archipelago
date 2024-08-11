@@ -23,7 +23,7 @@ from subversion_rando.game import Game as SvGame
 from subversion_rando.item_data import Item as SvItem, Items, unique_items
 from subversion_rando.item_marker import ItemMarker
 from subversion_rando.loadout import Loadout
-from subversion_rando.location_data import get_location_ids, pullCSV
+from subversion_rando.location_data import get_location_ids, new_locations
 from subversion_rando.logic_locations import location_logic
 from subversion_rando.logic_goal import can_win
 from subversion_rando.logic_updater import updateLogic
@@ -215,7 +215,7 @@ class SubversionWorld(World):
                 items_excluded.add(item)
                 candidate_items = filter(lambda it: it not in items_excluded, items)
                 loadout = Loadout(sv_game, itertools.chain(base_loadout, candidate_items))
-                locs = pullCSV().values()
+                locs = new_locations().values()
                 updateLogic(locs, loadout)
                 if sum(loc["inlogic"] for loc in locs) < target_location_count:
                     # can't exclude that item because it lowers the location count too low
@@ -228,7 +228,7 @@ class SubversionWorld(World):
 
         items_picked_up: List[SvItem] = []
         loadout = Loadout(sv_game, base_loadout)
-        unused_locations = pullCSV().values()
+        unused_locations = new_locations().values()
         for sphere in self.multiworld.get_spheres():
             my_items_in_this_sphere: List[SvItem] = []
             for loc in sphere:
