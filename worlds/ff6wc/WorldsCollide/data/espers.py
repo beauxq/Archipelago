@@ -44,7 +44,7 @@ class Espers():
             esper = Esper(esper_index, self.spells_bonus_data[esper_index], self.name_data[esper_index], self.ability_data[esper_index])
             self.espers.append(esper)
 
-        self.available_espers = set(range(self.ESPER_COUNT))
+        self.available_espers = list(range(self.ESPER_COUNT))
         self.starting_espers = []
 
         if args.starting_espers_min > 0:
