@@ -17,8 +17,6 @@ from .uat_server import UATServer
 if TYPE_CHECKING:
     from SNIClient import SNIClientCommandProcessor, SNIContext
 
-# TODO: SubversionRando version in requirements.txt  
-
 snes_logger = logging.getLogger("SNES")
 
 # FXPAK Pro protocol memory mapping used by SNI
