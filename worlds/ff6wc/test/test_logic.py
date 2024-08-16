@@ -1,4 +1,3 @@
-from collections import Counter
 from typing import ClassVar, Iterable
 
 from worlds.ff6wc import Locations
@@ -13,7 +12,8 @@ class TestFanaticsLogic(FF6WCTestBase):
     def test_access(self) -> None:
         for loc_name in self.location_names_to_test:
             with self.subTest(f"{loc_name=}"):
-                self.multiworld.state.prog_items[1] = Counter()
+                print(f"{loc_name=} {self.multiworld.state.prog_items[1]=}")
+                self.world_setup()
                 self.collect_by_name(["Strago"])
                 self.assertEqual(self.can_reach_location(loc_name),
                                  False,
