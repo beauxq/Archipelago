@@ -3,7 +3,7 @@ import logging
 import math
 from random import Random
 import random
-from typing import Any, List, Sequence
+from typing import Any, Dict, List, Sequence, Union
 
 from typing_extensions import override
 
@@ -324,6 +324,47 @@ class Flagstring(FreeText):
     display_name = "Flagstring"
     default = "False"
 
+    _cache: Union[Dict[str, Dict[str, str]], None] = None
+    """ `{full_flagstring_value: {flag: value}}` """
+
+    def _parse(self) -> Dict[str, str]:
+        parsed: Dict[str, str] = {}
+        space_split = self.value.split(" ")
+        i = 0
+        while i < len(space_split):
+            if space_split[i].startswith("-"):
+                if len(space_split[i]) < 2:
+                    raise ValueError(f"invalid {self.display_name} at symbol {i}")
+                key = space_split[i]
+                values: List[str] = []
+                i += 1
+                while i < len(space_split) and not space_split[i].startswith("-"):
+                    values.append(space_split[i])
+                    i += 1
+                value = " ".join(values)
+                parsed[key] = value
+            else:
+                i += 1
+        return parsed
+
+    def _get_from_cache(self) -> Dict[str, str]:
+        if self._cache is None:
+            self._cache = {}
+
+        parsed = self._cache.get(self.value)
+        if parsed is None:
+            parsed = self._parse()
+            self._cache[self.value] = parsed
+        return parsed
+
+    def has_flag(self, key: str) -> bool:
+        parsed = self._get_from_cache()
+        return key in parsed
+
+    def get_flag(self, key: str) -> str:
+        parsed = self._get_from_cache()
+        return parsed[key]
+
 
 @dataclass
 class FF6WCOptions(PerGameCommonOptions):
@@ -354,6 +395,15 @@ class FF6WCOptions(PerGameCommonOptions):
     ZozoClockChestExclude: ZozoClockChestExclude
     Treasuresanity: Treasuresanity
     Flagstring: Flagstring
+
+    def no_paladin_shields(self) -> bool:
+        return (not self.AllowStrongestItems.value) or self.Flagstring.has_flag("-nfps")
+
+    def no_exp_eggs(self) -> bool:
+        return (not self.AllowStrongestItems.value) or self.Flagstring.has_flag("-nee")
+
+    def no_illuminas(self) -> bool:
+        return (not self.AllowStrongestItems.value) or self.Flagstring.has_flag("-nil")
 
 
 def verify_flagstring(flags: Sequence[str]) -> None:
