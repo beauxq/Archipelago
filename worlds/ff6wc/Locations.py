@@ -554,7 +554,8 @@ fanatics_tower_checks = [
     "Fanatics' Tower Thirty-fifth Floor",
     "Fanatics' Tower Seventh Floor",
     "Fanatics' Tower Eighth Floor",
-    "Gem Box"
+    "Gem Box",
+    "White Dragon",
 ]
 
 accomplishment_data = [

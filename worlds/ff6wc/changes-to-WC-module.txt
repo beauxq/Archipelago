@@ -5,6 +5,7 @@ in case we need to reapply them after an update.
 c8bbc62771768eff7e00f4ea6247c91bb437d207 args/arguments.py seed for determinism
 66ed9777c4258a0c3e0fdaa1bf15366c32ce38e2 raise exception instead of exit in argparse
 b791c84934cbe70f9cbb7f96ee5f9a3d27241405 add newer sprites from upstream
+775086a7d787ee831dfb1f51a5c56090e19dcf92 fix random starting espers (Python 3.11 change to `random.sample`)
 
 integrate changes from 1.2.2 to 1.4.2 in WorldsCollide base
 in args/items.py always add ArchplgoItem to the reward IDs
