@@ -239,6 +239,8 @@ class FF6WCClient(SNIClient):
                     allow_local_network_item = True
                 elif item_name not in Rom.item_name_id.keys():
                     allow_local_network_item = True
+                elif item.location < 0:  # sent from server command, not location check
+                    allow_local_network_item = True
                 else:
                     self.increment_items_received(ctx, items_received_amount)
                     return
