@@ -455,11 +455,12 @@ class FF6WCWorld(World):
             add_rule(self.get_location(check_name),
                      lambda state: state.has("Terra", self.player))
 
-        for check in Locations.major_checks:
-            add_item_rule(self.get_location(check),
-                          # add things that are NOT in the non-rewards list
-                          # or something for another player (based on their settings)
-                          lambda item: item.name not in self.item_nonrewards or item.player != self.player)
+        # This rule was causing generation failures. (And I don't see a good reason for it to exist.)
+        # for check in Locations.major_checks:
+        #     add_item_rule(self.get_location(check),
+        #                   # add things that are NOT in the non-rewards list
+        #                   # or something for another player (based on their settings)
+        #                   lambda item: item.name not in self.item_nonrewards or item.player != self.player)
 
         for check in Locations.item_only_checks:
             if treasuresanity or (
