@@ -3,6 +3,7 @@ import logging
 from logging import Logger
 
 from NetUtils import ClientStatus
+from Utils import async_start
 from worlds.AutoSNIClient import SNIClient
 
 from . import Rom, Locations
@@ -10,8 +11,9 @@ from .id_maps import location_name_to_id
 from .patch import FF6WCPatch
 
 if typing.TYPE_CHECKING:
-    from SNIClient import SNIContext
+    from SNIClient import SNIClientCommandProcessor, SNIContext
 else:
+    SNIClientCommandProcessor = typing.Any
     SNIContext = typing.Any
 
 snes_logger: Logger = logging.getLogger("SNES")
@@ -41,7 +43,44 @@ class FF6WCClient(SNIClient):
 
         ctx.rom = rom_name
 
+        def cmd_debug(self: "SNIClientCommandProcessor", *args: str) -> None:
+            client = self.ctx.client_handler
+            if isinstance(client, FF6WCClient):
+                if len(args) < 1:
+                    snes_logger.info("/debug <address> [bit]")
+                    return
+                if len(args) > 1:
+                    bit = int(args[1])
+                else:
+                    bit = None
+                address_str = args[0]
+                if address_str.startswith("0x"):
+                    address = int(address_str[2:], 16)
+                else:
+                    address = int(address_str)
+                async_start(client._print_ram(self.ctx, address, bit))
+            else:
+                snes_logger.info(f"not connected: {client=}")
+
+        if __debug__:
+            # TODO: fix typing in core
+            if "debug" not in ctx.command_processor.commands:  # type: ignore
+                ctx.command_processor.commands["debug"] = cmd_debug  # type: ignore
+
         return True
+
+    async def _print_ram(self, ctx: SNIContext, address: int, bit: typing.Union[int, None] = None) -> None:
+        from SNIClient import snes_read
+
+        data = await snes_read(ctx, address, 1)
+        if data is None:
+            snes_logger.info("read failed")
+            return
+        if bit is None:
+            value = data[0]
+        else:
+            value = bool(data[0] & (1 << bit))
+        snes_logger.info(f"{hex(address)=} {bit=} {value=}")
 
     async def _new_location_check(self, ctx: SNIContext, location_name: str) -> None:
         """
@@ -90,6 +129,17 @@ class FF6WCClient(SNIClient):
             return False
         if map_index == 255:
             return False
+        if map_index == 51:
+            # moogle defense room - don't give items here unless the moogle defense event is complete
+            # because it will bug out if a character is received during the moogle defense event
+            all_event_data = await snes_read(ctx, Rom.event_flag_base_address, 211)
+            if not all_event_data:
+                return False
+            event_index, event_bit = Rom.get_event_flag_value(Rom.event_flag_location_names["Narshe Moogle Defense"])
+            event_data = all_event_data[event_index]
+            event_done = event_data & event_bit
+            if not event_done:  # while in map_index 51
+                return False
 
         menu_data = await snes_read(ctx, Rom.menu_address, 1)
         if menu_data is None:
