@@ -153,9 +153,17 @@ class StartingCharacter4(Choice):
     default = 14
 
 
+class StartAverageLevel(DefaultOnToggle):
+    """ Recruited characters start at the average character level """
+    display_name = "Start Average Level"
+
+    def flags(self) -> list[str]:
+        return ["-sal"] if self.value else []
+
+
 class RandomizedStats(Choice):
     """Modify character base stats, as a range of percentages applied to their vanilla stats.
-    Options include vanilla (100%), Light (85-125%), Moderate (50-150%), Boosted (100-1750%) and Wild (0-200%)"""
+    Options include vanilla (100%), Light (85-125%), Moderate (50-150%), Boosted (100-175%) and Wild (0-200%)"""
     display_name = "Randomized Stats"
     option_vanilla = 0
     option_light = 1
@@ -377,6 +385,7 @@ class FF6WCOptions(PerGameCommonOptions):
     StartingCharacter2: StartingCharacter2
     StartingCharacter3: StartingCharacter3
     StartingCharacter4: StartingCharacter4
+    StartAverageLevel: StartAverageLevel
     RandomizedStats: RandomizedStats
     RandomizedCommands: RandomizedCommands
     BattleRewardMultiplier: BattleRewardMultiplier
@@ -511,6 +520,8 @@ def generate_party_string(options: FF6WCOptions, starting_characters: List[str])
     character_three = "-sc3=" + str.lower(character_three) if character_count >= 3 else ""
     character_four = "-sc4=" + str.lower(character_four) if character_count == 4 else ""
 
+    sal = options.StartAverageLevel.flags()
+
     stat_min = 100
     stat_max = 100
     if options.RandomizedStats == 1:  # Light
@@ -530,7 +541,7 @@ def generate_party_string(options: FF6WCOptions, starting_characters: List[str])
 
     equipable_umaro = "-eu"
 
-    return [character_one, character_two, character_three, character_four, *stat_string, equipable_umaro]
+    return [character_one, character_two, character_three, character_four, *sal, *stat_string, equipable_umaro]
 
 
 def generate_commands_string(options: FF6WCOptions) -> List[str]:
