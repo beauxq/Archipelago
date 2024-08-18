@@ -230,7 +230,7 @@ class FF6WCClient(SNIClient):
             return
         else:
             item = ctx.items_received[items_received_amount]
-            item_name = ctx.item_names[item.item]
+            item_name = ctx.item_names.lookup_in_game(item.item)
             item_id = item.item
             allow_local_network_item = False
             if item.player == ctx.slot:
@@ -290,9 +290,9 @@ class FF6WCClient(SNIClient):
 
                     snes_buffered_write(ctx, Rom.characters_obtained_address, bytes([character_count + 1]))
                     snes_logger.info('Received %s from %s (%s)' % (
-                        ctx.item_names[character_item.item],
+                        ctx.item_names.lookup_in_game(character_item.item),
                         ctx.player_names[character_item.player],
-                        ctx.location_names[character_item.location]))
+                        ctx.location_names.lookup_in_slot(character_item.location, character_item.player)))
             elif item_name in Rom.espers:
                 esper_index = Rom.espers.index(item_name)
                 esper_byte, esper_bit = Rom.get_obtained_esper_bit(esper_index)
@@ -311,9 +311,9 @@ class FF6WCClient(SNIClient):
                 if esper_obtained == 0:
                     snes_buffered_write(ctx, Rom.espers_obtained_address, bytes([esper_count + 1]))
                 snes_logger.info('Received %s from %s (%s)' % (
-                    ctx.item_names[item.item],
+                    ctx.item_names.lookup_in_game(item.item),
                     ctx.player_names[item.player],
-                    ctx.location_names[item.location]))
+                    ctx.location_names.lookup_in_slot(item.location, item.player)))
 
             else:
                 item_types_data = await snes_read(ctx, Rom.item_types_base_address, 255)
@@ -340,7 +340,7 @@ class FF6WCClient(SNIClient):
                         snes_logger.info('Received %s from %s (%s)' % (
                             item_name,
                             ctx.player_names[item.player],
-                            ctx.location_names[item.location]))
+                            ctx.location_names.lookup_in_slot(item.location, item.player)))
                         break
 
     async def check_victory1(self, ctx: SNIContext) -> None:
