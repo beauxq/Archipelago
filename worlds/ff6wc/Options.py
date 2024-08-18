@@ -157,7 +157,7 @@ class StartAverageLevel(DefaultOnToggle):
     """ Recruited characters start at the average character level """
     display_name = "Start Average Level"
 
-    def flags(self) -> list[str]:
+    def flags(self) -> List[str]:
         return ["-sal"] if self.value else []
 
 
