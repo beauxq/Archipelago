@@ -83,7 +83,13 @@ class CharacterPalettes:
                 package_dir = os.path.dirname(__file__)
                 relative_path = os.path.relpath(palette_file, package_dir)
                 # print(f"{relative_path=}")
-                palette_data = list(pkgutil.get_data(__name__, relative_path))
+                if "." in __name__ and relative_path.startswith("../"):
+                    # relative path with "../" doesn't work in apworld
+                    pkg = ".".join(__name__.split(".")[:-2])
+                    relative_path = relative_path[3:]
+                else:
+                    pkg = __name__
+                palette_data = list(pkgutil.get_data(pkg, relative_path))
 
                 self.field_palettes[palette_index].data = palette_data
                 self.battle_palettes[palette_index].data = palette_data
@@ -113,7 +119,13 @@ class CharacterPalettes:
                 package_dir = os.path.dirname(__file__)
                 relative_path = os.path.relpath(portrait_palette_file, package_dir)
                 # print(f"{relative_path=}")
-                palette_data = list(pkgutil.get_data(__name__, relative_path))
+                if "." in __name__ and relative_path.startswith("../"):
+                    # relative path with "../" doesn't work in apworld
+                    pkg = ".".join(__name__.split(".")[:-2])
+                    relative_path = relative_path[3:]
+                else:
+                    pkg = __name__
+                palette_data = list(pkgutil.get_data(pkg, relative_path))
                 self.portrait_palettes[character].data = palette_data
 
     def mod(self):
