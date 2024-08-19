@@ -418,10 +418,12 @@ class FF6WCOptions(PerGameCommonOptions):
 def verify_flagstring(flags: Sequence[str]) -> None:
     """ raises exception (`ValueError`) if flagstring is invalid """
     from .WorldsCollide.args.arguments import Arguments
+    from . import FF6WCWorld
     assert not isinstance(flags, str)
     if "-i" not in flags:
         flags = ["-i", "x"] + list(flags)
-    Arguments(flags)
+    with FF6WCWorld.wc_ready:
+        Arguments(flags)
 
 
 def generate_flagstring(options: FF6WCOptions, starting_characters: List[str]) -> List[str]:
