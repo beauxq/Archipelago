@@ -1,6 +1,7 @@
-from typing import List
+from random import Random
+from typing import Dict, List
 
-from BaseClasses import Location
+from BaseClasses import ItemClassification, Location
 
 from . import Items
 from . import Rom
@@ -70,20 +71,62 @@ def get_item_rewards(options: FF6WCOptions) -> List[str]:
     return item_rewards
 
 
-def build_ir_for_treasuresanity(wc_event_locations: List[Location]) -> List[str]:
+def build_ir_from_placements(wc_event_locations: List[Location]) -> List[str]:
+    """ returns the "-ir" flag for the flagstring """
     inventory_item_ap_id_to_name = {item_name_to_id[name]: name for name in Items.items}
 
-    items_in_wc_event_locations: List[int] = []
+    items_in_wc_event_locations: Dict[str, int] = {}
     for loc in wc_event_locations:
         if loc.item and loc.item.player == loc.player:
             ap_item_id = loc.item.code
             if ap_item_id in inventory_item_ap_id_to_name:
                 wc_item_id = Rom.item_name_id[inventory_item_ap_id_to_name[ap_item_id]]
-                items_in_wc_event_locations.append(wc_item_id)
+                items_in_wc_event_locations[loc.name] = wc_item_id
 
-    items_in_wc_event_locations = sorted(set(items_in_wc_event_locations))
-    if len(items_in_wc_event_locations):
-        item_str = ",".join(str(i_id) for i_id in items_in_wc_event_locations)
+    items_in_wc_event_locations_list = sorted(set(items_in_wc_event_locations.values()))
+    if len(items_in_wc_event_locations_list):
+        item_str = ",".join(str(i_id) for i_id in items_in_wc_event_locations_list)
         return ["-ir", item_str]
     else:
         return []
+
+
+def limit_event_items(wc_event_locations: List[Location], random: Random) -> None:
+    """
+    make sure there are not too many different inventory items in the major locations
+
+    (because there's limited space in rom for dialogs to give the items)
+    """
+    inventory_item_ap_id_to_name = {item_name_to_id[name]: name for name in Items.items}
+
+    items_in_wc_event_locations: Dict[str, int] = {}
+    locations_by_name: Dict[str, Location] = {}
+    for loc in wc_event_locations:
+        if loc.item and loc.item.player == loc.player:
+            ap_item_id = loc.item.code
+            if ap_item_id in inventory_item_ap_id_to_name:
+                wc_item_id = Rom.item_name_id[inventory_item_ap_id_to_name[ap_item_id]]
+                items_in_wc_event_locations[loc.name] = wc_item_id
+                locations_by_name[loc.name] = loc
+
+    def sort_key(wc_item_id: int) -> int:
+        return Rom.item_id_name_weight[wc_item_id][1]
+
+    items_by_quality = sorted(set(items_in_wc_event_locations.values()), key=sort_key)
+
+    # I think we start with 50 dialogs.
+    # 8 might be used for the Auction House.
+    # I don't know what else might use them - should leave some room for error.
+    smaller_set = items_by_quality[:32]
+
+    for loc_name, loc in locations_by_name.items():
+        wc_item_id = items_in_wc_event_locations[loc_name]
+        if wc_item_id not in smaller_set:
+            replacement = random.choice(smaller_set)
+            replacement_name = Rom.item_id_name_weight[replacement][0]
+            replacement_code = item_name_to_id[replacement_name]
+            assert loc.item, f"{loc=}"
+            loc.item.name = replacement_name
+            loc.item.code = replacement_code
+            loc.item.classification = ItemClassification.useful
+            loc.locked = True

@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Dict, List, Union
 
 from BaseClasses import Item, Location, Region, MultiWorld, ItemClassification, Tutorial
 from .id_maps import item_name_to_id, location_name_to_id
-from .item_rewards import build_ir_for_treasuresanity, get_item_rewards
+from .item_rewards import build_ir_from_placements, get_item_rewards, limit_event_items
 from .gen_data import GenData
 from . import Rom
 from .patch import FF6WCPatch, NA10HASH
@@ -525,6 +525,14 @@ class FF6WCWorld(World):
                     if self.multiworld.random.randint(0, upgrade_base) < current_sphere_count:
                         self.upgrade_item(location.item)
 
+        if self.options.Treasuresanity.value != Treasuresanity.option_off:
+            wc_event_locations = [
+                loc
+                for loc in self.multiworld.get_locations(self.player)
+                if loc.name in Locations.checks_that_need_dialog_for_items
+            ]
+            limit_event_items(wc_event_locations, self.random)
+
     def upgrade_item(self, item: Item):
         if item.name in self.item_nonrewards:
             # Prevents upgrades to restricted items based on flags or AllowStrongestItems value
@@ -558,7 +566,6 @@ class FF6WCWorld(World):
 
     def generate_output(self, output_directory: str):
         locations: Dict[str, str] = dict()
-        wc_event_locations: List[Location] = []
         # get all locations
         for location in self.multiworld.get_locations(self.player):
             assert location.item
@@ -568,8 +575,6 @@ class FF6WCWorld(World):
                 location_name = Rom.treasure_chest_data[location.name][2]
             else:
                 location_name = location.name
-                if location_name in Locations.checks_that_need_dialog_for_items:
-                    wc_event_locations.append(location)
             location_name = str(location_name)  # dict needs str keys
             locations[location_name] = "Archipelago Item"
             if location.item.player == self.player:
@@ -585,7 +590,12 @@ class FF6WCWorld(World):
 
         assert not (self.flagstring is None), "need flagstring from earlier generation step"
         if self.options.Treasuresanity.value != Treasuresanity.option_off:
-            ir_flag = build_ir_for_treasuresanity(wc_event_locations)
+            wc_event_locations = [
+                loc
+                for loc in self.multiworld.get_locations(self.player)
+                if loc.name in Locations.checks_that_need_dialog_for_items
+            ]
+            ir_flag = build_ir_from_placements(wc_event_locations)
             try:
                 ir_index = self.flagstring.index("-ir")
             except ValueError:
