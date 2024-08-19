@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Dict, List, Union
 
 from BaseClasses import Item, Location, Region, MultiWorld, ItemClassification, Tutorial
 from .id_maps import item_name_to_id, location_name_to_id
-from .item_rewards import get_item_rewards
+from .item_rewards import build_ir_for_treasuresanity, get_item_rewards
 from .gen_data import GenData
 from . import Rom
 from .patch import FF6WCPatch, NA10HASH
@@ -19,7 +19,7 @@ from worlds.AutoWorld import World, WebWorld
 from . import Locations
 from . import Items
 from .Logic import can_beat_final_kefka
-from .Options import FF6WCOptions, Treasuresanity, generate_flagstring, resolve_character_options
+from .Options import FF6WCOptions, Treasuresanity, generate_flagstring, resolve_character_options, verify_flagstring
 import Utils
 import settings
 
@@ -558,22 +558,23 @@ class FF6WCWorld(World):
 
     def generate_output(self, output_directory: str):
         locations: Dict[str, str] = dict()
+        wc_event_locations: List[Location] = []
         # get all locations
-        for region in self.multiworld.regions:
-            if region.player == self.player:
-                for location in region.locations:
-                    assert location.item
-                    if location.name in Locations.minor_checks:
-                        location_name = Rom.treasure_chest_data[location.name][2]
-                    elif location.name in Locations.minor_ext_checks:
-                        location_name = Rom.treasure_chest_data[location.name][2]
-                    else:
-                        location_name = location.name
-                    location_name = str(location_name)  # dict needs str keys
-                    locations[location_name] = "Archipelago Item"
-                    if location.item.player == self.player:
-                        if location_name in Locations.major_checks or location.item.name in Items.items:
-                            locations[location_name] = location.item.name
+        for location in self.multiworld.get_locations(self.player):
+            assert location.item
+            if location.name in Locations.minor_checks:
+                location_name = Rom.treasure_chest_data[location.name][2]
+            elif location.name in Locations.minor_ext_checks:
+                location_name = Rom.treasure_chest_data[location.name][2]
+            else:
+                location_name = location.name
+                if location_name in Locations.checks_that_need_dialog_for_items:
+                    wc_event_locations.append(location)
+            location_name = str(location_name)  # dict needs str keys
+            locations[location_name] = "Archipelago Item"
+            if location.item.player == self.player:
+                if location_name in Locations.major_checks or location.item.name in Items.items:
+                    locations[location_name] = location.item.name
         self.rom_name_text = f'6WC{Utils.__version__.replace(".", "")[0:3]}_{self.player}_{self.multiworld.seed:11}'
         self.rom_name_text = self.rom_name_text[:20]
         self.romName = bytearray(self.rom_name_text, 'utf-8')
@@ -583,6 +584,17 @@ class FF6WCWorld(World):
         locations["RomName"] = self.rom_name_text
 
         assert not (self.flagstring is None), "need flagstring from earlier generation step"
+        if self.options.Treasuresanity.value != Treasuresanity.option_off:
+            ir_flag = build_ir_for_treasuresanity(wc_event_locations)
+            try:
+                ir_index = self.flagstring.index("-ir")
+            except ValueError:
+                ir_index = -1
+            if ir_index == -1:
+                self.flagstring.extend(ir_flag)
+            else:
+                self.flagstring[ir_index:ir_index+2] = ir_flag
+        verify_flagstring(self.flagstring)
         gen_data = GenData(locations, self.flagstring)
         out_file_base = self.multiworld.get_out_file_name_base(self.player)
         patch_file_name = os.path.join(output_directory, f"{out_file_base}{FF6WCPatch.patch_file_ending}")

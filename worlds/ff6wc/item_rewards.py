@@ -1,7 +1,10 @@
 from typing import List
 
+from BaseClasses import Location
+
 from . import Items
 from . import Rom
+from .id_maps import item_name_to_id
 from .Options import FF6WCOptions
 
 # NOTE: most of this code is located in WorldsCollide/args/items.py during the process function
@@ -65,3 +68,22 @@ def get_item_rewards(options: FF6WCOptions) -> List[str]:
         item_rewards = Items.good_items
 
     return item_rewards
+
+
+def build_ir_for_treasuresanity(wc_event_locations: List[Location]) -> List[str]:
+    inventory_item_ap_id_to_name = {item_name_to_id[name]: name for name in Items.items}
+
+    items_in_wc_event_locations: List[int] = []
+    for loc in wc_event_locations:
+        if loc.item and loc.item.player == loc.player:
+            ap_item_id = loc.item.code
+            if ap_item_id in inventory_item_ap_id_to_name:
+                wc_item_id = Rom.item_name_id[inventory_item_ap_id_to_name[ap_item_id]]
+                items_in_wc_event_locations.append(wc_item_id)
+
+    items_in_wc_event_locations = sorted(set(items_in_wc_event_locations))
+    if len(items_in_wc_event_locations):
+        item_str = ",".join(str(i_id) for i_id in items_in_wc_event_locations)
+        return ["-ir", item_str]
+    else:
+        return []
