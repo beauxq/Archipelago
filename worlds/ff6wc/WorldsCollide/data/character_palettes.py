@@ -79,17 +79,8 @@ class CharacterPalettes:
 
         for palette_index, palette_file in enumerate(self.args.palette_files):
             if modified[palette_index]:
-                import os
-                package_dir = os.path.dirname(__file__)
-                relative_path = os.path.relpath(palette_file, package_dir)
-                # print(f"{relative_path=}")
-                if "." in __name__ and relative_path.startswith("../"):
-                    # relative path with "../" doesn't work in apworld
-                    pkg = ".".join(__name__.split(".")[:-2])
-                    relative_path = relative_path[3:]
-                else:
-                    pkg = __name__
-                palette_data = list(pkgutil.get_data(pkg, relative_path))
+                from ..graphics.palettes.palettes import get_palette_data
+                palette_data = list(get_palette_data(palette_file))
 
                 self.field_palettes[palette_index].data = palette_data
                 self.battle_palettes[palette_index].data = palette_data
@@ -115,17 +106,8 @@ class CharacterPalettes:
         for index, portrait_palette_file in enumerate(self.args.portrait_palette_files):
             if self.args.portrait_ids[index] != DEFAULT_CHARACTER_PORTRAITS[index]:
                 character = PORTRAIT_CHARACTERS[index]
-                import os
-                package_dir = os.path.dirname(__file__)
-                relative_path = os.path.relpath(portrait_palette_file, package_dir)
-                # print(f"{relative_path=}")
-                if "." in __name__ and relative_path.startswith("../"):
-                    # relative path with "../" doesn't work in apworld
-                    pkg = ".".join(__name__.split(".")[:-2])
-                    relative_path = relative_path[3:]
-                else:
-                    pkg = __name__
-                palette_data = list(pkgutil.get_data(pkg, relative_path))
+                from ..graphics.portraits.portraits import get_portrait_data
+                palette_data = list(get_portrait_data(portrait_palette_file))
                 self.portrait_palettes[character].data = palette_data
 
     def mod(self):

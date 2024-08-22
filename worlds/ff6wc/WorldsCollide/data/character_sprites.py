@@ -63,17 +63,8 @@ class CharacterSprites:
             character = SPRITE_CHARACTERS[sprite_index]
 
             if self.args.sprite_ids[sprite_index] != character:
-                import os
-                package_dir = os.path.dirname(__file__)
-                relative_path = os.path.relpath(sprite_file, package_dir)
-                # print(f"{relative_path=}")
-                if "." in __name__ and relative_path.startswith("../"):
-                    # relative path with "../" doesn't work in apworld
-                    pkg = ".".join(__name__.split(".")[:-2])
-                    relative_path = relative_path[3:]
-                else:
-                    pkg = __name__
-                sprite_data = list(pkgutil.get_data(pkg, relative_path))
+                from ..graphics.sprites.sprites import get_sprite_data
+                sprite_data = list(get_sprite_data(sprite_file))
 
                 if len(sprite_data) < len(self.sprites[character].data):
                     # if sprite file does not contain every tile (e.g. missing poses) of sprite it is replacing, pad it with zeros
@@ -91,17 +82,8 @@ class CharacterSprites:
             if self.args.portrait_ids[index] != DEFAULT_CHARACTER_PORTRAITS[index]:
                 character = PORTRAIT_CHARACTERS[index]
 
-                import os
-                package_dir = os.path.dirname(__file__)
-                relative_path = os.path.relpath(portrait_sprite_file, package_dir)
-                # print(f"{relative_path=}")
-                if "." in __name__ and relative_path.startswith("../"):
-                    # relative path with "../" doesn't work in apworld
-                    pkg = ".".join(__name__.split(".")[:-2])
-                    relative_path = relative_path[3:]
-                else:
-                    pkg = __name__
-                portrait_data = list(pkgutil.get_data(pkg, relative_path))
+                from ..graphics.portraits.portraits import get_portrait_data
+                portrait_data = list(get_portrait_data(portrait_sprite_file))
                 self.portrait_sprites[character].data = portrait_data
 
     def mod(self):
