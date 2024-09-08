@@ -76,7 +76,7 @@ class SubversionWorld(World):
     spaceport_excluded_locs: List[str]
     early_hints_from_option: List[str]
 
-    def __init__(self, multiworld: MultiWorld, player: int):
+    def __init__(self, multiworld: MultiWorld, player: int) -> None:
         super().__init__(multiworld, player)
         self.rom_name = b""
         self.rom_name_available_event = Event()
@@ -119,7 +119,7 @@ class SubversionWorld(World):
                                     collection_state: CollectionState) -> bool:
                 if local_loc_name == "Torpedo Bay":
                     return True
-                loadout = cs_to_loadout(local_sv_game,  collection_state, p)
+                loadout = cs_to_loadout(local_sv_game, collection_state, p)
                 return location_logic[local_loc_name](loadout)
 
             access_rule = functools.partial(access_rule_wrapped,
@@ -284,7 +284,7 @@ class SubversionWorld(World):
         from Utils import __version__
         rom_name = bytearray(
             f'SV{__version__.replace(".", "")[0:3]}_{self.player}_{self.multiworld.seed:11}',
-            'utf8'
+            "utf8"
         )[:21]
         rom_name.extend(b" " * (21 - len(rom_name)))
         assert len(rom_name) == 21, f"{rom_name=}"
