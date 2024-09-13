@@ -232,10 +232,10 @@ class SubversionSNIClient(SNIClient):
             ctx.locations_checked.add(location_id)
             location = ctx.location_names.lookup_in_game(location_id)
             snes_logger.info(
-                f'New Check: {location} ({len(ctx.locations_checked)}/'
-                f'{len(ctx.missing_locations) + len(ctx.checked_locations)})'
+                f"New Check: {location} ({len(ctx.locations_checked)}/"
+                f"{len(ctx.missing_locations) + len(ctx.checked_locations)})"
             )
-            await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
+            await ctx.send_msgs([{"cmd": "LocationChecks", "locations": [location_id]}])
             self._update_location_logic(ctx)
 
         data = await snes_read(ctx, SM_RECV_QUEUE_WCOUNT, 2)
@@ -264,9 +264,9 @@ class SubversionSNIClient(SNIClient):
             # print(f"wcount addr {SM_RECV_QUEUE_WCOUNT}: {hex(item_out_ptr & 0xFF)} {(item_out_ptr >> 8) & 0xFF}")
             snes_buffered_write(ctx, SM_RECV_QUEUE_WCOUNT,
                                 bytes([item_out_ptr & 0xFF, (item_out_ptr >> 8) & 0xFF]))
-            logging.info('Received %s from %s (%s) (%d/%d in list)' % (
-                color(ctx.item_names.lookup_in_game(item.item), 'red', 'bold'),
-                color(ctx.player_names[item.player], 'yellow'),
+            logging.info("Received %s from %s (%s) (%d/%d in list)" % (
+                color(ctx.item_names.lookup_in_game(item.item), "red", "bold"),
+                color(ctx.player_names[item.player], "yellow"),
                 ctx.location_names.lookup_in_slot(item.location, item.player),
                 item_out_ptr,
                 len(ctx.items_received)

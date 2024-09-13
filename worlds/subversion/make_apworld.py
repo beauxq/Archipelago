@@ -52,7 +52,7 @@ def lib_crc() -> int:
     for p, _dir_names, file_names in os.walk(os.path.join(TEMP, "subversion_rando")):
         for file_name in file_names:
             full_path = os.path.join(p, file_name)
-            with open(full_path, 'rb') as file:
+            with open(full_path, "rb") as file:
                 crc = zlib.crc32(file.read(), crc)
     return crc
 

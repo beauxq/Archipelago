@@ -12,7 +12,7 @@ base_id = 8750000
 
 # support for AP world (somewhat copied from SM)
 _module_file_name = sys.modules[__name__].__file__
-_is_apworld = (not (_module_file_name is None)) and (".apworld" in _module_file_name)
+_is_apworld = (_module_file_name is not None) and (".apworld" in _module_file_name)
 
 
 def is_apworld() -> bool:
@@ -50,10 +50,10 @@ def open_file_apworld_compatible(
             resource = resource.replace("\\", "/")
         with zip_file as zf:
             zip_file_path = resource[resource.index(stem + "/"):]
-            if mode == 'rb':
-                return zf.open(zip_file_path, 'r')
+            if mode == "rb":
+                return zf.open(zip_file_path, "r")
             else:
-                assert mode == 'r' or mode == 'w', f"{mode=}"
+                assert mode == "r" or mode == "w", f"{mode=}"
                 return io.TextIOWrapper(zf.open(zip_file_path, mode), encoding)
     else:
         return open(resource, mode)
@@ -87,10 +87,10 @@ def load_library() -> None:
     (zip_file, _stem) = _get_zip_file()
     logging.info("loading subversion_rando library...")
     for file in zip_file.namelist():
-        if file.startswith('subversion/subversion_rando/'):
+        if file.startswith("subversion/subversion_rando/"):
             new_path = file[11:]
             zip_file.getinfo(file).filename = new_path
-            zip_file.extract(file, user_path('lib'))
+            zip_file.extract(file, user_path("lib"))
 
 
 if is_apworld():

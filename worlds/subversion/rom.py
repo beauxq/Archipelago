@@ -19,7 +19,7 @@ from subversion_rando.main_generation import apply_rom_patches
 from subversion_rando.romWriter import RomWriter
 
 
-SMJUHASH = '21f3e98df4780ee1c667b84e57d88675'
+SMJUHASH = "21f3e98df4780ee1c667b84e57d88675"
 
 
 # SNIClient assumes that the patch it gets is an APDeltaPatch
@@ -35,7 +35,7 @@ class SubversionDeltaPatch(APDeltaPatch):
     gen_data: str
     """ JSON encoded """
 
-    def __init__(self, *args: Any, patched_path: str = "", gen_data: str = "", **kwargs: Any) -> None:
+    def __init__(self, *args: Any, patched_path: str = "", gen_data: str = "", **kwargs: Any) -> None:  # noqa: ANN401
         super().__init__(*args, patched_path=patched_path, **kwargs)
         self.gen_data = gen_data
 
@@ -71,8 +71,8 @@ def get_base_rom_bytes(file_name: str = "") -> bytes:
         basemd5 = hashlib.md5()
         basemd5.update(base_rom_bytes)
         if SMJUHASH != basemd5.hexdigest():
-            raise Exception('Supplied Base Rom does not match known MD5 for Japan+US release. '
-                            'Get the correct game and version, then dump it')
+            raise Exception("Supplied Base Rom does not match known MD5 for Japan+US release. "
+                            "Get the correct game and version, then dump it")
         setattr(get_base_rom_bytes, "base_rom_bytes", base_rom_bytes)
     return base_rom_bytes
 
@@ -93,7 +93,7 @@ def write_rom_from_gen_data(gen_data_str: str, output_rom_file_name: str) -> Non
     gen_data = get_gen_data(gen_data_str)
 
     base_rom_path = get_base_rom_path()
-    RomWriter.patch_cache_dir = user_path('lib')
+    RomWriter.patch_cache_dir = user_path("lib")
     rom_writer = RomWriter.fromFilePaths(base_rom_path)  # this patches SM to Subversion 1.2
     logger = getLogger("Subversion")
     logger.debug("patched Super Metroid to Subversion")

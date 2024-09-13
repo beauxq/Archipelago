@@ -344,7 +344,7 @@ class SubversionWorld(World):
                 precollected_hints[location.item.player].add(hint)
             else:
                 players_in_group = self.multiworld.groups[location.item.player].get("players")
-                assert not (players_in_group is None)
+                assert players_in_group is not None
                 for player in players_in_group:
                     precollected_hints[player].add(hint)
 
