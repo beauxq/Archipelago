@@ -276,11 +276,11 @@ color_codes = {'reset': 0, 'bold': 1, 'underline': 4, 'black': 30, 'red': 31, 'g
                'blue_bg': 44, 'magenta_bg': 45, 'cyan_bg': 46, 'white_bg': 47}
 
 
-def color_code(*args):
+def color_code(*args: str) -> str:
     return '\033[' + ';'.join([str(color_codes[arg]) for arg in args]) + 'm'
 
 
-def color(text, *args):
+def color(text: str, *args: str) -> str:
     return color_code(*args) + text + color_code('reset')
 
 
