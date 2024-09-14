@@ -65,7 +65,8 @@ class UATServer:
         try:
             await client.send(json.dumps([info]))
             async for data in client:
-                packet: Sequence[ClientPacket | Any] | Any = json.loads(data)
+                # TODO: better solution for narrowing generics
+                packet: Sequence[ClientPacket | None] | None = json.loads(data)
                 print(f"received {json.dumps(packet, indent=4)}")
                 if not isinstance(packet, Sequence):
                     await error("?", "unknown")
