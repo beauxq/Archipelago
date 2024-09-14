@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import logging
-from typing import Any, ClassVar, Dict, FrozenSet, List, Union
+from typing import Any, ClassVar, Dict, FrozenSet, List
 from typing_extensions import override
 
 from BaseClasses import Item, ItemClassification as IC
@@ -253,7 +253,7 @@ def _make_custom(data: str) -> FrozenSet[Trick]:
     return casual
 
 
-def make_sv_game(options: SubversionOptions, seed: Union[int, None]) -> Game:
+def make_sv_game(options: SubversionOptions, seed: int) -> Game:
     logics = {
         SubversionLogic.option_casual: casual,
         SubversionLogic.option_expert: expert,
@@ -275,8 +275,6 @@ def make_sv_game(options: SubversionOptions, seed: Union[int, None]) -> Game:
         options.objective_rando.value
     )
 
-    seed = seed or 0
-
     connections = RandomizeAreas(False, seed) if sv_options.area_rando else vanilla_areas()
 
     sv_game = Game(sv_options, location_data, connections, seed)
@@ -284,7 +282,7 @@ def make_sv_game(options: SubversionOptions, seed: Union[int, None]) -> Game:
         daphne_blocks = get_daphne_gate(sv_options)
         sv_game.daphne_blocks = daphne_blocks
     if sv_options.objective_rando > 0:
-        goals = generate_goals(sv_options)
+        goals = generate_goals(sv_options, seed)
         sv_game.goals = goals
 
     return sv_game

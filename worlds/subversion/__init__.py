@@ -95,7 +95,7 @@ class SubversionWorld(World):
         menu = Region("Menu", self.player, self.multiworld)
         self.multiworld.regions.append(menu)
 
-        sv_game = make_sv_game(self.options, self.multiworld.seed)
+        sv_game = make_sv_game(self.options, self.random.randrange(1_000_000_000))
         self.sv_game = sv_game
 
         tb_item, exc_locs = choose_torpedo_bay(
