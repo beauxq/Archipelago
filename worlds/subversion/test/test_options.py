@@ -4,13 +4,13 @@ from Utils import parse_yaml
 from worlds.subversion.options import SubversionCustomLogic, SubversionShortGame
 import worlds.subversion.options as options_module
 
-from subversion_rando.location_data import pullCSV
+from subversion_rando.location_data import new_locations
 from subversion_rando.trick_data import Tricks
 
 
 def test_location_names() -> None:
     """ make sure all the names in these lists are valid location names """
-    locations = pullCSV()
+    locations = new_locations()
 
     for op, loc_list in SubversionShortGame.location_lists.items():
         for loc_name in loc_list:
@@ -57,7 +57,7 @@ def test_parse_tricks_from_yaml_string() -> None:
     """ one example of custom logic tricks that would be messed up if octal parsing isn't fixed """
     parsed_yaml = parse_yaml("custom_logic: 007000000000")
     option = SubversionCustomLogic.from_any(parsed_yaml["custom_logic"])
-    make_custom = getattr(options_module, "_make_custom")
+    make_custom = options_module._make_custom  # pyright: ignore[reportPrivateUsage]
     tricks = make_custom(option.value)
     assert len(tricks) == 3, f"{len(tricks)=}"
     assert Tricks.hell_run_easy in tricks, "easy not in tricks"

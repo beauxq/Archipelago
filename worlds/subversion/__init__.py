@@ -95,7 +95,7 @@ class SubversionWorld(World):
         menu = Region("Menu", self.player, self.multiworld)
         self.multiworld.regions.append(menu)
 
-        sv_game = make_sv_game(self.options, self.multiworld.seed)
+        sv_game = make_sv_game(self.options, self.random.randrange(1_000_000_000))
         self.sv_game = sv_game
 
         tb_item, exc_locs = choose_torpedo_bay(
@@ -344,7 +344,7 @@ class SubversionWorld(World):
                 precollected_hints[location.item.player].add(hint)
             else:
                 players_in_group = self.multiworld.groups[location.item.player].get("players")
-                assert not (players_in_group is None)
+                assert players_in_group is not None
                 for player in players_in_group:
                     precollected_hints[player].add(hint)
 
