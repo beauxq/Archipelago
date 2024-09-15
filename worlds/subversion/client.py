@@ -189,9 +189,14 @@ class SubversionSNIClient(SNIClient):
     @override
     async def game_watcher(self, ctx: "SNIContext") -> None:
         from SNIClient import snes_buffered_write, snes_flush_writes
-        if ctx.server is None or ctx.slot is None or self.snes_reader is None or not await self.snes_reader.read():
-            # not successfully connected to a multiworld server or failed to read from snes,
+        if ctx.server is None or ctx.slot is None or self.snes_reader is None:
+            # not successfully connected to a multiworld server,
             # cannot process the game sending items
+            return
+
+        snes_data = await self.snes_reader.read()
+        if snes_data is None:
+            snes_logger.info("error reading from snes")
             return
 
         if len(ctx.locations_info) < 122:
@@ -206,7 +211,7 @@ class SubversionSNIClient(SNIClient):
             # TODO: test logic map tracker reconnecting to a game where I've already picked up items
             # maybe a setTimeout here to update logic after getting info from server.
 
-        gamemode = self.snes_reader.get(SubversionMemory.game_mode)
+        gamemode = snes_data.get(SubversionMemory.game_mode)
         if "DeathLink" in ctx.tags and ctx.last_death_link + 1 < time.time():
             currently_dead = gamemode[0] in SM_DEATH_MODES
             await ctx.handle_deathlink_state(currently_dead)
@@ -216,12 +221,12 @@ class SubversionSNIClient(SNIClient):
                 ctx.finished_game = True
             return
 
-        data = self.snes_reader.get(SubversionMemory.send_queue_r_count)
+        data = snes_data.get(SubversionMemory.send_queue_r_count)
 
         recv_index = data[0] | (data[1] << 8)
         recv_item = data[2] | (data[3] << 8)  # this is actually SM_SEND_QUEUE_WCOUNT
 
-        send_queue = self.snes_reader.get(SubversionMemory.send_queue)
+        send_queue = snes_data.get(SubversionMemory.send_queue)
 
         while (recv_index < recv_item):
             item_address = recv_index * 8
@@ -248,7 +253,7 @@ class SubversionSNIClient(SNIClient):
             await ctx.send_msgs([{"cmd": "LocationChecks", "locations": [location_id]}])
             self._update_location_logic(ctx)
 
-        data = self.snes_reader.get(SubversionMemory.recv_queue_w_count)
+        data = snes_data.get(SubversionMemory.recv_queue_w_count)
 
         # print(f"{data=} {int.from_bytes(data, 'little')=} {len(ctx.items_received)=}")
         item_out_ptr = data[0] | (data[1] << 8)
