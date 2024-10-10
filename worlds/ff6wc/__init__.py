@@ -240,6 +240,8 @@ class FF6WCWorld(World):
             kt_obj_list: List[str] = []
             kt_obj_code_index = len(flags_list)
             alphabet = string.ascii_lowercase
+            # for letter in alphabet:
+            #     objective = f"-o{letter}"
             for letter in range(len(alphabet)):
                 objective_list = ["-o", alphabet[letter]]
                 objective = "".join(objective_list)
@@ -279,7 +281,7 @@ class FF6WCWorld(World):
 
                 else:  # is a ranged objective, note that checks (type "10") are not currently parsed by AP
                     skip = index + 2
-                    count_low = int(kt_obj_list[index + 1])
+                    count_low = int(kt_obj_list[index + 1])  # FIXME: IndexError
                     count_high = int(kt_obj_list[index + 2])
                     if kt_obj_list[index] == "2":
                         character_count = random.randint(count_low, count_high)
