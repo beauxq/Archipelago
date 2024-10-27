@@ -240,19 +240,24 @@ class FF6WCWorld(World):
             kt_obj_list: List[str] = []
             kt_obj_code_index = len(flags_list)
             alphabet = string.ascii_lowercase
-            # for letter in alphabet:
-            #     objective = f"-o{letter}"
-            for letter in range(len(alphabet)):
-                objective_list = ["-o", alphabet[letter]]
-                objective = "".join(objective_list)
-                if objective in flags_list:
-                    objective_code = flags_list[flags_list.index(objective) + 1]
-                    objective_code_list = objective_code.split(".")
-                    if objective_code_list[0] == "2":
-                        # kt_obj_code = objective_code
-                        kt_obj_list = objective_code_list
-                        kt_obj_code_index = flags_list.index(objective) + 1
-                        break
+            for letter in alphabet:
+                objective = f"-o{letter}"
+                try:
+                    obj_i = flags_list.index(objective) + 1
+                except ValueError:
+                    # TODO: Is it legal to skip letters? -oa ... -ob ... -od
+                    # if not, change continue to break
+                    continue
+                if obj_i >= len(flags_list):
+                    raise ValueError(f"invalid flags {objective}")
+                objective_code = flags_list[obj_i]
+                objective_code_list = objective_code.split(".")
+                if len(objective_code_list) < 3:
+                    raise ValueError(f"invalid objective string for {objective}: {objective_code}")
+                if objective_code_list[0] == "2":
+                    kt_obj_list = objective_code_list
+                    kt_obj_code_index = obj_i
+                    break
             if kt_obj_code_index == len(flags_list):
                 # TODO: use yaml options instead?
                 raise ValueError("kt objective code not found in flags")
@@ -269,36 +274,44 @@ class FF6WCWorld(World):
             # are required for seed completion. For example, if 1 of 2 conditions is required, one being 14 characters
             # and the other being Kill Cid, the logic should still be such that 14 characters can be acquired.
 
-            not_ranged_obj_numbers = ["1", "3", "5", "7", "9", "11", "12"]  # Random or looking for something specific.
-            skip = 2  # jumps over the initial KT requirements inputs which are indices 0, 1, and 2
+            not_ranged_obj_numbers = {"1", "3", "5", "7", "9", "11", "12"}  # Random or looking for something specific.
 
-            for index in range(len(kt_obj_list)):
-                if skip >= index or skip >= len(kt_obj_list):
-                    continue  # skips over the ranges or specific condition inputs based on condition type
+            err_msg = f"invalid kt objective string: {flags_list[kt_obj_code_index]}"
+            cursor_i = 3
+            while cursor_i < len(kt_obj_list):
+                if kt_obj_list[cursor_i] in not_ranged_obj_numbers:  # not a ranged objective type
+                    cursor_i += 1
+                    if cursor_i >= len(kt_obj_list):
+                        raise ValueError(err_msg)
+                    cursor_i += 1
+                    continue
+                # is a ranged objective, note that checks (type "10") are not currently parsed by AP
+                if cursor_i + 2 >= len(kt_obj_list):
+                    raise ValueError(err_msg)
+                try:
+                    count_low = int(kt_obj_list[cursor_i + 1])
+                    count_high = int(kt_obj_list[cursor_i + 2])
+                except ValueError as e:
+                    raise ValueError(err_msg) from e
+                if kt_obj_list[cursor_i] == "2":
+                    character_count = self.random.randint(count_low, count_high)
+                    kt_obj_list[cursor_i + 1] = str(character_count)
+                    kt_obj_list[cursor_i + 2] = str(character_count)
+                elif kt_obj_list[cursor_i] == "4":
+                    esper_count = self.random.randint(count_low, count_high)
+                    kt_obj_list[cursor_i + 1] = str(esper_count)
+                    kt_obj_list[cursor_i + 2] = str(esper_count)
+                elif kt_obj_list[cursor_i] == "6":
+                    dragon_count = self.random.randint(count_low, count_high)
+                    kt_obj_list[cursor_i + 1] = str(dragon_count)
+                    kt_obj_list[cursor_i + 2] = str(dragon_count)
+                elif kt_obj_list[cursor_i] == "8":
+                    boss_count = self.random.randint(count_low, count_high)
+                    kt_obj_list[cursor_i + 1] = str(boss_count)
+                    kt_obj_list[cursor_i + 2] = str(boss_count)
+                # else 10 - not parsed
 
-                if kt_obj_list[index] in not_ranged_obj_numbers:  # not a ranged objective type
-                    skip = index + 1
-
-                else:  # is a ranged objective, note that checks (type "10") are not currently parsed by AP
-                    skip = index + 2
-                    count_low = int(kt_obj_list[index + 1])  # FIXME: IndexError
-                    count_high = int(kt_obj_list[index + 2])
-                    if kt_obj_list[index] == "2":
-                        character_count = random.randint(count_low, count_high)
-                        kt_obj_list[index + 1] = str(character_count)
-                        kt_obj_list[index + 2] = str(character_count)
-                    elif kt_obj_list[index] == "4":
-                        esper_count = random.randint(count_low, count_high)
-                        kt_obj_list[index + 1] = str(esper_count)
-                        kt_obj_list[index + 2] = str(esper_count)
-                    elif kt_obj_list[index] == "6":
-                        dragon_count = random.randint(count_low, count_high)
-                        kt_obj_list[index + 1] = str(dragon_count)
-                        kt_obj_list[index + 2] = str(dragon_count)
-                    elif kt_obj_list[index] == "8":
-                        boss_count = random.randint(count_low, count_high)
-                        kt_obj_list[index + 1] = str(boss_count)
-                        kt_obj_list[index + 2] = str(boss_count)
+                cursor_i += 3
             kt_obj_list_string = ".".join(kt_obj_list)
             flags_list[kt_obj_code_index] = kt_obj_list_string
 
