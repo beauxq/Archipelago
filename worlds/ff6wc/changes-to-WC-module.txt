@@ -19,3 +19,4 @@ event/auction_house.py remove code for -nfp and -ame flags as they only make sen
 event/veldt.py add an else clause for an item reward in the case of an AP item since that check can be char/esper/item reward now instead of char/esper like in base game
 72a2792f1034e1b3fd4b76b9e3d94cda43ea6c98 fix portraits/sprites/colors/palettes for linux apworld
 98d78981f7d86b32fd64c0aba30e28e060082869 rework portraits/sprites/colors/palettes again
+ff94786347c1eda76a5308f139028e3153a45236 better avoiding `exit` from `ArgumentParser` and some type annotations
