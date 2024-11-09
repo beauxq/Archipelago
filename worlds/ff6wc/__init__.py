@@ -321,6 +321,23 @@ class FF6WCWorld(World):
             self.options.DragonCount.value = dragon_count
             self.options.BossCount.value = boss_count
 
+            # starting espers
+            if self.options.Flagstring.has_flag("-stesp"):
+                stesp_str = self.options.Flagstring.get_flag("-stesp")
+                stesp_err_msg = f"invalid -stesp flag {stesp_str}"
+                stesp_list = stesp_str.split(" ")
+                if len(stesp_list) != 2:
+                    raise ValueError(f"invalid -stesp flag {stesp_str}")
+                stesp_min_str, stesp_max_str = stesp_list
+                try:
+                    stesp_min = int(stesp_min_str)
+                    stesp_max = int(stesp_max_str)
+                except ValueError as e:
+                    raise ValueError(stesp_err_msg) from e
+                if stesp_min > 0 or stesp_max > 0:
+                    # TODO:
+                    raise NotImplementedError("starting espers is not supported")
+
         else:
             self.starting_characters = resolve_character_options(self.options, self.random)
 

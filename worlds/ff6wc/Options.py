@@ -370,6 +370,7 @@ class Flagstring(FreeText):
         return key in parsed
 
     def get_flag(self, key: str) -> str:
+        """ `key` including "-" prefix """
         parsed = self._get_from_cache()
         return parsed[key]
 

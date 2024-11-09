@@ -337,7 +337,7 @@ class Espers():
         self.name_data.write()
         self.ability_data.write()
 
-    def available(self):
+    def available(self) -> int:
         return len(self.available_espers)
 
     def get_random_esper(self):
@@ -348,7 +348,7 @@ class Espers():
         self.available_espers.remove(rand_esper)
         return rand_esper
     
-    def get_specific_esper(self, name):
+    def get_specific_esper(self, name: str) -> int:
         chosen_esper = None
         for index, esper in enumerate(self.espers):
             if esper.name == name:
