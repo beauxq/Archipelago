@@ -327,7 +327,7 @@ class FF6WCWorld(World):
                 stesp_err_msg = f"invalid -stesp flag {stesp_str}"
                 stesp_list = stesp_str.split(" ")
                 if len(stesp_list) != 2:
-                    raise ValueError(f"invalid -stesp flag {stesp_str}")
+                    raise ValueError(stesp_err_msg)
                 stesp_min_str, stesp_max_str = stesp_list
                 try:
                     stesp_min = int(stesp_min_str)
