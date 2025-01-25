@@ -97,7 +97,7 @@ def process(args):
                     # get the objective string that is not valid for display
                     objective_string = getattr(args, "objective_" + lower_letter)
                     # print error message including the objective string in question
-                    raise ValueError(f"{sys.argv[0]}: error! Objective not valid: o{lower_letter} {objective_string}")
+                    raise ValueError(f"Error! Objective not valid: o{lower_letter} {objective_string}")
 
                 # if the condition requires 2 condition arguments, ensure we get 2, otherwise this is an error
                 # this is something like -oa 2.1.1.2.5 where there needs to be something after 5 (minimum) for the maximum range
@@ -106,12 +106,12 @@ def process(args):
                     # get the objective string that is not valid for display
                     objective_string = getattr(args, "objective_" + lower_letter)
                     # print error message including the objective string in question
-                    raise ValueError(f"{sys.argv[0]}: error! Objective not valid: o{lower_letter} {objective_string}")
+                    raise ValueError(f"Error! Objective not valid: o{lower_letter} {objective_string}")
 
                 for arg in condition_args:
                     if arg not in condition_type.value_range:
                         args.parser.print_usage()
-                        raise ValueError(f"{sys.argv[0]}: error: {condition_type.name}: invalid argument {arg}")
+                        raise ValueError(f"Error: {condition_type.name}: invalid argument {arg}")
                 condition = Condition(*condition_type, condition_args)
                 conditions.append(condition)
 
