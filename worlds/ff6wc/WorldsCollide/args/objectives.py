@@ -75,6 +75,15 @@ def process(args):
             conditions_required_max = values[value_index]
             value_index += 1
 
+            # if the minimum number of conditions required > maximum, that's an error
+            # this is something like -oe 42.2.1.9.15.4.5.10.3.2 where it requires 2 of 1 conditions, which is non-valid statement
+            if conditions_required_min > conditions_required_max:
+                args.parser.print_usage()
+                # get the objective string that is not valid for display
+                objective_string = getattr(args, "objective_" + lower_letter)
+                # print error message including the objective string in question
+                raise ValueError(f"Error! Objective not valid, min conditions > max conditions: o{lower_letter} {objective_string}")
+
             conditions = []
             while value_index < len(values) and len(conditions) < MAX_CONDITIONS:
                 condition_type = condition_types[values[value_index]]
