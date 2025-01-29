@@ -99,7 +99,7 @@ def process(args):
 
                 # if there are no condition args at all, this is an error
                 # this is something like -oa 2.1.1.3 where there needs to be something after 3 (either r or a number)
-                if condition_args == []:
+                if len(condition_args) < 1:
                     args.parser.print_usage()
                     # get the objective string that is not valid for display
                     objective_string = getattr(args, "objective_" + lower_letter)
