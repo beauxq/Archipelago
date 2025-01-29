@@ -63,10 +63,8 @@ def process(args):
 
             for arg in result_args:
                 if arg not in result_type.value_range:
-                    import sys
                     args.parser.print_usage()
-                    print(f"{sys.argv[0]}: error: {result_type.name}: invalid argument {arg}")
-                    sys.exit(1)
+                    raise ValueError(f"Error: {result_type.name}: invalid argument {arg}")
 
             result = Result(*result_type, result_args)
 
