@@ -328,7 +328,7 @@ class FF6WCClient(SNIClient):
                     exists = False
                     if slot == Rom.item_name_id[item_name]:
                         exists = True
-                    if (slot == 255 or quantity == 0 or exists is True):
+                    if (slot == 255 or quantity == 0 or exists is True) and quantity < 98:
                         reserved_slots.append(i)
                         type_destination = Rom.item_types_base_address + i
                         amount_destination = Rom.item_quantities_base_address + i
