@@ -458,17 +458,6 @@ def generate_objectives_string(options: FF6WCOptions) -> List[str]:
     character_count = options.CharacterCount
     esper_count = options.EsperCount
     dragon_count = options.DragonCount
-
-    # randomized bosses can make it so not enough bosses are available for kefka requirement
-    # A proper fix for this needs to be in the WorldsCollide code,
-    # but a workaround here can make it really unlikely that this problem occurs
-    # TODO: remove this workaround when it's fixed in WorldsCollide code (and that version of WC is here in AP)
-    # https://discord.com/channels/666661907628949504/1235621693381410906
-    if options.RandomizedBosses.value == RandomizedBosses.option_randomized:
-        # 18 makes it around 1/85000 if bosses randomized and requirement randomized
-        if options.BossCount.value > 18:
-            options.BossCount.value = 18
-
     boss_count = options.BossCount
 
     # fb = final battle unlock
