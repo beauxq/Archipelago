@@ -174,14 +174,15 @@ class EnemyPacks():
                         required_statue_formations.add(formation)
                     else:
                         required_boss_formations.add(formation)
-                # if this condition is a set number of bosses, make sure we always get the highest amount for the minimum req # of formations
                 elif condition.NAME == bosses_condition_name and condition.count > min_boss_formations:
+                    # if this condition is a set number of bosses,
+                    # make sure we always get the highest amount for the minimum req # of formations
                     min_boss_formations = condition.count
                 elif condition.NAME == dragon_condition_name:
                     required_dragon_formations.add(condition.dragon_formation)
                 elif condition.NAME == dragons_condition_name and condition.count > min_dragon_formations:
                     min_dragon_formations = condition.count
-       # amount of bosses needed is the minimum from above minus the required bosses + required statues
+        # amount of bosses needed is the minimum from above minus the required bosses + required statues
         boss_formations_needed = min_boss_formations - (len(required_boss_formations) + len(required_statue_formations))
         # if the extra required number needed non-zero
         if boss_formations_needed > 0:
@@ -190,7 +191,8 @@ class EnemyPacks():
             # remaining bosses is all bosses - required bosses | required statues
             required_formations = set(required_boss_formations | required_statue_formations)
             remaining_boss_formations = list(all_boss_formations - required_formations)
-            # the random boss formation list is a sample of the remaining bosses for the amount needed to fulfill objectives
+            # the random boss formation list is a sample of the remaining bosses
+            # for the amount needed to fulfill objectives
             random_boss_formations = random.sample(remaining_boss_formations, boss_formations_needed)
             # update required boss formations with union of itself & random boss formations
             required_boss_formations |= set(random_boss_formations)
