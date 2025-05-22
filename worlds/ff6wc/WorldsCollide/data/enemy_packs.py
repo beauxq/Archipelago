@@ -189,7 +189,7 @@ class EnemyPacks():
             all_boss_formations = set(bosses.normal_formation_name)
             # remaining bosses is all bosses - required bosses | required statues
             required_formations = set(required_boss_formations | required_statue_formations)
-            remaining_boss_formations = list(all_boss_formations - required_formations)
+            remaining_boss_formations = sorted(all_boss_formations - required_formations)
             # the random boss formation list is a sample of the remaining bosses for the amount needed to fulfill objectives
             random_boss_formations = random.sample(remaining_boss_formations, boss_formations_needed)
             # update required boss formations with union of itself & random boss formations
@@ -208,7 +208,7 @@ class EnemyPacks():
         dragon_formations_needed = min_dragon_formations - len(required_dragon_formations)
         if dragon_formations_needed > 0:
             all_dragon_formations = set(bosses.dragon_formation_name)
-            remaining_dragon_formations = list(all_dragon_formations - required_dragon_formations)
+            remaining_dragon_formations = sorted(all_dragon_formations - required_dragon_formations)
             random_dragon_formations = random.sample(remaining_dragon_formations, dragon_formations_needed)
             required_dragon_formations |= set(random_dragon_formations)
 
