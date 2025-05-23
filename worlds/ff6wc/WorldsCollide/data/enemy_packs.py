@@ -191,7 +191,7 @@ class EnemyPacks():
             # remaining bosses is all bosses - required bosses | required statues
             required_formations = set(required_boss_formations | required_statue_formations)
             remaining_boss_formations = sorted(all_boss_formations - required_formations)
-            # the random boss formation list is a sample of the remaining bosses 
+            # the random boss formation list is a sample of the remaining bosses
             # for the amount needed to fulfill objectives
             random_boss_formations = random.sample(remaining_boss_formations, boss_formations_needed)
             # add these boss formations into the appropriate set 
