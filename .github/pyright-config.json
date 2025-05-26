@@ -15,11 +15,13 @@
     "../test/utils/__init__.py",
     "../test/webhost/test_descriptions.py",
     "../worlds/AutoSNIClient.py",
+    "../worlds/ff6wc",
     "type_check.py"
   ],
 
   "exclude": [
-    "**/__pycache__"
+    "**/__pycache__",
+    "../worlds/ff6wc/WorldsCollide"
   ],
 
   "stubPath": "../typings",

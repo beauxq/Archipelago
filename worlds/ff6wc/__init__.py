@@ -6,7 +6,9 @@ import os
 import random
 import string
 import threading
-from typing import Any, ClassVar, Dict, List, Union
+from typing import Any, ClassVar
+
+from typing_extensions import override
 
 from BaseClasses import Item, Location, Region, MultiWorld, ItemClassification, Tutorial
 from .id_maps import item_name_to_id, location_name_to_id
@@ -134,8 +136,8 @@ class FF6WCWorld(World):
         'espers': set(all_espers),
     }
 
-    starting_characters: Union[List[str], None]
-    flagstring: Union[List[str], None]
+    starting_characters: list[str] | None
+    flagstring: list[str] | None
 
     def __init__(self, world: MultiWorld, player: int):
         super().__init__(world, player)
@@ -147,6 +149,7 @@ class FF6WCWorld(World):
         self.wc = None
         self.rom_name_available_event = threading.Event()
 
+    @override
     def create_item(self, name: str):
         return FF6WCItem(name, ItemClassification.progression, self.item_name_to_id[name], self.player)
 
@@ -159,10 +162,11 @@ class FF6WCWorld(World):
     def create_event(self, event: str):
         return FF6WCItem(event, ItemClassification.progression, None, self.player)
 
-    def create_location(self, name: str, id: Union[int, None], parent: Region) -> FF6WCLocation:
+    def create_location(self, name: str, id: int | None, parent: Region) -> FF6WCLocation:
         return_location = FF6WCLocation(self.player, name, id, parent)
         return return_location
 
+    @override
     def generate_early(self):
         # if requested to exclude the Zozo Clock Chest, add to exclude_locations
         if self.options.ZozoClockChestExclude:
@@ -171,7 +175,7 @@ class FF6WCWorld(World):
         if (self.options.Flagstring.value).capitalize() != "False":
 
             self.starting_characters = []
-            character_list: List[str] = []
+            character_list: list[str] = []
             flags = self.options.Flagstring.value
             # Determining Starting Characters
             flags_list = flags.split(" ")
@@ -237,7 +241,7 @@ class FF6WCWorld(World):
             dragon_count = 0
             boss_count = 0
 
-            kt_obj_list: List[str] = []
+            kt_obj_list: list[str] = []
             kt_obj_code_index = len(flags_list)
             alphabet = string.ascii_lowercase
             for letter in alphabet:
@@ -341,6 +345,7 @@ class FF6WCWorld(World):
         else:
             self.starting_characters = resolve_character_options(self.options, self.random)
 
+    @override
     def create_regions(self):
         menu = Region("Menu", self.player, self.multiworld)
         world_map = Region("World Map", self.player, self.multiworld)
@@ -369,8 +374,9 @@ class FF6WCWorld(World):
         self.multiworld.regions.append(world_map)
         self.multiworld.regions.append(final_dungeon)
 
+    @override
     def create_items(self) -> None:
-        item_pool: List[FF6WCItem] = []
+        item_pool: list[FF6WCItem] = []
         assert self.starting_characters
         for item in map(self.create_item, self.item_name_to_id):
             if item.name in self.starting_characters:
@@ -397,10 +403,10 @@ class FF6WCWorld(World):
         # update the non-reward items to be everything that's not in item_rewards
         self.item_nonrewards = [item for item in Items.items if item not in self.item_rewards]
 
-        filler_pool: List[str] = []
+        filler_pool: list[str] = []
         # Each filler item has a chest item tier weight
-        filler_pool_weights: List[int] = []
-        good_filler_pool: List[str] = []
+        filler_pool_weights: list[int] = []
+        good_filler_pool: list[str] = []
 
         for item in Items.items:
             # Skips adding an item to filler_pool and good_filler_pool if item restrictions are in place
@@ -445,6 +451,7 @@ class FF6WCWorld(World):
                 ))
             self.multiworld.itempool += item_pool
 
+    @override
     def set_rules(self):
         check_list = {
             "Terra": (Locations.major_terra_checks, Locations.minor_terra_checks, Locations.minor_terra_ext_checks),
@@ -547,6 +554,7 @@ class FF6WCWorld(World):
         # TODO: move this generate_flagstring earlier if we can verify that options aren't changed
         self.flagstring = generate_flagstring(self.options, self.starting_characters)
 
+    @override
     def post_fill(self) -> None:
         spheres = list(self.multiworld.get_spheres())
         sphere_count = len(spheres)
@@ -596,8 +604,9 @@ class FF6WCWorld(World):
             item.classification = ItemClassification.useful
         return
 
+    @override
     def generate_output(self, output_directory: str):
-        locations: Dict[str, str] = dict()
+        locations: dict[str, str] = dict()
         # get all locations
         for location in self.multiworld.get_locations(self.player):
             assert location.item
@@ -635,7 +644,7 @@ class FF6WCWorld(World):
             if ir_index == -1:
                 self.flagstring.extend(ir_flag)
             else:
-                self.flagstring[ir_index:ir_index+2] = ir_flag
+                self.flagstring[ir_index:ir_index + 2] = ir_flag
         verify_flagstring(self.flagstring)
         gen_data = GenData(locations, self.flagstring)
         out_file_base = self.multiworld.get_out_file_name_base(self.player)
@@ -648,7 +657,8 @@ class FF6WCWorld(World):
 
         logging.debug(f"FF6WC player {self.player} finished generate_output")
 
-    def modify_multidata(self, multidata: Dict[str, Any]) -> None:
+    @override
+    def modify_multidata(self, multidata: dict[str, Any]) -> None:
         import base64
         # wait for self.rom_name to be available.
         self.rom_name_available_event.wait()
