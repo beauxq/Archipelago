@@ -140,6 +140,7 @@ class FF6WCWorld(World):
     def __init__(self, world: MultiWorld, player: int):
         super().__init__(world, player)
         self.starting_characters = None
+        self.starting_espers = None
         self.flagstring = None
         self.item_rewards = []
         self.item_nonrewards = []
@@ -171,6 +172,7 @@ class FF6WCWorld(World):
         if (self.options.Flagstring.value).capitalize() != "False":
 
             self.starting_characters = []
+            self.starting_espers = []
             character_list: List[str] = []
             flags = self.options.Flagstring.value
             # Determining Starting Characters
@@ -323,6 +325,8 @@ class FF6WCWorld(World):
 
             # starting espers
             if self.options.Flagstring.has_flag("-stesp"):
+                # initialize -sen flag to indicate specific espers
+                sen_flag = ""
                 stesp_str = self.options.Flagstring.get_flag("-stesp")
                 stesp_err_msg = f"invalid -stesp flag {stesp_str}"
                 stesp_list = stesp_str.split(" ")
@@ -335,8 +339,35 @@ class FF6WCWorld(World):
                 except ValueError as e:
                     raise ValueError(stesp_err_msg) from e
                 if stesp_min > 0 or stesp_max > 0:
-                    # TODO:
-                    raise NotImplementedError("starting espers is not supported")
+                    # pick a random number of starting espers between min & max specified
+                    num_start_espers = random.randint(stesp_min,stesp_max)
+                    # copy & shuffle the esper list
+                    mixed_espers = Rom.espers.copy()
+                    random.shuffle(mixed_espers)
+                    # pick each specific starting esper
+                    esper_index = 0
+                    while esper_index < num_start_espers:
+                        # add to the list of starting espers, 
+                        # this will be processed in create_items later
+                        self.starting_espers.append(mixed_espers[esper_index])
+                        # add the esper ID to the -sen flagstring
+                        sen_flag = sen_flag + str(Rom.espers.index(mixed_espers[esper_index]))
+                        # increment the counter
+                        esper_index = esper_index + 1
+                        # add a comma after the flagstring if this isn't the last one
+                        if esper_index < num_start_espers:
+                            sen_flag = sen_flag + ","
+                    # Now, replace -stesp min max flags with -sen x,y,z,etc
+                    # create a list of flags
+                    splitflags = [flag for flag in self.options.Flagstring.value.split("-")]
+                    # for each flag in the total flagstring
+                    for flag in splitflags:
+                        # find the flag for stesp
+                        if flag.split(" ")[0] == "stesp":
+                            # replace with the specific esper string we built above
+                            splitflags[splitflags.index(flag)] = "sen " + sen_flag + " "
+                        # join the flagstring back together again
+                        self.options.Flagstring.value = "-".join(splitflags) 
 
         else:
             self.starting_characters = resolve_character_options(self.options, self.random)
@@ -374,6 +405,10 @@ class FF6WCWorld(World):
         assert self.starting_characters
         for item in map(self.create_item, self.item_name_to_id):
             if item.name in self.starting_characters:
+                self.multiworld.push_precollected(item)
+            # if this is a starting esper
+            elif item.name in self.starting_espers:
+                # put into the pre-collected list so it is not assigned again
                 self.multiworld.push_precollected(item)
             elif item.name in Rom.characters or item.name in Rom.espers:
                 item_pool.append(item)
