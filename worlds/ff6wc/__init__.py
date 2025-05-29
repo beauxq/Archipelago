@@ -435,15 +435,15 @@ class FF6WCWorld(World):
         major_items = len([location for location in Locations.major_checks if "(Boss)" not in location and "Status"
                            not in location])
         progression_items = len(item_pool)
+        major_items = major_items - progression_items
         if not self.options.Treasuresanity.value:
-            major_items = major_items - progression_items
             for _ in range(major_items):
                 item_pool.append(self.create_good_filler_item(self.multiworld.random.choice(good_filler_pool)))
             self.multiworld.itempool += item_pool
         else:
             for _ in range(major_items):
                 item_pool.append(self.create_good_filler_item(self.multiworld.random.choice(good_filler_pool)))
-            minor_items = len(Locations.all_minor_checks) - progression_items
+            minor_items = len(Locations.all_minor_checks)
             for _ in range(minor_items):
                 # random filler item, but use chest item tier weights
                 item_pool.append(self.create_filler_item(
