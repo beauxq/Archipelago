@@ -438,16 +438,16 @@ class FF6WCWorld(World):
         major_items = major_items - progression_items
         if not self.options.Treasuresanity.value:
             for _ in range(major_items):
-                item_pool.append(self.create_good_filler_item(self.multiworld.random.choice(good_filler_pool)))
+                item_pool.append(self.create_good_filler_item(self.random.choice(good_filler_pool)))
             self.multiworld.itempool += item_pool
         else:
             for _ in range(major_items):
-                item_pool.append(self.create_good_filler_item(self.multiworld.random.choice(good_filler_pool)))
+                item_pool.append(self.create_good_filler_item(self.random.choice(good_filler_pool)))
             minor_items = len(Locations.all_minor_checks)
             for _ in range(minor_items):
                 # random filler item, but use chest item tier weights
                 item_pool.append(self.create_filler_item(
-                    self.multiworld.random.choices(filler_pool, filler_pool_weights)[0]
+                    self.random.choices(filler_pool, filler_pool_weights)[0]
                 ))
             self.multiworld.itempool += item_pool
 
@@ -562,7 +562,7 @@ class FF6WCWorld(World):
         for current_sphere_count, sphere in enumerate(spheres):
             for location in sphere:
                 if location.item and location.item.player == self.player:
-                    if self.multiworld.random.randint(0, upgrade_base) < current_sphere_count:
+                    if self.random.randint(0, upgrade_base) < current_sphere_count:
                         self.upgrade_item(location.item)
 
         if self.options.Treasuresanity.value != Treasuresanity.option_off:
@@ -579,7 +579,7 @@ class FF6WCWorld(World):
             nfps = nee = nil = 1
             temp_new_item = ""
             while (nfps or nee or nil) == 1:
-                temp_new_item = self.multiworld.random.choice(self.item_rewards)
+                temp_new_item = self.random.choice(self.item_rewards)
                 if self.options.no_paladin_shields() and (temp_new_item == "Paladin Shld"
                                                           or temp_new_item == "Cursed Shld"):
                     nfps = 1
