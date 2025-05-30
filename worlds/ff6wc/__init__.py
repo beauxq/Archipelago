@@ -436,20 +436,16 @@ class FF6WCWorld(World):
                            not in location])
         progression_items = len(item_pool)
         major_items = major_items - progression_items
-        if not self.options.Treasuresanity.value:
-            for _ in range(major_items):
-                item_pool.append(self.create_good_filler_item(self.random.choice(good_filler_pool)))
-            self.multiworld.itempool += item_pool
-        else:
-            for _ in range(major_items):
-                item_pool.append(self.create_good_filler_item(self.random.choice(good_filler_pool)))
+        for _ in range(major_items):
+            item_pool.append(self.create_good_filler_item(self.random.choice(good_filler_pool)))
+        if self.options.Treasuresanity.value:
             minor_items = len(Locations.all_minor_checks)
             for _ in range(minor_items):
                 # random filler item, but use chest item tier weights
                 item_pool.append(self.create_filler_item(
                     self.random.choices(filler_pool, filler_pool_weights)[0]
                 ))
-            self.multiworld.itempool += item_pool
+        self.multiworld.itempool += item_pool
 
     @override
     def set_rules(self):
