@@ -332,7 +332,7 @@ class FF6WCClient(SNIClient):
                     if slot == Rom.item_name_id[item_name]:
                         found_slot = i
                         break
-                if found_slot != -1:
+                if found_slot != -1:  # We have this item in inventory, so increment count
                     quantity = item_quantities_data[found_slot]
                     amount = max(min(quantity + 1, 99), 1)
                     self.add_item_to_inventory(ctx,
@@ -341,7 +341,7 @@ class FF6WCClient(SNIClient):
                                                amount,
                                                item_name,
                                                item)
-                else: # Item not in inventory, so we write to a free slot
+                else:  # Item not in inventory, so we write to a free slot
                     for slot_index in range(0, 255):
                         slot = item_types_data[slot_index]
                         quantity = item_quantities_data[slot_index]
