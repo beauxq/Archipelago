@@ -337,7 +337,7 @@ class FF6WCClient(SNIClient):
                     type_destination = Rom.item_types_base_address + found_slot
                     amount_destination = Rom.item_quantities_base_address + found_slot
                     quantity = item_quantities_data[found_slot]
-                    amount = max(min(quantity + 1, 99), 0)
+                    amount = max(min(quantity + 1, 99), 1)
                     type_id = Rom.item_name_id[item_name]
                     self.add_item_to_inventory(ctx,
                                                type_destination,
