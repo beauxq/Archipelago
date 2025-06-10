@@ -324,7 +324,6 @@ class FF6WCClient(SNIClient):
                 item_quantities_data = await snes_read(ctx, Rom.item_quantities_base_address, 255)
                 if item_types_data is None or item_quantities_data is None:
                     return
-                reserved_slots: list[int] = []
                 # Field items
                 # First, check if we already have the item in question in inventory
                 found_slot = -1
@@ -334,33 +333,23 @@ class FF6WCClient(SNIClient):
                         found_slot = i
                         break
                 if found_slot != -1:
-                    type_destination = Rom.item_types_base_address + found_slot
-                    amount_destination = Rom.item_quantities_base_address + found_slot
                     quantity = item_quantities_data[found_slot]
                     amount = max(min(quantity + 1, 99), 1)
-                    type_id = Rom.item_name_id[item_name]
                     self.add_item_to_inventory(ctx,
-                                               type_destination,
-                                               amount_destination,
+                                               found_slot,
                                                items_received_amount,
-                                               type_id,
                                                amount,
                                                item_name,
                                                item)
                 else: # Item not in inventory, so we write to a free slot
-                    for i in range(0, 255):
-                        slot = item_types_data[i]
-                        quantity = item_quantities_data[i]
+                    for slot_index in range(0, 255):
+                        slot = item_types_data[slot_index]
+                        quantity = item_quantities_data[slot_index]
                         if (slot == 255 or quantity == 0):
-                            type_destination = Rom.item_types_base_address + i
-                            amount_destination = Rom.item_quantities_base_address + i
-                            type_id = Rom.item_name_id[item_name]
                             amount = 1
                             self.add_item_to_inventory(ctx,
-                                                       type_destination,
-                                                       amount_destination,
+                                                       slot_index,
                                                        items_received_amount,
-                                                       type_id,
                                                        amount,
                                                        item_name,
                                                        item)
@@ -398,15 +387,17 @@ class FF6WCClient(SNIClient):
         items_received_amount += 1
         snes_buffered_write(ctx, Rom.items_received_address, items_received_amount.to_bytes(2, 'little'))
 
-    def add_item_to_inventory(self, ctx: SNIContext,
-                                    type_destination: int,
-                                    amount_destination: int,
-                                    items_received_amount: int,
-                                    type_id: int,
-                                    amount: int,
-                                    item_name: str,
-                                    item: NetworkItem):
+    def add_item_to_inventory(self,
+                              ctx: SNIContext,
+                              slot_index: int,
+                              items_received_amount: int,
+                              amount: int,
+                              item_name: str,
+                              item: NetworkItem) -> None:
         from SNIClient import snes_buffered_write
+        type_destination = Rom.item_types_base_address + slot_index
+        amount_destination = Rom.item_quantities_base_address + slot_index
+        type_id = Rom.item_name_id[item_name]
         snes_buffered_write(ctx, type_destination, bytes([type_id]))
         snes_buffered_write(ctx, amount_destination, bytes([amount]))
         self.increment_items_received(ctx, items_received_amount)
