@@ -140,7 +140,7 @@ class FF6WCWorld(World):
     def __init__(self, world: MultiWorld, player: int):
         super().__init__(world, player)
         self.starting_characters = None
-        self.starting_espers = None
+        self.starting_espers = []
         self.flagstring = None
         self.item_rewards = []
         self.item_nonrewards = []
@@ -340,23 +340,13 @@ class FF6WCWorld(World):
                     raise ValueError(stesp_err_msg) from e
                 if stesp_min > 0 or stesp_max > 0:
                     # pick a random number of starting espers between min & max specified
-                    num_start_espers = random.randint(stesp_min,stesp_max)
-                    # copy & shuffle the esper list
-                    mixed_espers = Rom.espers.copy()
-                    random.shuffle(mixed_espers)
-                    # pick each specific starting esper
-                    esper_index = 0
-                    while esper_index < num_start_espers:
-                        # add to the list of starting espers, 
-                        # this will be processed in create_items later
-                        self.starting_espers.append(mixed_espers[esper_index])
-                        # add the esper ID to the -sen flagstring
-                        sen_flag = sen_flag + str(Rom.espers.index(mixed_espers[esper_index]))
-                        # increment the counter
-                        esper_index = esper_index + 1
-                        # add a comma after the flagstring if this isn't the last one
-                        if esper_index < num_start_espers:
-                            sen_flag = sen_flag + ","
+                    num_start_espers = self.random.randint(stesp_min, stesp_max)
+                    # copy & shuffle the espers list
+                    chosen_esper_indexes = self.random.sample(range(len(Rom.espers)), num_start_espers)
+                    # update the -sen flag to include a list of chosen esper numbers
+                    sen_flag = ",".join([str(id_) for id_ in chosen_esper_indexes])
+                    # populate list of starting espers
+                    self.starting_espers = [Rom.espers[i] for i in chosen_esper_indexes]
                     # Now, replace -stesp min max flags with -sen x,y,z,etc
                     # create a list of flags
                     splitflags = [flag for flag in self.options.Flagstring.value.split("-")]
