@@ -1,6 +1,8 @@
-import typing
 import logging
 from logging import Logger
+from typing import TYPE_CHECKING
+
+from typing_extensions import override
 
 from NetUtils import ClientStatus
 from Utils import async_start
@@ -10,25 +12,26 @@ from . import Rom, Locations
 from .id_maps import location_name_to_id
 from .patch import FF6WCPatch
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from SNIClient import SNIClientCommandProcessor, SNIContext
 else:
-    SNIClientCommandProcessor = typing.Any
-    SNIContext = typing.Any
+    SNIClientCommandProcessor = object
+    SNIContext = object
 
 snes_logger: Logger = logging.getLogger("SNES")
 
 
 class FF6WCClient(SNIClient):
     game: str = "Final Fantasy 6 Worlds Collide"
-    location_names: typing.List[str] = list(Rom.event_flag_location_names)
-    location_ids: typing.Dict[str, int]
+    location_names: list[str] = list(Rom.event_flag_location_names)
+    location_ids: dict[str, int]
     patch_suffix = FF6WCPatch.patch_file_ending
 
     def __init__(self):
         super()
         self.location_ids = location_name_to_id
 
+    @override
     async def validate_rom(self, ctx: SNIContext) -> bool:
         from SNIClient import snes_read
 
@@ -69,7 +72,7 @@ class FF6WCClient(SNIClient):
 
         return True
 
-    async def _print_ram(self, ctx: SNIContext, address: int, bit: typing.Union[int, None] = None) -> None:
+    async def _print_ram(self, ctx: SNIContext, address: int, bit: int | None = None) -> None:
         from SNIClient import snes_read
 
         data = await snes_read(ctx, address, 1)
@@ -99,6 +102,7 @@ class FF6WCClient(SNIClient):
             snes_logger.info(f"Picked up: {location_name}")
         await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [location_id]}])
 
+    @override
     async def game_watcher(self, ctx: SNIContext) -> None:
         from SNIClient import snes_flush_writes
         if await self.connection_check(ctx) is False:
@@ -186,7 +190,7 @@ class FF6WCClient(SNIClient):
                 both_rewards_status = both_rewards_data & both_rewards_bit
                 if initial_event_status or both_rewards_status:
                     first_reward_status = first_reward_data & first_reward_bit
-                    locations_cleared: typing.List[str] = []
+                    locations_cleared: list[str] = []
                     if first_reward_status:
                         locations_cleared.append(location_one)
                     else:
@@ -320,7 +324,7 @@ class FF6WCClient(SNIClient):
                 item_quantities_data = await snes_read(ctx, Rom.item_quantities_base_address, 255)
                 if item_types_data is None or item_quantities_data is None:
                     return
-                reserved_slots: typing.List[int] = []
+                reserved_slots: list[int] = []
                 # Field items
                 for i in range(0, 255):
                     slot = item_types_data[i]
