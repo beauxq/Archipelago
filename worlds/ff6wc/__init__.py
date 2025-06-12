@@ -148,6 +148,7 @@ class FF6WCWorld(World):
         self.item_nonrewards = []
         self.generator_in_use = threading.Event()
         self.wc = None
+        self.rom_name = bytearray()
         self.rom_name_available_event = threading.Event()
 
     @override
@@ -460,21 +461,17 @@ class FF6WCWorld(World):
         major_items = len([location for location in Locations.major_checks if "(Boss)" not in location and "Status"
                            not in location])
         progression_items = len(item_pool)
-        if not self.options.Treasuresanity.value:
-            major_items = major_items - progression_items
-            for _ in range(major_items):
-                item_pool.append(self.create_good_filler_item(self.multiworld.random.choice(good_filler_pool)))
-            self.multiworld.itempool += item_pool
-        else:
-            for _ in range(major_items):
-                item_pool.append(self.create_good_filler_item(self.multiworld.random.choice(good_filler_pool)))
-            minor_items = len(Locations.all_minor_checks) - progression_items
+        major_items = major_items - progression_items
+        for _ in range(major_items):
+            item_pool.append(self.create_good_filler_item(self.random.choice(good_filler_pool)))
+        if self.options.Treasuresanity.value:
+            minor_items = len(Locations.all_minor_checks)
             for _ in range(minor_items):
                 # random filler item, but use chest item tier weights
                 item_pool.append(self.create_filler_item(
-                    self.multiworld.random.choices(filler_pool, filler_pool_weights)[0]
+                    self.random.choices(filler_pool, filler_pool_weights)[0]
                 ))
-            self.multiworld.itempool += item_pool
+        self.multiworld.itempool += item_pool
 
     @override
     def set_rules(self):
@@ -587,7 +584,7 @@ class FF6WCWorld(World):
         for current_sphere_count, sphere in enumerate(spheres):
             for location in sphere:
                 if location.item and location.item.player == self.player:
-                    if self.multiworld.random.randint(0, upgrade_base) < current_sphere_count:
+                    if self.random.randint(0, upgrade_base) < current_sphere_count:
                         self.upgrade_item(location.item)
 
         if self.options.Treasuresanity.value != Treasuresanity.option_off:
@@ -604,7 +601,7 @@ class FF6WCWorld(World):
             nfps = nee = nil = 1
             temp_new_item = ""
             while (nfps or nee or nil) == 1:
-                temp_new_item = self.multiworld.random.choice(self.item_rewards)
+                temp_new_item = self.random.choice(self.item_rewards)
                 if self.options.no_paladin_shields() and (temp_new_item == "Paladin Shld"
                                                           or temp_new_item == "Cursed Shld"):
                     nfps = 1
@@ -646,13 +643,12 @@ class FF6WCWorld(World):
             if location.item.player == self.player:
                 if location_name in Locations.major_checks or location.item.name in Items.items:
                     locations[location_name] = location.item.name
-        self.rom_name_text = f'6WC{Utils.__version__.replace(".", "")[0:3]}_{self.player}_{self.multiworld.seed:11}'
-        self.rom_name_text = self.rom_name_text[:20]
-        self.romName = bytearray(self.rom_name_text, 'utf-8')
-        self.romName.extend([0] * (20 - len(self.romName)))
-        self.rom_name = self.romName
+        rom_name_text = f'6WC{Utils.__version__.replace(".", "")[0:3]}_{self.player}_{self.multiworld.seed:11}'
+        rom_name_text = rom_name_text[:20]
+        self.rom_name = bytearray(rom_name_text, 'utf-8')
+        self.rom_name.extend([0] * (20 - len(self.rom_name)))
         self.rom_name_available_event.set()
-        locations["RomName"] = self.rom_name_text
+        locations["RomName"] = rom_name_text
 
         assert not (self.flagstring is None), "need flagstring from earlier generation step"
         if self.options.Treasuresanity.value != Treasuresanity.option_off:
@@ -687,7 +683,7 @@ class FF6WCWorld(World):
         import base64
         # wait for self.rom_name to be available.
         self.rom_name_available_event.wait()
-        rom_name = getattr(self, "rom_name", None)
+        rom_name = self.rom_name
         # we skip in case of error, so that the original error in the output thread is the one that gets raised
         if rom_name:
             new_name = base64.b64encode(bytes(self.rom_name)).decode()

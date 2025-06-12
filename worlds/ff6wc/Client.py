@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from NetUtils import ClientStatus
+from NetUtils import ClientStatus, NetworkItem
 from Utils import async_start
 from worlds.AutoSNIClient import SNIClient
 
@@ -324,28 +324,36 @@ class FF6WCClient(SNIClient):
                 item_quantities_data = await snes_read(ctx, Rom.item_quantities_base_address, 255)
                 if item_types_data is None or item_quantities_data is None:
                     return
-                reserved_slots: list[int] = []
                 # Field items
+                # First, check if we already have the item in question in inventory
+                found_slot = -1
                 for i in range(0, 255):
                     slot = item_types_data[i]
-                    quantity = item_quantities_data[i]
-                    exists = False
                     if slot == Rom.item_name_id[item_name]:
-                        exists = True
-                    if (slot == 255 or quantity == 0 or exists is True) and quantity < 98:
-                        reserved_slots.append(i)
-                        type_destination = Rom.item_types_base_address + i
-                        amount_destination = Rom.item_quantities_base_address + i
-                        type_id = Rom.item_name_id[item_name]
-                        amount = quantity + 1
-                        snes_buffered_write(ctx, type_destination, bytes([type_id]))
-                        snes_buffered_write(ctx, amount_destination, bytes([amount]))
-                        self.increment_items_received(ctx, items_received_amount)
-                        snes_logger.info('Received %s from %s (%s)' % (
-                            item_name,
-                            ctx.player_names[item.player],
-                            ctx.location_names.lookup_in_slot(item.location, item.player)))
+                        found_slot = i
                         break
+                if found_slot != -1:  # We have this item in inventory, so increment count
+                    quantity = item_quantities_data[found_slot]
+                    amount = max(min(quantity + 1, 99), 1)
+                    self.add_item_to_inventory(ctx,
+                                               found_slot,
+                                               items_received_amount,
+                                               amount,
+                                               item_name,
+                                               item)
+                else:  # Item not in inventory, so we write to a free slot
+                    for slot_index in range(0, 255):
+                        slot = item_types_data[slot_index]
+                        quantity = item_quantities_data[slot_index]
+                        if (slot == 255 or quantity == 0):
+                            amount = 1
+                            self.add_item_to_inventory(ctx,
+                                                       slot_index,
+                                                       items_received_amount,
+                                                       amount,
+                                                       item_name,
+                                                       item)
+                            break
 
     async def check_victory1(self, ctx: SNIContext) -> None:
         from SNIClient import snes_read
@@ -378,3 +386,22 @@ class FF6WCClient(SNIClient):
         from SNIClient import snes_buffered_write
         items_received_amount += 1
         snes_buffered_write(ctx, Rom.items_received_address, items_received_amount.to_bytes(2, 'little'))
+
+    def add_item_to_inventory(self,
+                              ctx: SNIContext,
+                              slot_index: int,
+                              items_received_amount: int,
+                              amount: int,
+                              item_name: str,
+                              item: NetworkItem) -> None:
+        from SNIClient import snes_buffered_write
+        type_destination = Rom.item_types_base_address + slot_index
+        amount_destination = Rom.item_quantities_base_address + slot_index
+        type_id = Rom.item_name_id[item_name]
+        snes_buffered_write(ctx, type_destination, bytes([type_id]))
+        snes_buffered_write(ctx, amount_destination, bytes([amount]))
+        self.increment_items_received(ctx, items_received_amount)
+        snes_logger.info('Received %s from %s (%s)' % (
+            item_name,
+            ctx.player_names[item.player],
+            ctx.location_names.lookup_in_slot(item.location, item.player)))
