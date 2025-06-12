@@ -56,7 +56,7 @@ class Espers():
             # for each esper in the list
             for specific_esper in args.starting_espers_list:
                 # make sure we get that specific one
-                self.starting_espers.append(self.get_specific_esper(self.esper_names[int(specific_esper)]))
+                self.starting_espers.append(self.get_specific_esper(self.esper_names[specific_esper]))
 
     def receive_dialogs_mod(self, dialogs):
         self.receive_dialogs = [1133, 1380, 1381, 1134, 1535, 1082, 1091, 1092, 1136, 1534, 2618, 1093, 1087,\

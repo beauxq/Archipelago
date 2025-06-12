@@ -109,9 +109,10 @@ def process(args):
     if args.starting_espers_named:
         from ..constants.espers import id_esper
         # loop over all esper IDs separated by commas
-        for an_esper_id in args.starting_espers_named.split(','):
+        for an_esper_id_str in args.starting_espers_named.split(','):
+            an_esper_id = int(an_esper_id_str)
             # if a valid esper ID
-            if int(an_esper_id) < len(id_esper):
+            if an_esper_id < len(id_esper):
                 # if we haven't already added this into the list
                 if an_esper_id not in args.starting_espers_list:
                     # add to the list of starting espers to be processed in data/espers.py
