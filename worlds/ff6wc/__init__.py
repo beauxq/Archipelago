@@ -147,6 +147,7 @@ class FF6WCWorld(World):
         self.item_nonrewards = []
         self.generator_in_use = threading.Event()
         self.wc = None
+        self.rom_name = bytearray()
         self.rom_name_available_event = threading.Event()
 
     @override
@@ -617,13 +618,12 @@ class FF6WCWorld(World):
             if location.item.player == self.player:
                 if location_name in Locations.major_checks or location.item.name in Items.items:
                     locations[location_name] = location.item.name
-        self.rom_name_text = f'6WC{Utils.__version__.replace(".", "")[0:3]}_{self.player}_{self.multiworld.seed:11}'
-        self.rom_name_text = self.rom_name_text[:20]
-        self.romName = bytearray(self.rom_name_text, 'utf-8')
-        self.romName.extend([0] * (20 - len(self.romName)))
-        self.rom_name = self.romName
+        rom_name_text = f'6WC{Utils.__version__.replace(".", "")[0:3]}_{self.player}_{self.multiworld.seed:11}'
+        rom_name_text = rom_name_text[:20]
+        self.rom_name = bytearray(rom_name_text, 'utf-8')
+        self.rom_name.extend([0] * (20 - len(self.rom_name)))
         self.rom_name_available_event.set()
-        locations["RomName"] = self.rom_name_text
+        locations["RomName"] = rom_name_text
 
         assert not (self.flagstring is None), "need flagstring from earlier generation step"
         if self.options.Treasuresanity.value != Treasuresanity.option_off:
@@ -658,7 +658,7 @@ class FF6WCWorld(World):
         import base64
         # wait for self.rom_name to be available.
         self.rom_name_available_event.wait()
-        rom_name = getattr(self, "rom_name", None)
+        rom_name = self.rom_name
         # we skip in case of error, so that the original error in the output thread is the one that gets raised
         if rom_name:
             new_name = base64.b64encode(bytes(self.rom_name)).decode()
