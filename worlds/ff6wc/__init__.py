@@ -346,7 +346,6 @@ class FF6WCWorld(World):
                 if stesp_min > 0 or stesp_max > 0:
                     # pick a random number of starting espers between min & max specified
                     num_start_espers = self.random.randint(stesp_min, stesp_max)
-                    # copy & shuffle the espers list
                     chosen_esper_indexes = self.random.sample(range(len(Rom.espers)), num_start_espers)
                     # update the -sen flag to include a list of chosen esper numbers
                     sen_flag = ",".join([str(id_) for id_ in chosen_esper_indexes])
