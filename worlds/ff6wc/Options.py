@@ -1,9 +1,10 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
 import logging
 import math
 from random import Random
 import random
-from typing import Any, Dict, List, Sequence, Union
+from typing import Any, Dict, List, Sequence
 
 from typing_extensions import override
 
@@ -332,7 +333,7 @@ class Flagstring(FreeText):
     display_name = "Flagstring"
     default = "False"
 
-    _cache: Union[Dict[str, Dict[str, str]], None] = None
+    _cache: dict[str, Mapping[str, str]] | None = None
     """ `{full_flagstring_value: {flag: value}}` """
 
     def _parse(self) -> Dict[str, str]:
@@ -355,7 +356,19 @@ class Flagstring(FreeText):
                 i += 1
         return parsed
 
-    def _get_from_cache(self) -> Dict[str, str]:
+    def _set(self, flags: Mapping[str, str]) -> None:
+        """ inverse of `_parse` """
+        items: list[str] = []
+        for k, v in flags.items():
+            if not k.startswith("-"):
+                raise ValueError(f"{k=} should start with '-'")
+            items.append(k)
+            if len(v):
+                items.append(v)
+        self.value = " ".join(items)
+        assert self._get_from_cache() == flags, flags
+
+    def _get_from_cache(self) -> Mapping[str, str]:
         if self._cache is None:
             self._cache = {}
 
@@ -373,6 +386,23 @@ class Flagstring(FreeText):
         """ `key` including "-" prefix """
         parsed = self._get_from_cache()
         return parsed[key]
+
+    def replace_flag(self, old_key: str, new_key: str, new_value: str) -> None:
+        """
+        - keys should include the "-" prefix
+        - `new_value` should should be empty string for keys without values
+        """
+        if not new_key.startswith("-"):
+            raise ValueError(f"{new_key=} should start with '-'")
+        parsed = self._get_from_cache()
+        if old_key not in parsed.keys():
+            raise KeyError(old_key)
+        # to preserve order, new dict instead of pop and insert new key
+        new_flags = {
+            (k if k != old_key else new_key): (v if k != old_key else new_value)
+            for k, v in parsed.items()
+        }
+        self._set(new_flags)
 
 
 @dataclass
