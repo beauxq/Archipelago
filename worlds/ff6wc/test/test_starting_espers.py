@@ -16,13 +16,15 @@ class TestStartingEsperFlagBegin(FF6WCTestBase):
 class TestStartingEsperFlagEnd(FF6WCTestBase):
     """ -stesp at end of flagstring """
     options = {
-        "Flagstring": "-cg -oa 2.7.7 -sc1 random -sc2 random -yremove -stesp 4 4",
+        "Flagstring": "-cg -oa 2.7.7 -sc1 random -sc2 random -yremove -stesp 2 4",
     }
 
     def test_stesp_changes_to_sen(self) -> None:
         self.assertNotIn("stesp", self.world.options.Flagstring.value)
         sen_value = self.world.options.Flagstring.get_flag("-sen")
-        self.assertEqual(sen_value.count(","), 3)
+        comma_count = sen_value.count(",")
+        self.assertLessEqual(comma_count, 3)
+        self.assertGreaterEqual(comma_count, 1)
 
 
 class TestStartingEsperFlagMid(FF6WCTestBase):
