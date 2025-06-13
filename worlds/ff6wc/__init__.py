@@ -352,16 +352,7 @@ class FF6WCWorld(World):
                     # populate list of starting espers
                     self.starting_espers = [Rom.espers[i] for i in chosen_esper_indexes]
                     # Now, replace -stesp min max flags with -sen x,y,z,etc
-                    # create a list of flags
-                    splitflags = [flag for flag in self.options.Flagstring.value.split("-")]
-                    # for each flag in the total flagstring
-                    for flag in splitflags:
-                        # find the flag for stesp
-                        if flag.split(" ")[0] == "stesp":
-                            # replace with the specific esper string we built above
-                            splitflags[splitflags.index(flag)] = "sen " + sen_flag + " "
-                        # join the flagstring back together again
-                        self.options.Flagstring.value = "-".join(splitflags) 
+                    self.options.Flagstring.replace_flag("-stesp", "-sen", sen_flag)
 
         else:
             self.starting_characters = resolve_character_options(self.options, self.random)
