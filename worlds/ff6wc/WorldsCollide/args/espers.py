@@ -121,7 +121,7 @@ def process(args):
             else:
                 args.parser.print_usage()
                 raise ValueError(f"Error! Starting Esper ID not valid: {an_esper_id}")
-            
+
 def flags(args):
     flags = ""
 
