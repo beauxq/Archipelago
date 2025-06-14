@@ -650,36 +650,39 @@ def generate_magic_string(options: FF6WCOptions) -> List[str]:
             multi_summon_string, *natural_magic_strings]
 
 
-def generate_items_string(options: FF6WCOptions) -> List[str]:
+def generate_items_string(options: FF6WCOptions) -> list[str]:
     starting_gp_string = f"-gp={options.StartingGP}"
     # Three Moogle Charms, a Warp Stone, and five Fenix Downs
     starting_items_strings = ["-smc=3", "-sws=1", "-sfd=5"]
 
     # 75-125% shop prices, five Dried Meat shops, no priceless items
     shops_strings = ["-sprp", "75", "125", "-sdm", "5", "-npi"]
-    if options.RandomizedShops == 1:  # Shuffled shops
-        shops_strings.extend(["-slsr"])
-    elif options.RandomizedShops == 2:  # Randomized Shops
+    if options.RandomizedShops.value == RandomizedShops.option_randomized:
+        shops_strings.extend(["-sisr"])
+    elif options.RandomizedShops.value == RandomizedShops.option_random_tiered:
         shops_strings.extend(["-sirt"])
 
-    spellcasting_items_string = []
-    if options.SpellcastingItems == 1:  # Limited
+    if options.SpellcastingItems.value == SpellcastingItems.option_limited:
         spellcasting_items_string = ["-sebr", "-sesb", "-snes"]
-    elif options.SpellcastingItems == 2:  # None
+    elif options.SpellcastingItems.value == SpellcastingItems.option_none:
         spellcasting_items_string = ["-snbr", "-snsb", "-snes"]
+    else:  # vanilla
+        spellcasting_items_string = []
 
     # Moogle Charms equipable by all, no Moogle Charms in item pool, no Sprint Shoes in pool
     # Stronger Atma Weapon, 8-32 battles to uncurse Cursed Shield
     equipability_strings = ["-mca", "-nmc", "-noshoes", "-saw", "-csb", "8", "32"]
     if not options.AllowStrongestItems.value:
         equipability_strings.extend(["-nee", "-nil", "-nfps"])
-    if options.Equipment == 1:  # Shuffled
+    if options.Equipment.value == Equipment.option_shuffled:
         equipability_strings.extend(["-iesr=0", "-iersr=0"])
-    elif options.Equipment == 2:  # Random
+    elif options.Equipment.value == Equipment.option_randomized:
         equipability_strings.extend(["-ier", "1", "14", "-ierr", "1", "14"])
-    elif options.Equipment == 3:  # Balanced Random
+    elif options.Equipment.value == Equipment.option_balanced_random:
         equipability_strings.extend(["-iebr=6", "-ierbr=6"])
+
     chest_randomization = ["-ccsr", "20"]  # Default shuffle + 20% random. Only applies if Treasuresanity = off
+
     return [starting_gp_string, *starting_items_strings, *shops_strings,
             *spellcasting_items_string, *equipability_strings, *chest_randomization]
 
