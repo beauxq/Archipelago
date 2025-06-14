@@ -445,6 +445,16 @@ class FF6WCOptions(PerGameCommonOptions):
     def no_illuminas(self) -> bool:
         return (not self.AllowStrongestItems.value) or self.Flagstring.has_flag("-nil")
 
+    def no_shoes(self) -> bool:
+        # We default to noshoes if no flagstring is given
+        # TODO: SSOT with generate_items_string
+        return ("-" not in self.Flagstring.value) or self.Flagstring.has_flag("-noshoes")
+
+    def no_moogle_charm(self) -> bool:
+        # We default to nmc if no flagstring is given
+        # TODO: SSOT with generate_items_string
+        return ("-" not in self.Flagstring.value) or self.Flagstring.has_flag("-nmc")
+
 
 def verify_flagstring(flags: Sequence[str]) -> None:
     """ raises exception (`ValueError`) if flagstring is invalid """

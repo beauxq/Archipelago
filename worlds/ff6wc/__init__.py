@@ -418,10 +418,10 @@ class FF6WCWorld(World):
             if self.options.no_illuminas() and item == "Illumina":
                 continue
             # if -noshoes No SprintShoes specified, remove from list
-            if self.options.Flagstring.has_flag("-noshoes") and item == "Sprint Shoes":
+            if self.options.no_shoes() and item == "Sprint Shoes":
                 continue
             # if -nmc No MoogleCharms specified, remove from list
-            if self.options.Flagstring.has_flag("-nmc") and item == "Moogle Charm":
+            if self.options.no_moogle_charm() and item == "Moogle Charm":
                 continue
             if item != "ArchplgoItem":
                 filler_pool.append(item)
