@@ -51,6 +51,13 @@ class Espers():
             count = random.randint(args.starting_espers_min, args.starting_espers_max)
             self.starting_espers = [self.get_random_esper() for _esp in range(count)]
 
+        # else if specific espers were named to start
+        elif args.starting_espers_named:
+            # for each esper in the list
+            for specific_esper in args.starting_espers_list:
+                # make sure we get that specific one
+                self.starting_espers.append(self.get_specific_esper(self.esper_names[specific_esper]))
+
     def receive_dialogs_mod(self, dialogs):
         self.receive_dialogs = [1133, 1380, 1381, 1134, 1535, 1082, 1091, 1092, 1136, 1534, 2618, 1093, 1087,\
                                 2975, 2799, 1506, 1095, 1135, 2755, 1097, 1098, 1572, 2756, 1099, 2273, 2733, 1100]
