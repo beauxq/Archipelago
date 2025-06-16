@@ -668,7 +668,7 @@ def generate_items_string(options: FF6WCOptions) -> list[str]:
     # 75-125% shop prices, five Dried Meat shops, no priceless items
     shops_strings = ["-sprp", "75", "125", "-sdm", "5", "-npi"]
     if options.RandomizedShops.value == RandomizedShops.option_randomized:
-        shops_strings.extend(["-sisr"])
+        shops_strings.extend(["-sisr", "20"])
     elif options.RandomizedShops.value == RandomizedShops.option_random_tiered:
         shops_strings.extend(["-sirt"])
 
