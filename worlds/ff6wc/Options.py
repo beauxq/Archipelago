@@ -307,10 +307,9 @@ class RandomizeZozoClock(Removed):
 
     def __init__(self, value: str):
         if value:
-            # TODO: after some deprecation time, change this to raise an exception
-            logging.warning("`RandomizeZozoClock` removed in WC 1.4.2, please update your options file. "
-                            "If you would like to make sure you don't have to do the clock puzzle, "
-                            "you can use `ZozoClockChestExclude`")
+            raise RuntimeError("`RandomizeZozoClock` removed in WC 1.4.2, please update your options file. "
+                               "If you would like to make sure you don't have to do the clock puzzle, "
+                               "you can use `ZozoClockChestExclude`")
         super().__init__("")
 
 
@@ -431,7 +430,7 @@ class FF6WCOptions(PerGameCommonOptions):
     SpellcastingItems: SpellcastingItems
     Equipment: Equipment
     AllowStrongestItems: AllowStrongestItems
-    RandomizeZozoClock: RandomizeZozoClock  # TODO: some time after the above TODO raises an exception, remove this
+    RandomizeZozoClock: RandomizeZozoClock  # TODO: some time after this option raises an exception, remove this
     ZozoClockChestExclude: ZozoClockChestExclude
     Treasuresanity: Treasuresanity
     Flagstring: Flagstring
