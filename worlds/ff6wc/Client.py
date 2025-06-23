@@ -9,7 +9,6 @@ from Utils import async_start
 from worlds.AutoSNIClient import SNIClient
 
 from . import Rom, Locations
-from .Rom import dialog_index_size
 from .id_maps import location_name_to_id
 from .patch import FF6WCPatch
 
@@ -423,7 +422,7 @@ class FF6WCClient(SNIClient):
 
     async def check_location_scouts(self, ctx: SNIContext):
         from SNIClient import snes_read
-        dialog_data = await snes_read(ctx, Rom.dialog_index_address, dialog_index_size)
+        dialog_data = await snes_read(ctx, Rom.dialog_index_address, Rom.dialog_index_size)
         if dialog_data is None:
             return
         dialog_index = int.from_bytes(dialog_data, "little")
