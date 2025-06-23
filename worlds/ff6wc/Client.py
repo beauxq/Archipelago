@@ -198,25 +198,21 @@ class FF6WCClient(SNIClient):
                 if is_narshe:
                     # Mark Narshe Weapon Shop 1 if Option 1 was picked (0x0b5 is TRUE)
                     if _first_reward_status: 
-                        if self.location_ids[location_one_string] not in ctx.locations_checked:
-                            locations_cleared.append(location_one_string)  # will clear "Narshe Weapon Shop 1"
+                        locations_cleared.append(location_one_string)  # will clear "Narshe Weapon Shop 1"
                     # Mark Narshe Weapon Shop 2 if Option 2 was picked (0x0b5 is FALSE) AND Shop Collected (0x0b6 is TRUE)
                     else:
                         _got_ragnarok_idx, _got_ragnarok_bit = Rom.get_event_flag_value(Rom.additional_event_flags["Narshe Weapon Shop Collected"])  # GOT_RAGNAROK is 0x0b6
                         _got_ragnarok_status = all_event_data[_got_ragnarok_idx] & _got_ragnarok_bit
                         if _got_ragnarok_status:  # If GOT_RAGNAROK (0x0b6) is TRUE
-                            if self.location_ids[location_two_string] not in ctx.locations_checked:
-                                locations_cleared.append(location_two_string)  # will clear "Narshe Weapon Shop 2"
+                            locations_cleared.append(location_two_string)  # will clear "Narshe Weapon Shop 2"
 
                 # Lone Wolf specific logic
                 else:
                     if _main_inter_status:  # If Lone Wolf Encountered (0x68d) is TRUE
                         if _first_reward_status:  # If Option 1 was picked (0x29f is TRUE)
-                            if self.location_ids[location_one_string] not in ctx.locations_checked:
-                                locations_cleared.append(location_one_string)  # will clear "Lone Wolf 1"
+                            locations_cleared.append(location_one_string)  # will clear "Lone Wolf 1"
                         else:  # Option 2 was picked (0x29f is FALSE)
-                            if self.location_ids[location_two_string] not in ctx.locations_checked:
-                                locations_cleared.append(location_two_string)  # will clear "Lone Wolf 2"
+                            locations_cleared.append(location_two_string)  # will clear "Lone Wolf 2"
 
                 # Catch the second reward
                 if _both_rewards_status:
