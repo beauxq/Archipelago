@@ -24,6 +24,7 @@ animation_byte = 0xF5009A
 dialog_index_address = 0xF500D0
 dialog_index_size = 2
 
+
 espers = [  # This is the internal order of the Espers in the game. Editing this will break things.
     "Ramuh", "Ifrit", "Shiva",
     "Siren", "Terrato", "Shoat",
@@ -642,12 +643,12 @@ treasure_chest_data: Dict[str, Tuple[int, int, int]] = {
 }
 
 dialog_location_scouts_lookup = {
-    1111: ["Auction House 10kGP"],
-    1115: ["Auction House 20kGP"],
-    1765: ["Lone Wolf 1", "Lone Wolf 2"],
-    1519: ["Narshe Weapon Shop 1", "Narshe Weapon Shop 2"],
-    1569: ["Tzen Thief"],
-    1570: ["Tzen Thief"], # This isn't an error. He's got two different dialogs depending on WoB vs WoR.
+    (200, 1111): ["Auction House 10kGP"],
+    (200, 1115): ["Auction House 20kGP"],
+    (23, 1765): ["Lone Wolf 1", "Lone Wolf 2"],
+    (24, 1519): ["Narshe Weapon Shop 1", "Narshe Weapon Shop 2"],
+    (306, 1569): ["Tzen Thief"],
+    (305, 1570): ["Tzen Thief"], # This isn't an error. He's got two different dialogs depending on WoB vs WoR.
 }
 
 def get_event_flag_value(event_id: int) -> Tuple[int, int]:

@@ -423,11 +423,16 @@ class FF6WCClient(SNIClient):
     async def check_location_scouts(self, ctx: SNIContext):
         from SNIClient import snes_read
         dialog_data = await snes_read(ctx, Rom.dialog_index_address, Rom.dialog_index_size)
+        map_data = await snes_read(ctx, Rom.map_index_address, 2)
+        if map_data is None:
+            return False
+        map_index = int.from_bytes(map_data, "little")
         if dialog_data is None:
             return
         dialog_index = int.from_bytes(dialog_data, "little")
-        if dialog_index in Rom.dialog_location_scouts_lookup.keys():
-            location_scout_list = Rom.dialog_location_scouts_lookup[dialog_index]
+        lookup = map_index, dialog_index
+        if lookup in Rom.dialog_location_scouts_lookup.keys():
+            location_scout_list = Rom.dialog_location_scouts_lookup[lookup]
             for location in location_scout_list:
                 location_id = self.location_ids[location]
                 if location_id not in ctx.locations_scouted:
