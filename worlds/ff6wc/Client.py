@@ -203,9 +203,7 @@ class FF6WCClient(SNIClient):
                     # Mark Narshe Weapon Shop 2 if Option 2 was picked (0x0b5 is FALSE) AND Shop Collected (0x0b6 is TRUE)
                     else:
                         _got_ragnarok_idx, _got_ragnarok_bit = Rom.get_event_flag_value(Rom.additional_event_flags["Narshe Weapon Shop Collected"]) # GOT_RAGNAROK is 0x0b6
-                        _got_ragnarok_raw_byte_data = await snes_read(ctx, Rom.event_flag_base_address + _got_ragnarok_idx, 1)
-                        _got_ragnarok_raw_byte = _got_ragnarok_raw_byte_data[0] if _got_ragnarok_raw_byte_data else 0
-                        _got_ragnarok_status = _got_ragnarok_raw_byte & _got_ragnarok_bit
+                        _got_ragnarok_status = all_event_data[_got_ragnarok_idx] & _got_ragnarok_bit
                         if _got_ragnarok_status: # If GOT_RAGNAROK (0x0b6) is TRUE
                             if self.location_ids[location_two_string] not in ctx.locations_checked:
                                 locations_cleared.append(location_two_string) # will clear "Narshe Weapon Shop 2"
