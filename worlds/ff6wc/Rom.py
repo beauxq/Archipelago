@@ -307,8 +307,8 @@ event_flag_location_names = {
     "Zozo": 0x52,
     "Mobliz": 0x0bf,
     "South Figaro Cave": 0x0b1,
-    "Narshe Weapon Shop 1": 0x0b7,
-    "Narshe Weapon Shop 2": 0x0b6,
+    "Narshe Weapon Shop 1": 0x0b5,
+    "Narshe Weapon Shop 2": 0x0b7,
     "Phoenix Cave": 0x0d7,
     "Red Dragon": 0x120,
     "Doma Castle Siege": 0x040,
@@ -370,6 +370,7 @@ additional_event_flags = {
     "Lone Wolf First Reward Picked": 0x29f,
     "Lone Wolf Both Rewards Picked": 0x241,
     "Narshe Weapon Shop Encountered": 0x605,
+    "Narshe Weapon Shop Collected": 0x0b6,
     "Narshe Weapon Shop First Reward Picked": 0x0b5,
     "Narshe Weapon Shop Both Rewards Picked": 0x0b7
 }
