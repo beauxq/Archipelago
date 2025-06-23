@@ -420,27 +420,25 @@ class FF6WCClient(SNIClient):
             await ctx.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
             ctx.finished_game = True
 
-    async def check_location_scouts(self, ctx: SNIContext):
+    async def check_location_scouts(self, ctx: SNIContext) -> None:
         from SNIClient import snes_read
         dialog_data = await snes_read(ctx, Rom.dialog_index_address, Rom.dialog_index_size)
         map_data = await snes_read(ctx, Rom.map_index_address, 2)
-        if map_data is None:
-            return False
-        map_index = int.from_bytes(map_data, "little")
-        if dialog_data is None:
+        if map_data is None or dialog_data is None:
             return
+        map_index = int.from_bytes(map_data, "little")
         dialog_index = int.from_bytes(dialog_data, "little")
         lookup = map_index, dialog_index
-        if lookup in Rom.dialog_location_scouts_lookup.keys():
-            location_scout_list = Rom.dialog_location_scouts_lookup[lookup]
-            for location in location_scout_list:
-                location_id = self.location_ids[location]
-                if location_id not in ctx.locations_scouted:
-                    ctx.locations_scouted.add(location_id)
-                    await ctx.send_msgs([{
-                        "cmd": "LocationScouts",
-                        "locations": [location_id],
-                        "create_as_hint": 2}])
+        location_scout_list = Rom.dialog_location_scouts_lookup.get(lookup, ())
+        for location in location_scout_list:
+            location_id = self.location_ids[location]
+            if location_id not in ctx.locations_scouted:
+                ctx.locations_scouted.add(location_id)
+                await ctx.send_msgs([{
+                    "cmd": "LocationScouts",
+                    "locations": [location_id],
+                    "create_as_hint": 2,
+                }])
 
     def increment_items_received(self, ctx: SNIContext, items_received_amount: int) -> None:
         from SNIClient import snes_buffered_write

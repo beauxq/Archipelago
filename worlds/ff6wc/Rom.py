@@ -648,8 +648,9 @@ dialog_location_scouts_lookup = {
     (23, 1765): ["Lone Wolf 1", "Lone Wolf 2"],
     (24, 1519): ["Narshe Weapon Shop 1", "Narshe Weapon Shop 2"],
     (306, 1569): ["Tzen Thief"],
-    (305, 1570): ["Tzen Thief"], # This isn't an error. He's got two different dialogs depending on WoB vs WoR.
+    (305, 1570): ["Tzen Thief"],  # This isn't an error. He's got two different dialogs depending on WoB vs WoR.
 }
+
 
 def get_event_flag_value(event_id: int) -> Tuple[int, int]:
     """ returns (address offset from `event_flag_base_address`, bit mask) """
