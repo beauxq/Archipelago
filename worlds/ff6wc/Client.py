@@ -163,11 +163,10 @@ class FF6WCClient(SNIClient):
             location_name = self.location_names[location_index]
             location_id = self.location_ids[location_name]
 
-            # --- START PAIRED LOCATIONS BLOCK ---
             # This block handles Lone Wolf and Narshe Weapon Shop paired locations.
             if location_name in ["Lone Wolf 1", "Lone Wolf 2", "Narshe Weapon Shop 1", "Narshe Weapon Shop 2"]: 
                 is_narshe = (location_name[0] == "N")
-				# Semantic flags from Rom.additional_event_flags
+		# Semantic flags from Rom.additional_event_flags
                 if is_narshe: # Narshe Weapon Shop
                     initial_choice_distinction_flag_id = Rom.additional_event_flags["Narshe Weapon Shop First Reward Picked"] # 0x0b5 (CHOSE_RAGNAROK_ESPER)
                     both_rewards_obtained_flag_id = Rom.additional_event_flags["Narshe Weapon Shop Both Rewards Picked"] # 0x0b7
@@ -221,20 +220,19 @@ class FF6WCClient(SNIClient):
                             if self.location_ids[location_two_string] not in ctx.locations_checked:
                                 locations_cleared.append(location_two_string) # will clear "Lone Wolf 2"
 
-				# Catch the second reward
+		# Catch the second reward
                 if _both_rewards_status:
                     if location_one_string not in locations_cleared:
                         locations_cleared.append(location_one_string)
                     if location_two_string not in locations_cleared:
                         locations_cleared.append(location_two_string)
 
-				# Send checks for locations determined in this block
+		# Send checks for locations determined in this block
                 for location_name in locations_cleared:
                     location_id = self.location_ids[location_name]
                     if location_id not in ctx.locations_checked:
                         await self._new_location_check(ctx, location_name)
                 continue
-            # --- END PAIRED LOCATIONS BLOCK ---
 
             else:
                 event_index, event_bit = Rom.get_event_flag_value(Rom.event_flag_location_names[location_name])
