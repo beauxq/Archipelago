@@ -164,21 +164,21 @@ class FF6WCClient(SNIClient):
             location_id = self.location_ids[location_name]
 
             # This block handles Lone Wolf and Narshe Weapon Shop paired locations.
-            if location_name in ["Lone Wolf 1", "Lone Wolf 2", "Narshe Weapon Shop 1", "Narshe Weapon Shop 2"]: 
+            if location_name in ["Lone Wolf 1", "Lone Wolf 2", "Narshe Weapon Shop 1", "Narshe Weapon Shop 2"]:
                 is_narshe = (location_name[0] == "N")
-		# Semantic flags from Rom.additional_event_flags
-                if is_narshe: # Narshe Weapon Shop
-                    initial_choice_distinction_flag_id = Rom.additional_event_flags["Narshe Weapon Shop First Reward Picked"] # 0x0b5 (CHOSE_RAGNAROK_ESPER)
-                    both_rewards_obtained_flag_id = Rom.additional_event_flags["Narshe Weapon Shop Both Rewards Picked"] # 0x0b7
-                    main_interaction_complete_flag_id = Rom.additional_event_flags["Narshe Weapon Shop Encountered"] # 0x605
-                    location_one_string = "Narshe Weapon Shop 1" # Rom.py ID: 0x0b5
-                    location_two_string = "Narshe Weapon Shop 2" # Rom.py ID: 0x0b7
-                else: # Lone Wolf
-                    initial_choice_distinction_flag_id = Rom.additional_event_flags["Lone Wolf First Reward Picked"] # 0x29f (RECRUITED_MOG_WOB)
-                    both_rewards_obtained_flag_id = Rom.additional_event_flags["Lone Wolf Both Rewards Picked"] # 0x241
-                    main_interaction_complete_flag_id = Rom.additional_event_flags["Lone Wolf Encountered"] # 0x68d
-                    location_one_string = "Lone Wolf 1" # Rom.py ID: 0x29f
-                    location_two_string = "Lone Wolf 2" # Rom.py ID: 0x241
+                # Semantic flags from Rom.additional_event_flags
+                if is_narshe:  # Narshe Weapon Shop
+                    initial_choice_distinction_flag_id = Rom.additional_event_flags["Narshe Weapon Shop First Reward Picked"]  # 0x0b5 (CHOSE_RAGNAROK_ESPER)
+                    both_rewards_obtained_flag_id = Rom.additional_event_flags["Narshe Weapon Shop Both Rewards Picked"]  # 0x0b7
+                    main_interaction_complete_flag_id = Rom.additional_event_flags["Narshe Weapon Shop Encountered"]  # 0x605
+                    location_one_string = "Narshe Weapon Shop 1"  # Rom.py ID: 0x0b5
+                    location_two_string = "Narshe Weapon Shop 2"  # Rom.py ID: 0x0b7
+                else:  # Lone Wolf
+                    initial_choice_distinction_flag_id = Rom.additional_event_flags["Lone Wolf First Reward Picked"]  # 0x29f (RECRUITED_MOG_WOB)
+                    both_rewards_obtained_flag_id = Rom.additional_event_flags["Lone Wolf Both Rewards Picked"]  # 0x241
+                    main_interaction_complete_flag_id = Rom.additional_event_flags["Lone Wolf Encountered"]  # 0x68d
+                    location_one_string = "Lone Wolf 1"  # Rom.py ID: 0x29f
+                    location_two_string = "Lone Wolf 2"  # Rom.py ID: 0x241
 
                 # Read main interaction complete status (e.g. NWS Encountered / LW Encountered)
                 _main_inter_idx, _main_inter_bit = Rom.get_event_flag_value(main_interaction_complete_flag_id)
@@ -199,33 +199,33 @@ class FF6WCClient(SNIClient):
                     # Mark Narshe Weapon Shop 1 if Option 1 was picked (0x0b5 is TRUE)
                     if _first_reward_status: 
                         if self.location_ids[location_one_string] not in ctx.locations_checked:
-                            locations_cleared.append(location_one_string) # will clear "Narshe Weapon Shop 1"
+                            locations_cleared.append(location_one_string)  # will clear "Narshe Weapon Shop 1"
                     # Mark Narshe Weapon Shop 2 if Option 2 was picked (0x0b5 is FALSE) AND Shop Collected (0x0b6 is TRUE)
                     else:
-                        _got_ragnarok_idx, _got_ragnarok_bit = Rom.get_event_flag_value(Rom.additional_event_flags["Narshe Weapon Shop Collected"]) # GOT_RAGNAROK is 0x0b6
+                        _got_ragnarok_idx, _got_ragnarok_bit = Rom.get_event_flag_value(Rom.additional_event_flags["Narshe Weapon Shop Collected"])  # GOT_RAGNAROK is 0x0b6
                         _got_ragnarok_status = all_event_data[_got_ragnarok_idx] & _got_ragnarok_bit
-                        if _got_ragnarok_status: # If GOT_RAGNAROK (0x0b6) is TRUE
+                        if _got_ragnarok_status:  # If GOT_RAGNAROK (0x0b6) is TRUE
                             if self.location_ids[location_two_string] not in ctx.locations_checked:
-                                locations_cleared.append(location_two_string) # will clear "Narshe Weapon Shop 2"
+                                locations_cleared.append(location_two_string)  # will clear "Narshe Weapon Shop 2"
 
                 # Lone Wolf specific logic
                 else:
-                    if _main_inter_status: # If Lone Wolf Encountered (0x68d) is TRUE
-                        if _first_reward_status: # If Option 1 was picked (0x29f is TRUE)
+                    if _main_inter_status:  # If Lone Wolf Encountered (0x68d) is TRUE
+                        if _first_reward_status:  # If Option 1 was picked (0x29f is TRUE)
                             if self.location_ids[location_one_string] not in ctx.locations_checked:
-                                locations_cleared.append(location_one_string) # will clear "Lone Wolf 1"
-                        else: # Option 2 was picked (0x29f is FALSE)
+                                locations_cleared.append(location_one_string)  # will clear "Lone Wolf 1"
+                        else:  # Option 2 was picked (0x29f is FALSE)
                             if self.location_ids[location_two_string] not in ctx.locations_checked:
-                                locations_cleared.append(location_two_string) # will clear "Lone Wolf 2"
+                                locations_cleared.append(location_two_string)  # will clear "Lone Wolf 2"
 
-		# Catch the second reward
+                # Catch the second reward
                 if _both_rewards_status:
                     if location_one_string not in locations_cleared:
                         locations_cleared.append(location_one_string)
                     if location_two_string not in locations_cleared:
                         locations_cleared.append(location_two_string)
 
-		# Send checks for locations determined in this block
+                # Send checks for locations determined in this block
                 for location_name in locations_cleared:
                     location_id = self.location_ids[location_name]
                     if location_id not in ctx.locations_checked:
