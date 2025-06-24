@@ -649,6 +649,8 @@ dialog_location_scouts_lookup = {
     (24, 1519): ["Narshe Weapon Shop 1", "Narshe Weapon Shop 2"],
     (306, 1569): ["Tzen Thief"],
     (305, 1570): ["Tzen Thief"],  # This isn't an error. He's got two different dialogs depending on WoB vs WoR.
+    (154, 2264): ["Mobliz"],  # The spoiler girl if Esper or Item.
+    (154, 2307): ["Mobliz"],  # The spoiler girl if Character.
 }
 
 
