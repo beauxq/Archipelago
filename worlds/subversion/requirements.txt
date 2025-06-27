@@ -1,2 +1,2 @@
-subversion_rando @ git+https://github.com/SubversionRando/SubversionRando@e99de834516989d62c2473965fe2b6a66092dede#0.9.0
+subversion_rando @ git+https://github.com/SubversionRando/SubversionRando@31eb2068f02dec52c49cfce09f700f612f03eac3#0.9.3
 typing_extensions>=4.12.2

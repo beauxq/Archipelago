@@ -93,7 +93,9 @@ def cs_to_loadout(sv_game: Game, collection_state: CollectionState, player: int)
     """ convert Archipelago CollectionState to subversion_rando collection state """
     loadout = Loadout(sv_game)
     for item_name, count in item_counts(collection_state, player):
-        loadout.contents[id_to_sv_item[item_name_to_id[item_name]]] += count
+        # private usage for performance
+        # assert len(loadout._cache) == 0
+        loadout._contents[id_to_sv_item[item_name_to_id[item_name]]] += count  # pyright: ignore[reportPrivateUsage]
     loadout.append(Items.spaceDrop)
     loadout.append(area_doors["SunkenNestL"])
     update_area_logic(loadout)
