@@ -57,7 +57,7 @@ class SubversionSNIClient(SNIClient):
     patch_suffix = ".apsv"
 
     pop_tracker_logic_server: Union[UATServer, None] = None
-    snes_reader: SnesReader[SubversionMemory] | None = None
+    snes_reader = SnesReader(SubversionMemory)
 
     @override
     async def deathlink_kill_player(self, ctx: "SNIContext") -> None:
@@ -94,12 +94,9 @@ class SubversionSNIClient(SNIClient):
             if self.pop_tracker_logic_server:
                 await self.pop_tracker_logic_server.close()
                 self.pop_tracker_logic_server = None
-            self.snes_reader = None
             return False
 
         ctx.game = self.game
-        if self.snes_reader is None:
-            self.snes_reader = SnesReader(SubversionMemory, ctx)
 
         # romVersion = int(rom_name[2:5].decode('UTF-8'))
         # if romVersion < 30:
@@ -189,12 +186,11 @@ class SubversionSNIClient(SNIClient):
     @override
     async def game_watcher(self, ctx: "SNIContext") -> None:
         from SNIClient import snes_buffered_write, snes_flush_writes
-        if ctx.server is None or ctx.slot is None or self.snes_reader is None:
-            # not successfully connected to a multiworld server,
-            # cannot process the game sending items
+        if ctx.server is None or ctx.slot is None:
+            # not successfully connected to a multiworld server, cannot process the game sending items
             return
 
-        snes_data = await self.snes_reader.read()
+        snes_data = await self.snes_reader.read(ctx)
         if snes_data is None:
             snes_logger.info("error reading from snes")
             return
