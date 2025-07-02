@@ -1,4 +1,5 @@
 from collections import Counter
+from enum import Enum
 import itertools
 import logging
 import asyncio
@@ -7,7 +8,7 @@ from typing import TYPE_CHECKING, AbstractSet, Union
 from typing_extensions import override
 
 from NetUtils import ClientStatus, color
-from worlds.AutoSNIClient import SNIClient
+from worlds.AutoSNIClient import Read, SNIClient, SnesReader
 
 from .config import base_id
 from .location import fallen_locs, id_to_name
@@ -44,11 +45,19 @@ SM_DEATH_LINK_ACTIVE_ADDR = ROM_START + offset_from_symbol("config_deathlink")  
 SM_REMOTE_ITEM_FLAG_ADDR = ROM_START + offset_from_symbol("config_remote_items")  # 1 byte
 
 
+class SubversionMemory(Enum):
+    game_mode = Read(WRAM_START + 0x0998, 1)
+    send_queue = Read(SM_SEND_QUEUE_START, 8 * 127)
+    send_queue_r_count = Read(SM_SEND_QUEUE_RCOUNT, 4)
+    recv_queue_w_count = Read(SM_RECV_QUEUE_WCOUNT, 2)
+
+
 class SubversionSNIClient(SNIClient):
     game = "Subversion"
     patch_suffix = ".apsv"
 
     pop_tracker_logic_server: Union[UATServer, None] = None
+    snes_reader = SnesReader(SubversionMemory)
 
     @override
     async def deathlink_kill_player(self, ctx: "SNIContext") -> None:
@@ -176,9 +185,14 @@ class SubversionSNIClient(SNIClient):
 
     @override
     async def game_watcher(self, ctx: "SNIContext") -> None:
-        from SNIClient import snes_buffered_write, snes_flush_writes, snes_read
+        from SNIClient import snes_buffered_write, snes_flush_writes
         if ctx.server is None or ctx.slot is None:
             # not successfully connected to a multiworld server, cannot process the game sending items
+            return
+
+        snes_data = await self.snes_reader.read(ctx)
+        if snes_data is None:
+            snes_logger.info("error reading from snes")
             return
 
         if len(ctx.locations_info) < 122:
@@ -193,29 +207,26 @@ class SubversionSNIClient(SNIClient):
             # TODO: test logic map tracker reconnecting to a game where I've already picked up items
             # maybe a setTimeout here to update logic after getting info from server.
 
-        gamemode = await snes_read(ctx, WRAM_START + 0x0998, 1)
-        if "DeathLink" in ctx.tags and gamemode and ctx.last_death_link + 1 < time.time():
+        gamemode = snes_data.get(SubversionMemory.game_mode)
+        if "DeathLink" in ctx.tags and ctx.last_death_link + 1 < time.time():
             currently_dead = gamemode[0] in SM_DEATH_MODES
             await ctx.handle_deathlink_state(currently_dead)
-        if gamemode is not None and gamemode[0] in SM_ENDGAME_MODES:
+        if gamemode[0] in SM_ENDGAME_MODES:
             if not ctx.finished_game:
                 await ctx.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
                 ctx.finished_game = True
             return
 
-        data = await snes_read(ctx, SM_SEND_QUEUE_RCOUNT, 4)
-        if data is None:
-            return
+        data = snes_data.get(SubversionMemory.send_queue_r_count)
 
         recv_index = data[0] | (data[1] << 8)
         recv_item = data[2] | (data[3] << 8)  # this is actually SM_SEND_QUEUE_WCOUNT
 
+        send_queue = snes_data.get(SubversionMemory.send_queue)
+
         while (recv_index < recv_item):
             item_address = recv_index * 8
-            message = await snes_read(ctx, SM_SEND_QUEUE_START + item_address, 8)
-            if message is None:
-                logging.warning("connection lost receiving item from game")
-                return
+            message = send_queue[item_address: item_address + 8]
             # print(f"{message=} {[hex(d) for d in message]}")
             rom_loc_id = (message[4] | (message[5] << 8)) >> 3
             # print(f"{rom_loc_id=}")
@@ -238,9 +249,7 @@ class SubversionSNIClient(SNIClient):
             await ctx.send_msgs([{"cmd": "LocationChecks", "locations": [location_id]}])
             self._update_location_logic(ctx)
 
-        data = await snes_read(ctx, SM_RECV_QUEUE_WCOUNT, 2)
-        if data is None:
-            return
+        data = snes_data.get(SubversionMemory.recv_queue_w_count)
 
         # print(f"{data=} {int.from_bytes(data, 'little')=} {len(ctx.items_received)=}")
         item_out_ptr = data[0] | (data[1] << 8)
