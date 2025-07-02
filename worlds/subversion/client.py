@@ -57,7 +57,7 @@ class SubversionSNIClient(SNIClient):
     patch_suffix = ".apsv"
 
     pop_tracker_logic_server: Union[UATServer, None] = None
-    snes_reader: Union[SnesReader[SubversionMemory], None] = None
+    snes_reader: SnesReader[SubversionMemory] | None = None
 
     @override
     async def deathlink_kill_player(self, ctx: "SNIContext") -> None:
