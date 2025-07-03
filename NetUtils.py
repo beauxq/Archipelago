@@ -6,6 +6,8 @@ import enum
 import warnings
 from json import JSONEncoder, JSONDecoder
 
+from typing_extensions import NotRequired, TypedDict
+
 if typing.TYPE_CHECKING:
     from websockets import WebSocketServerProtocol as ServerConnection
 
@@ -20,7 +22,7 @@ class HintStatus(ByValue, enum.IntEnum):
     HINT_FOUND = 40
 
 
-class JSONMessagePart(typing.TypedDict, total=False):
+class JSONMessagePart(TypedDict, total=False):
     text: str
     # optional
     type: str
@@ -451,24 +453,25 @@ class _LocationStore(dict, typing.MutableMapping[int, typing.Dict[int, typing.Tu
                         location_id not in checked])
 
 
-class MinimumVersions(typing.TypedDict):
+class MinimumVersions(TypedDict):
     server: tuple[int, int, int]
     clients: dict[int, tuple[int, int, int]]
 
 
-class GamesPackage(typing.TypedDict, total=False):
+class GamesPackage(TypedDict):
     item_name_groups: dict[str, list[str]]
     item_name_to_id: dict[str, int]
     location_name_groups: dict[str, list[str]]
     location_name_to_id: dict[str, int]
-    checksum: str
+    checksum: NotRequired[str]
+    version: NotRequired[int]
 
 
-class DataPackage(typing.TypedDict):
+class DataPackage(TypedDict):
     games: dict[str, GamesPackage]
 
 
-class MultiData(typing.TypedDict):
+class MultiData(TypedDict):
     slot_data: dict[int, Mapping[str, typing.Any]]
     slot_info: dict[int, NetworkSlot]
     connect_names: dict[str, tuple[int, int]]

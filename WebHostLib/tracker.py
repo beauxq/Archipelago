@@ -9,7 +9,7 @@ from flask import make_response, render_template, request, Request, Response
 from werkzeug.exceptions import abort
 
 from MultiServer import Context, get_saving_second
-from NetUtils import ClientStatus, Hint, NetworkItem, NetworkSlot, SlotType
+from NetUtils import ClientStatus, Hint, MultiData, NetworkItem, NetworkSlot, SlotType
 from Utils import restricted_loads, KeyedDefaultDict
 from . import app, cache
 from .models import GameDataPackage, Room
@@ -49,7 +49,7 @@ class TrackerData:
     subsequent helper method calls do not need to recompute results during the lifetime of this instance.
     """
     room: Room
-    _multidata: Dict[str, Any]
+    _multidata: MultiData
     _multisave: Dict[str, Any]
     _tracker_cache: Dict[str, Any]
 

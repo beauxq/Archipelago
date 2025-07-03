@@ -1,4 +1,5 @@
 import base64
+from collections.abc import Mapping
 import json
 import pickle
 import typing
@@ -9,6 +10,7 @@ import zlib
 from io import BytesIO
 from flask import request, flash, redirect, url_for, session, render_template, abort
 from markupsafe import Markup
+import msgspec
 from pony.orm import commit, flush, select, rollback
 from pony.orm.core import TransactionIntegrityError
 import schema
@@ -25,15 +27,6 @@ banned_extensions = (".sfc", ".z64", ".n64", ".nes", ".smc", ".sms", ".gb", ".gb
 allowed_options_extensions = (".yaml", ".json", ".yml", ".txt", ".zip")
 allowed_generation_extensions = (".archipelago", ".zip")
 
-games_package_schema = schema.Schema({
-    "item_name_groups": {str: [str]},
-    "item_name_to_id": {str: int},
-    "location_name_groups": {str: [str]},
-    "location_name_to_id": {str: int},
-    schema.Optional("checksum"): str,
-    schema.Optional("version"): int,
-})
-
 
 def allowed_options(filename: str) -> bool:
     return filename.endswith(allowed_options_extensions)
@@ -47,7 +40,7 @@ def banned_file(filename: str) -> bool:
     return filename.endswith(banned_extensions)
 
 
-def process_multidata(compressed_multidata, files={}):
+def process_multidata(compressed_multidata: bytes, files: Mapping[int, bytes | None] = {}):
     game_data: GamesPackage
 
     decompressed_multidata = MultiServer.Context.decompress(compressed_multidata)
@@ -59,7 +52,6 @@ def process_multidata(compressed_multidata, files={}):
         for game, game_data in decompressed_multidata["datapackage"].items():
             if game_data.get("checksum"):
                 original_checksum = game_data.pop("checksum")
-                game_data = games_package_schema.validate(game_data)
                 game_data = {key: value for key, value in sorted(game_data.items())}
                 game_data["checksum"] = data_package_checksum(game_data)
                 if original_checksum != game_data["checksum"]:
@@ -69,10 +61,12 @@ def process_multidata(compressed_multidata, files={}):
 
                 game_data_package = GameDataPackage(checksum=game_data["checksum"],
                                                     data=pickle.dumps(game_data))
-                decompressed_multidata["datapackage"][game] = {
+                # TODO: Why are we removing the other keys of the GamesPackage?
+                games_package: GamesPackage = {
                     "version": game_data.get("version", 0),
                     "checksum": game_data["checksum"],
                 }
+                decompressed_multidata["datapackage"][game] = games_package
                 try:
                     commit()  # commit game data package
                     game_data_packages.append(game_data_package)
@@ -91,7 +85,11 @@ def process_multidata(compressed_multidata, files={}):
                            game=slot_info.game))
         flush()  # commit slots
 
-    compressed_multidata = compressed_multidata[0:1] + zlib.compress(pickle.dumps(decompressed_multidata), 9)
+    multidata_version = compressed_multidata[0:1]
+    if multidata_version[0] < 4:
+        compressed_multidata = multidata_version + zlib.compress(pickle.dumps(decompressed_multidata), 9)
+    else:
+        compressed_multidata = multidata_version + zlib.compress(msgspec.json.encode(decompressed_multidata), 9)
     return slots, compressed_multidata
 
 

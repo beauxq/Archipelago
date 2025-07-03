@@ -22,6 +22,8 @@ import typing
 import weakref
 import zlib
 
+import msgspec
+
 import ModuleUpdate
 
 ModuleUpdate.update()
@@ -439,11 +441,17 @@ class Context:
         self.data_filename = multidatapath
 
     @staticmethod
-    def decompress(data: bytes) -> dict:
+    def decompress(data: bytes) -> MultiData:
         format_version = data[0]
-        if format_version > 3:
+        if format_version > 4:
             raise Utils.VersionException("Incompatible multidata.")
-        return restricted_loads(zlib.decompress(data[1:]))
+        if format_version < 4:
+            # TODO: delete this after some deprecation time
+            decompressed_data = restricted_loads(zlib.decompress(data[1:]))
+            # for validation, we re-decode it with msgspec
+            return msgspec.json.decode(msgspec.json.encode(decompressed_data), type=MultiData)
+        # format_version == 4
+        return msgspec.json.decode(zlib.decompress(data[1:]), type=MultiData)
 
     def _load(self, decoded_obj: MultiData, game_data_packages: typing.Dict[str, typing.Any],
               use_embedded_server_options: bool):
