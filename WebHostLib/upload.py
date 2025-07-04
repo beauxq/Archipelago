@@ -13,7 +13,6 @@ from markupsafe import Markup
 import msgspec
 from pony.orm import commit, flush, select, rollback
 from pony.orm.core import TransactionIntegrityError
-import schema
 
 import MultiServer
 from NetUtils import GamesPackage, SlotType
