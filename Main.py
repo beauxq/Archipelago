@@ -3,7 +3,6 @@ from collections.abc import Mapping
 import concurrent.futures
 import logging
 import os
-import pickle
 import tempfile
 import time
 from typing import Any
