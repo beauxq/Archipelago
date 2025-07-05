@@ -108,6 +108,8 @@ class WebHostContext(Context):
         else:
             self.port = get_random_port()
 
+        # TODO: multidata loaded here doesn't have name groups and ids in data package.
+        # We need a way to know which one to expect.
         multidata = self.decompress(room.seed.multidata)
         game_data_packages = {}
 
