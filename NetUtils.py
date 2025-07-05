@@ -6,6 +6,7 @@ import enum
 import warnings
 from json import JSONEncoder, JSONDecoder
 
+import pydantic
 from typing_extensions import NotRequired, TypedDict
 
 if typing.TYPE_CHECKING:
@@ -488,6 +489,9 @@ class MultiData(TypedDict):
     spheres: list[dict[int, set[int]]]
     datapackage: dict[str, GamesPackage]
     race_mode: int
+
+
+multidata_codec: typing.Final = pydantic.TypeAdapter(MultiData)
 
 
 if typing.TYPE_CHECKING:  # type-check with pure python implementation until we have a typing stub

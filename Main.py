@@ -9,8 +9,7 @@ from typing import Any
 import zipfile
 import zlib
 
-import msgspec
-
+from NetUtils import multidata_codec
 import worlds
 from BaseClasses import CollectionState, Item, Location, LocationProgressType, MultiWorld
 from Fill import FillError, balance_multiworld_progression, distribute_items_restrictive, flood_items, \
@@ -341,7 +340,7 @@ def main(args, seed=None, baked_server_options: dict[str, object] | None = None)
                 }
                 AutoWorld.call_all(multiworld, "modify_multidata", multidata)
 
-                multidata = zlib.compress(msgspec.json.encode(multidata), 9)
+                multidata = zlib.compress(multidata_codec.dump_json(multidata), 9)
 
                 with open(os.path.join(temp_dir, f'{outfilebase}.archipelago'), 'wb') as f:
                     f.write(bytes([4]))  # version of format

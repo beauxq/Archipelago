@@ -10,12 +10,11 @@ import zlib
 from io import BytesIO
 from flask import request, flash, redirect, url_for, session, render_template, abort
 from markupsafe import Markup
-import msgspec
 from pony.orm import commit, flush, select, rollback
 from pony.orm.core import TransactionIntegrityError
 
 import MultiServer
-from NetUtils import GamesPackage, SlotType
+from NetUtils import GamesPackage, SlotType, multidata_codec
 from Utils import VersionException, __version__
 from worlds.Files import AutoPatchRegister
 from worlds.AutoWorld import data_package_checksum
@@ -88,7 +87,7 @@ def process_multidata(compressed_multidata: bytes, files: Mapping[int, bytes | N
     if multidata_version[0] < 4:
         compressed_multidata = multidata_version + zlib.compress(pickle.dumps(decompressed_multidata), 9)
     else:
-        compressed_multidata = multidata_version + zlib.compress(msgspec.json.encode(decompressed_multidata), 9)
+        compressed_multidata = multidata_version + zlib.compress(multidata_codec.dump_json(decompressed_multidata), 9)
     return slots, compressed_multidata
 
 

@@ -22,8 +22,6 @@ import typing
 import weakref
 import zlib
 
-import msgspec
-
 import ModuleUpdate
 
 ModuleUpdate.update()
@@ -45,7 +43,7 @@ import NetUtils
 import Utils
 from Utils import version_tuple, restricted_loads, Version, async_start, get_intended_text
 from NetUtils import Endpoint, ClientStatus, NetworkItem, decode, encode, NetworkPlayer, Permission, NetworkSlot, \
-    SlotType, LocationStore, MultiData, Hint, HintStatus
+    SlotType, LocationStore, MultiData, Hint, HintStatus, multidata_codec
 from BaseClasses import ItemClassification
 
 
@@ -448,10 +446,9 @@ class Context:
         if format_version < 4:
             # TODO: delete this after some deprecation time
             decompressed_data = restricted_loads(zlib.decompress(data[1:]))
-            # for validation, we re-decode it with msgspec
-            return msgspec.json.decode(msgspec.json.encode(decompressed_data), type=MultiData)
+            return multidata_codec.validate_python(decompressed_data)
         # format_version == 4
-        return msgspec.json.decode(zlib.decompress(data[1:]), type=MultiData)
+        return multidata_codec.validate_json(zlib.decompress(data[1:]))
 
     def _load(self, decoded_obj: MultiData, game_data_packages: typing.Dict[str, typing.Any],
               use_embedded_server_options: bool):
