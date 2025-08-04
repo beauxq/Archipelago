@@ -14,8 +14,9 @@ import worlds
 from BaseClasses import CollectionState, Item, Location, LocationProgressType, MultiWorld
 from Fill import FillError, balance_multiworld_progression, distribute_items_restrictive, flood_items, \
     parse_planned_blocks, distribute_planned_blocks, resolve_early_locations_for_planned
+from NetUtils import convert_to_base_types
 from Options import StartInventoryPool
-from Utils import __version__, output_path, version_tuple
+from Utils import __version__, output_path, restricted_dumps, version_tuple
 from settings import get_settings
 from worlds import AutoWorld
 from worlds.generic.Rules import exclusion_rules, locality_rules
@@ -94,6 +95,15 @@ def main(args, seed=None, baked_server_options: dict[str, object] | None = None)
                     del local_early
             del early
 
+        # items can't be both local and non-local, prefer local
+        multiworld.worlds[player].options.non_local_items.value -= multiworld.worlds[player].options.local_items.value
+        multiworld.worlds[player].options.non_local_items.value -= set(multiworld.local_early_items[player])
+
+    # Clear non-applicable local and non-local items.
+    if multiworld.players == 1:
+        multiworld.worlds[1].options.non_local_items.value = set()
+        multiworld.worlds[1].options.local_items.value = set()
+
     logger.info('Creating MultiWorld.')
     AutoWorld.call_all(multiworld, "create_regions")
 
@@ -101,12 +111,6 @@ def main(args, seed=None, baked_server_options: dict[str, object] | None = None)
     AutoWorld.call_all(multiworld, "create_items")
 
     logger.info('Calculating Access Rules.')
-
-    for player in multiworld.player_ids:
-        # items can't be both local and non-local, prefer local
-        multiworld.worlds[player].options.non_local_items.value -= multiworld.worlds[player].options.local_items.value
-        multiworld.worlds[player].options.non_local_items.value -= set(multiworld.local_early_items[player])
-
     AutoWorld.call_all(multiworld, "set_rules")
 
     for player in multiworld.player_ids:
@@ -127,11 +131,9 @@ def main(args, seed=None, baked_server_options: dict[str, object] | None = None)
         multiworld.worlds[player].options.priority_locations.value -= world_excluded_locations
 
     # Set local and non-local item rules.
+    # This function is called so late because worlds might otherwise overwrite item_rules which are how locality works
     if multiworld.players > 1:
         locality_rules(multiworld)
-    else:
-        multiworld.worlds[1].options.non_local_items.value = set()
-        multiworld.worlds[1].options.local_items.value = set()
 
     multiworld.plando_item_blocks = parse_planned_blocks(multiworld)
 
@@ -175,7 +177,7 @@ def main(args, seed=None, baked_server_options: dict[str, object] | None = None)
 
     multiworld.link_items()
 
-    if any(multiworld.item_links.values()):
+    if any(world.options.item_links for world in multiworld.worlds.values()):
         multiworld._all_state = None
 
     logger.info("Running Item Plando.")
@@ -330,7 +332,7 @@ def main(args, seed=None, baked_server_options: dict[str, object] | None = None)
                     "er_hint_data": er_hint_data,
                     "precollected_items": precollected_items,
                     "precollected_hints": precollected_hints,
-                    "version": tuple(version_tuple),
+                    "version": (version_tuple.major, version_tuple.minor, version_tuple.build),
                     "tags": ["AP"],
                     "minimum_versions": minimum_versions,
                     "seed_name": multiworld.seed_name,
@@ -338,6 +340,7 @@ def main(args, seed=None, baked_server_options: dict[str, object] | None = None)
                     "datapackage": data_package,
                     "race_mode": int(multiworld.is_race),
                 }
+                # TODO: change to `"version": version_tuple` after getting better serialization
                 AutoWorld.call_all(multiworld, "modify_multidata", multidata)
 
                 multidata = zlib.compress(multidata_codec.dump_json(multidata), 9)
