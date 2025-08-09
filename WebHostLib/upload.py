@@ -1,4 +1,3 @@
-import base64
 from collections.abc import Mapping
 import json
 import pickle
@@ -14,7 +13,7 @@ from pony.orm import commit, flush, select, rollback
 from pony.orm.core import TransactionIntegrityError
 
 import MultiServer
-from NetUtils import GamesPackage, SlotType, multidata_codec
+from NetUtils import ChecksumGamesPackage, GamesPackage, MultiData, SlotType, multidata_checksum_codec
 from Utils import VersionException, __version__
 from worlds.Files import AutoPatchRegister
 from worlds.AutoWorld import data_package_checksum
@@ -59,8 +58,8 @@ def process_multidata(compressed_multidata: bytes, files: Mapping[int, bytes | N
 
                 game_data_package = GameDataPackage(checksum=game_data["checksum"],
                                                     data=pickle.dumps(game_data))
-                # TODO: Why are we removing the other keys of the GamesPackage?
-                games_package: GamesPackage = {
+                assert (decompressed_multidata := typing.cast(MultiData[ChecksumGamesPackage], decompressed_multidata))  # noqa: RUF018
+                games_package: ChecksumGamesPackage = {
                     "version": game_data.get("version", 0),
                     "checksum": game_data["checksum"],
                 }
@@ -71,6 +70,7 @@ def process_multidata(compressed_multidata: bytes, files: Mapping[int, bytes | N
                 except TransactionIntegrityError:
                     del game_data_package
                     rollback()
+    assert (decompressed_multidata := typing.cast(MultiData[ChecksumGamesPackage], decompressed_multidata))  # noqa: RUF018
 
     if "slot_info" in decompressed_multidata:
         for slot, slot_info in decompressed_multidata["slot_info"].items():
@@ -87,7 +87,9 @@ def process_multidata(compressed_multidata: bytes, files: Mapping[int, bytes | N
     if multidata_version[0] < 4:
         compressed_multidata = multidata_version + zlib.compress(pickle.dumps(decompressed_multidata), 9)
     else:
-        compressed_multidata = multidata_version + zlib.compress(multidata_codec.dump_json(decompressed_multidata), 9)
+        compressed_multidata = multidata_version + zlib.compress(
+            multidata_checksum_codec.dump_json(decompressed_multidata), 9,
+        )
     return slots, compressed_multidata
 
 
@@ -101,7 +103,7 @@ def upload_zip_to_db(zfile: zipfile.ZipFile, owner=None, meta={"race": False}, s
         return
 
     spoiler = ""
-    files = {}
+    files: dict[int, bytes] = {}
     multidata = None
 
     # Load files.

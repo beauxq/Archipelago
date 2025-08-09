@@ -7,7 +7,7 @@ import warnings
 from json import JSONEncoder, JSONDecoder
 
 import pydantic
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import Generic, NotRequired, TypeVar, TypedDict
 
 if typing.TYPE_CHECKING:
     from websockets import WebSocketServerProtocol as ServerConnection
@@ -486,14 +486,22 @@ class GamesPackage(TypedDict):
     location_name_groups: dict[str, list[str]]
     location_name_to_id: dict[str, int]
     checksum: NotRequired[str]
-    version: NotRequired[int]
+
+
+class ChecksumGamesPackage(TypedDict):
+    checksum: str
+    version: int
 
 
 class DataPackage(TypedDict):
     games: dict[str, GamesPackage]
 
 
-class MultiData(TypedDict):
+_T_GamesPackage = TypeVar("_T_GamesPackage", default=GamesPackage, bound=(GamesPackage | ChecksumGamesPackage))
+""" MultiData has a different GamesPackage in different contexts. """
+
+
+class MultiData(TypedDict, Generic[_T_GamesPackage]):
     slot_data: dict[int, Mapping[str, typing.Any]]
     slot_info: dict[int, NetworkSlot]
     connect_names: dict[str, tuple[int, int]]
@@ -508,11 +516,14 @@ class MultiData(TypedDict):
     minimum_versions: MinimumVersions
     seed_name: str
     spheres: list[dict[int, set[int]]]
-    datapackage: dict[str, GamesPackage]
+    datapackage: dict[str, _T_GamesPackage]
     race_mode: int
 
 
 multidata_codec: typing.Final = pydantic.TypeAdapter(MultiData)
+""" with the full data package """
+multidata_checksum_codec: typing.Final = pydantic.TypeAdapter(MultiData[ChecksumGamesPackage])
+""" does not have the full data package, only its checksum """
 
 
 if typing.TYPE_CHECKING:  # type-check with pure python implementation until we have a typing stub
