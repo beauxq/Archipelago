@@ -5,7 +5,7 @@ from bisect import bisect_right
 from dataclasses import dataclass
 import enum
 import logging
-from typing import (TYPE_CHECKING, Any, ClassVar, Dict, Generic, Iterable,
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generic, Iterable,
                     Optional, Sequence, Tuple, TypeGuard, TypeVar, Union)
 
 
@@ -138,6 +138,27 @@ class SnesData(Generic[_T_Enum]):
         return mem_read.data[sub_index:sub_index + read.value.size]
 
 
+@dataclass(frozen=True, slots=True)
+class Verifier:
+    """
+    used to avoid race conditions if data is changing while we read
+
+    Both before and after reading all of the data for the SnesReader,
+    we read one location in memory and make sure it has the value we want.
+
+    For example, it could look at a memory location that indicates
+    whether the player has pressed "start" to enter the game.
+    """
+
+    read: Read
+    """ a location in snes memory """
+    callback: Callable[[bytes], bool]
+    """
+    a function that is called with the bytes read from `read`
+    and returns `True` if we want to accept the data with that value
+    """
+
+
 class SnesReader(Generic[_T_Enum]):
     """
     how to use:
@@ -163,8 +184,11 @@ class SnesReader(Generic[_T_Enum]):
     _ranges: Sequence[Read]
     """ sorted by address """
 
-    def __init__(self, reads: type[_T_Enum]) -> None:
+    _verifier: Verifier | None
+
+    def __init__(self, reads: type[_T_Enum], verifier: Verifier | None = None) -> None:
         self._ranges = self._make_ranges(reads)
+        self._verifier = verifier
 
     @staticmethod
     def _make_ranges(reads: type[enum.Enum]) -> Sequence[Read]:
@@ -197,6 +221,12 @@ class SnesReader(Generic[_T_Enum]):
         """
         from SNIClient import snes_read
 
+        verifier = self._verifier
+        if verifier is not None:
+            pre_verify = await snes_read(ctx, verifier.read.address, verifier.read.size)
+            if pre_verify is None or not verifier.callback(pre_verify):
+                return None
+
         reads: list[tuple[Read, bytes]] = []
         for r in self._ranges:
             if r.size < SNES_READ_CHUNK_SIZE:  # most common
@@ -218,4 +248,10 @@ class SnesReader(Generic[_T_Enum]):
                     collection.append(response)
                     read_so_far += chunk_size
                 reads.append((r, b"".join(collection)))
+
+        if verifier is not None:
+            post_verify = await snes_read(ctx, verifier.read.address, verifier.read.size)
+            if post_verify is None or not verifier.callback(post_verify):
+                return None
+
         return SnesData(reads)
