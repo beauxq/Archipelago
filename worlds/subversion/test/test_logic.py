@@ -1,10 +1,8 @@
-from typing import Dict, List
-
 from worlds.subversion import logic
 from worlds.subversion.item import name_to_id as item_name_to_id
 from worlds.subversion.location import name_to_id as loc_name_to_id
 
-spaceport_exclusions: Dict[str, List[str]] = getattr(logic, "_excluded_after_torpedo_bay")
+spaceport_exclusions: dict[str, list[str]] = logic._excluded_after_torpedo_bay  # pyright: ignore[reportPrivateUsage]
 
 
 def test_item_names() -> None:

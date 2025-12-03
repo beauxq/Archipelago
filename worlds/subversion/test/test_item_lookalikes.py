@@ -1,4 +1,3 @@
-from typing import Dict
 from BaseClasses import MultiWorld
 
 from worlds.sm import SMWorld
@@ -8,19 +7,19 @@ from worlds.subversion import patch_utils
 
 def test_sm_names() -> None:
     """ other games changing item names """
-    _SM_name_to_subversion_name: Dict[str, str] = getattr(patch_utils, "_SM_name_to_subversion_name")
-    for item_name in _SM_name_to_subversion_name.keys():
+    sm_name_to_subversion_name: dict[str, str] = patch_utils._SM_name_to_subversion_name  # pyright: ignore[reportPrivateUsage]
+    for item_name in sm_name_to_subversion_name.keys():
         assert item_name in SMWorld.item_name_to_id, f"{item_name} not in SMWorld.item_name_to_id"
 
 
 def test_smz3_names() -> None:
     """ other games changing item names """
-    _SMZ3_name_to_SM_name: Dict[str, str] = getattr(patch_utils, "_SMZ3_name_to_SM_name")
-    _SM_name_to_subversion_name: Dict[str, str] = getattr(patch_utils, "_SM_name_to_subversion_name")
+    smz3_name_to_sm_name: dict[str, str] = patch_utils._SMZ3_name_to_SM_name  # pyright: ignore[reportPrivateUsage]
+    sm_name_to_subversion_name: dict[str, str] = patch_utils._SM_name_to_subversion_name  # pyright: ignore[reportPrivateUsage]
 
-    for smz3_item_name, sm_item_name in _SMZ3_name_to_SM_name.items():
+    for smz3_item_name, sm_item_name in smz3_name_to_sm_name.items():
         assert smz3_item_name in SMZ3World.item_name_to_id, f"{smz3_item_name} not in SMZ3World.item_name_to_id"
-        assert sm_item_name in _SM_name_to_subversion_name
+        assert sm_item_name in sm_name_to_subversion_name
 
 
 def test_smz3_game_name() -> None:

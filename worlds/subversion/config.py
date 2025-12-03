@@ -4,7 +4,7 @@ import os
 import pathlib
 from shutil import rmtree
 import sys
-from typing import IO, Any, Literal, Tuple, Union, overload
+from typing import IO, Any, Literal, overload
 import zipfile
 
 
@@ -19,7 +19,7 @@ def is_apworld() -> bool:
     return _is_apworld
 
 
-def _get_zip_file() -> Tuple[zipfile.ZipFile, str]:
+def _get_zip_file() -> tuple[zipfile.ZipFile, str]:
     apworld_ext = ".apworld"
     assert _module_file_name
     zip_path = pathlib.Path(_module_file_name[:_module_file_name.index(apworld_ext) + len(apworld_ext)])
@@ -28,18 +28,18 @@ def _get_zip_file() -> Tuple[zipfile.ZipFile, str]:
 
 @overload
 def open_file_apworld_compatible(
-    resource: Union[str, pathlib.Path], mode: Literal["rb"], encoding: None = None
+    resource: str | pathlib.Path, mode: Literal["rb"], encoding: None = None
 ) -> IO[bytes]: ...
 
 
 @overload
 def open_file_apworld_compatible(
-    resource: Union[str, pathlib.Path], mode: Literal["r"] = "r", encoding: None = None
+    resource: str | pathlib.Path, mode: Literal["r"] = "r", encoding: None = None
 ) -> IO[str]: ...
 
 
 def open_file_apworld_compatible(
-    resource: Union[str, pathlib.Path], mode: str = "r", encoding: None = None
+    resource: str | pathlib.Path, mode: str = "r", encoding: None = None
 ) -> IO[Any]:
     if _is_apworld:
         (zip_file, stem) = _get_zip_file()
@@ -111,7 +111,7 @@ if is_apworld():
         from .lib_crc import crc  # type: ignore
         # created by apworld script
 
-        with open(lib_crc_file_name) as lib_crc_file:
+        with open(lib_crc_file_name, encoding="utf-8") as lib_crc_file:
             text_crc = lib_crc_file.read()
         if int(text_crc) == crc:
             validated = True

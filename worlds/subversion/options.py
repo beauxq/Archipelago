@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import logging
-from typing import Any, ClassVar, Dict, FrozenSet, List
+from typing import Any, ClassVar
 from typing_extensions import override
 
 from BaseClasses import Item, ItemClassification as IC
@@ -104,7 +104,7 @@ class SubversionShortGame(Choice):
     option_not_in_suzi = 2
     default = 1
 
-    location_lists: ClassVar[Dict[int, List[str]]] = {
+    location_lists: ClassVar[dict[int, list[str]]] = {
         option_anywhere: [],
         option_not_in_thunder_lab: ["Shrine Of The Animate Spark", "Enervation Chamber"],
         option_not_in_suzi: [
@@ -120,7 +120,7 @@ class SubversionShortGame(Choice):
         ]
     }
 
-    cypher_options: ClassVar[Dict[int, CypherItems]] = {
+    cypher_options: ClassVar[dict[int, CypherItems]] = {
         option_anywhere: CypherItems.Anything,
         option_not_in_thunder_lab: CypherItems.NotRequired,
         option_not_in_suzi: CypherItems.SmallAmmo
@@ -156,7 +156,7 @@ class SubversionAutoHints(Choice):
             return cls(SubversionAutoHints.default)
         elif text == "false":
             return cls(SubversionAutoHints.option_none)
-        return super(SubversionAutoHints, cls).from_text(text)
+        return super().from_text(text)
 
 
 class SubversionTrollAmmo(Toggle):
@@ -183,7 +183,7 @@ class SubversionItemMarkers(Choice):
     option_three_tiered = 3
     default = 0
 
-    marker_options: ClassVar[Dict[int, ItemMarkersOption]] = {
+    marker_options: ClassVar[dict[int, ItemMarkersOption]] = {
         option_simple: ItemMarkersOption.Simple,
         option_three_tiered: ItemMarkersOption.ThreeTiered,
     }
@@ -244,7 +244,7 @@ class SubversionOptions(PerGameCommonOptions):
     objective_rando: SubversionObjectiveRando
 
 
-def _make_custom(data: str) -> FrozenSet[Trick]:
+def _make_custom(data: str) -> frozenset[Trick]:
     try:
         logic = custom_logic_tricks_from_str(data)
         return logic

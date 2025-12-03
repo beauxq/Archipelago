@@ -1,7 +1,7 @@
 import hashlib
 from logging import getLogger
 import os
-from typing import Any, Optional
+from typing import Any
 from typing_extensions import override
 import zipfile
 
@@ -52,9 +52,10 @@ class SubversionDeltaPatch(APDeltaPatch):
                                 compress_type=zipfile.ZIP_DEFLATED)
 
     @override
-    def read_contents(self, opened_zipfile: zipfile.ZipFile) -> None:
-        APContainer.read_contents(self, opened_zipfile)
+    def read_contents(self, opened_zipfile: zipfile.ZipFile) -> dict[str, Any]:
+        manifest = APContainer.read_contents(self, opened_zipfile)
         self.gen_data = opened_zipfile.read("rom_data.json").decode()
+        return manifest
 
     @override
     def patch(self, target: str) -> None:
@@ -63,7 +64,7 @@ class SubversionDeltaPatch(APDeltaPatch):
 
 
 def get_base_rom_bytes(file_name: str = "") -> bytes:
-    base_rom_bytes: Optional[bytes] = getattr(get_base_rom_bytes, "base_rom_bytes", None)
+    base_rom_bytes: bytes | None = getattr(get_base_rom_bytes, "base_rom_bytes", None)
     if not base_rom_bytes:
         file_name = get_base_rom_path(file_name)
         base_rom_bytes = bytes(read_snes_rom(open(file_name, "rb")))

@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 import json
-from typing import Any, Literal, Mapping, Sequence, TypedDict
+from typing import Any, Literal, TypedDict
 from typing_extensions import NotRequired
 import websockets
 

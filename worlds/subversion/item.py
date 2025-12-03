@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Iterator
+from collections.abc import Iterator
 from BaseClasses import Item, ItemClassification as IC
 from .config import base_id
 
@@ -8,7 +8,7 @@ from subversion_rando.item_data import Item as SvItem, Items
 from subversion_rando.fillAssumed import FillAssumed
 
 
-classifications: Dict[str, IC] = defaultdict(lambda: IC.progression)
+classifications: dict[str, IC] = defaultdict(lambda: IC.progression)
 classifications.update({
     Items.Refuel.name: IC.filler,
     Items.SmallAmmo.name: IC.filler,
@@ -33,7 +33,7 @@ class SubversionItem(Item):
 
 
 # The order of this list must match itemnames.asm
-local_id_to_sv_item: Dict[int, SvItem] = {
+local_id_to_sv_item: dict[int, SvItem] = {
     0x00: Items.Energy,
     0x01: Items.Missile,
     0x02: Items.Super,

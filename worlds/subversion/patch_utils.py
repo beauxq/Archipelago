@@ -1,9 +1,10 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
 import json
 from pathlib import Path
-from typing import Dict, Final, List, Mapping, Optional, Set, Tuple, Union
+from typing import Final
 
 from BaseClasses import ItemClassification, Location
 
@@ -69,7 +70,7 @@ box_blue_tbl = {
 """ item names use this, player names are ascii """
 
 
-def get_word_array(w: int) -> Tuple[int, int]:
+def get_word_array(w: int) -> tuple[int, int]:
     """ little-endian convert a 16-bit number to an array of numbers <= 255 each """
     return (w & 0x00FF, (w & 0xFF00) >> 8)
 
@@ -93,7 +94,7 @@ def make_item_name_for_rom(item_name: str) -> bytearray:
     return data
 
 
-_symbols: Optional[Dict[str, str]] = None
+_symbols: dict[str, str] | None = None
 
 
 def offset_from_symbol(symbol: str) -> int:
@@ -126,7 +127,7 @@ _item_sprites = [
 ]
 
 
-def patch_item_sprites(rom: Union[bytes, bytearray]) -> bytearray:
+def patch_item_sprites(rom: bytes | bytearray) -> bytearray:
     """
     puts the 2 new off-world item sprites in the rom
 
@@ -149,7 +150,7 @@ def patch_item_sprites(rom: Union[bytes, bytearray]) -> bytearray:
 
 
 # copied from SM
-_SMZ3_name_to_SM_type: Dict[str, str] = {
+_SMZ3_name_to_SM_type: dict[str, str] = {
     "ETank": "ETank", "Missile": "Missile", "Super": "Super", "PowerBomb": "PowerBomb", "Bombs": "Bomb",
     "Charge": "Charge", "Ice": "Ice", "HiJump": "HiJump", "SpeedBooster": "SpeedBooster",
     "Wave": "Wave", "Spazer": "Spazer", "SpringBall": "SpringBall", "Varia": "Varia", "Plasma": "Plasma",
@@ -159,14 +160,14 @@ _SMZ3_name_to_SM_type: Dict[str, str] = {
 
 try:
     from worlds.sm.variaRandomizer.rando.Items import ItemManager
-    _SMZ3_name_to_SM_name: Dict[str, str] = {
+    _SMZ3_name_to_SM_name: dict[str, str] = {
         smz3_name: ItemManager.Items[sm_type].Name
         for smz3_name, sm_type in _SMZ3_name_to_SM_type.items()
     }
 except ImportError:
     _SMZ3_name_to_SM_name = {}
 
-_SM_name_to_subversion_name: Dict[str, str] = {
+_SM_name_to_subversion_name: dict[str, str] = {
     "Energy Tank": Items.Energy.name,
     "Missile": Items.Missile.name,
     "Super Missile": Items.Super.name,
@@ -217,9 +218,9 @@ SM_ITEM_GAME_NAME = "Super Metroid"
 
 NUM_ITEMS_WITH_ICONS = len(local_id_to_sv_item) + len(sv_item_name_to_sm_item_id)
 
-ItemNames_ItemTable_PlayerNames_PlayerIDs = Tuple[List[bytearray], Dict[int, _ItemTableEntry], bytearray, List[int]]
+ItemNames_ItemTable_PlayerNames_PlayerIDs = tuple[list[bytearray], dict[int, _ItemTableEntry], bytearray, list[int]]
 
-ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON = Tuple[List[List[int]], Dict[str, List[int]], List[int], List[int]]
+ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON = tuple[list[list[int]], dict[str, list[int]], list[int], list[int]]
 
 
 class ItemRomData:
@@ -227,9 +228,9 @@ class ItemRomData:
     """ my AP id for this game """
     troll_ammo: Final[bool]
     """ whether I have the troll ammo option on """
-    my_locations: List[SubversionLocation]
+    my_locations: list[SubversionLocation]
     """ locations in my world """
-    player_ids: Set[int]
+    player_ids: set[int]
     """ all the players I interact with (including myself and 0 (the server player)) """
     player_id_to_name: Mapping[int, str]
 
@@ -257,9 +258,9 @@ class ItemRomData:
 
     def _make_tables(self) -> ItemNames_ItemTable_PlayerNames_PlayerIDs:
         """ after all locations are registered """
-        item_table: Dict[int, _ItemTableEntry] = {}
+        item_table: dict[int, _ItemTableEntry] = {}
 
-        item_names_after_constants: List[bytearray] = []
+        item_names_after_constants: list[bytearray] = []
 
         sorted_player_ids = sorted(self.player_ids)
         if len(sorted_player_ids) > 246:  # magic number from asm patch
@@ -340,7 +341,7 @@ class ItemRomData:
 
         return item_names_after_constants, item_table, player_names, sorted_player_ids
 
-    def patch_tables(self, rom: Union[bytes, bytearray]) -> bytearray:
+    def patch_tables(self, rom: bytes | bytearray) -> bytearray:
         """
         after calling register on all locations
 
@@ -382,7 +383,7 @@ class ItemRomData:
 
     @staticmethod
     def patch_from_json(
-        rom: Union[bytes, bytearray],
+        rom: bytes | bytearray,
         json_result: ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON
     ) -> bytearray:
         tr = bytearray(rom)
@@ -409,7 +410,7 @@ class ItemRomData:
         return tr
 
 
-def ips_patch_from_file(ips_file_name: Union[str, Path], input_bytes: Union[bytes, bytearray]) -> bytearray:
+def ips_patch_from_file(ips_file_name: str | Path, input_bytes: bytes | bytearray) -> bytearray:
     with open_file_apworld_compatible(ips_file_name, "rb") as ips_file:
         ips_data = ips_file.read()
     return ips_patch(input_bytes, ips_data)
@@ -426,7 +427,7 @@ class GenData:
     item_rom_data: ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON
     sv_game: SvGame
     player: int
-    game_name_in_rom: Union[bytes, bytearray]
+    game_name_in_rom: bytes | bytearray
 
 
 def make_gen_data(data: GenData) -> str:

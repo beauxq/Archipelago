@@ -1,9 +1,10 @@
 from collections import Counter
+from collections.abc import Set as AbstractSet
 import itertools
 import logging
 import asyncio
 import time
-from typing import TYPE_CHECKING, AbstractSet, Union
+from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from NetUtils import ClientStatus, color
@@ -48,7 +49,7 @@ class SubversionSNIClient(SNIClient):
     game = "Subversion"
     patch_suffix = ".apsv"
 
-    pop_tracker_logic_server: Union[UATServer, None] = None
+    pop_tracker_logic_server: UATServer | None = None
 
     @override
     async def deathlink_kill_player(self, ctx: "SNIContext") -> None:
@@ -187,7 +188,7 @@ class SubversionSNIClient(SNIClient):
             # so I know which of my items I've picked up locally
             await ctx.send_msgs([{
                 "cmd": "LocationScouts",
-                "locations": [id_ for id_ in id_to_name],
+                "locations": list(id_to_name.keys()),
                 "create_as_hint": 0,
             }])
             # TODO: test logic map tracker reconnecting to a game where I've already picked up items

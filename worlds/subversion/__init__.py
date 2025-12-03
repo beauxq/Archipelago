@@ -1,14 +1,15 @@
+from collections.abc import Iterable
 import functools
 import itertools
 import logging
 import os
 from threading import Event
-from typing import Any, Dict, Iterable, List, Optional, Set, TextIO, Union
+from typing import TextIO
 from typing_extensions import override
 
 from BaseClasses import CollectionState, Item, ItemClassification, Location, \
     LocationProgressType, MultiWorld, Region, Tutorial
-from NetUtils import Hint
+from NetUtils import Hint, MultiData
 from worlds.AutoWorld import WebWorld, World
 from .client import SubversionSNIClient
 from .item import IMPORTANT_ITEM_ID, SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
@@ -67,14 +68,14 @@ class SubversionWorld(World):
     location_name_to_id = _loc_name_to_id
     item_name_to_id = _item_name_to_id
 
-    rom_name: Union[bytes, bytearray]
+    rom_name: bytes | bytearray
     rom_name_available_event: Event
 
     logger: logging.Logger
-    sv_game: Optional[SvGame] = None
-    torpedo_bay_item: Optional[str] = None
-    spaceport_excluded_locs: List[str]
-    early_hints_from_option: List[str]
+    sv_game: SvGame | None = None
+    torpedo_bay_item: str | None = None
+    spaceport_excluded_locs: list[str]
+    early_hints_from_option: list[str]
 
     def __init__(self, multiworld: MultiWorld, player: int) -> None:
         super().__init__(multiworld, player)
@@ -164,10 +165,10 @@ class SubversionWorld(World):
 
     @override
     def fill_hook(self,
-                  progitempool: List[Item],
-                  usefulitempool: List[Item],
-                  filleritempool: List[Item],
-                  fill_locations: List[Location]) -> None:
+                  progitempool: list[Item],
+                  usefulitempool: list[Item],
+                  filleritempool: list[Item],
+                  fill_locations: list[Location]) -> None:
         # The objective here is to create a bias towards the player receiving missiles before super missiles.
         # In this fill algorithm, the item being placed earlier tends to be picked up later in progression.
         # The fill algorithm places items from this list in reverse order.
@@ -189,7 +190,7 @@ class SubversionWorld(World):
         else:
             self.logger.debug("super was already being placed earlier")
 
-    def first_progression_items(self, sv_game: SvGame, auto_hints: SubversionAutoHints) -> List[str]:
+    def first_progression_items(self, sv_game: SvGame, auto_hints: SubversionAutoHints) -> list[str]:
         """ names of items that I'm expected to receive first """
         # TODO: does generation know the hint cost?
         # I might want to lower these if the hint cost is lower.
@@ -202,15 +203,15 @@ class SubversionWorld(World):
         base_loadout = (Items.spaceDrop, area_doors["SunkenNestL"])
 
         # This set is only referenced for unique items so it doesn't matter whether non-unique items go in it.
-        items_in_my_own_locations: Set[str] = set()
+        items_in_my_own_locations: set[str] = set()
 
-        def minimize(items: Iterable[SvItem]) -> List[str]:
+        def minimize(items: Iterable[SvItem]) -> list[str]:
             """
             remove as many items as we can while keeping access to enough locations
 
             then filter to items not in my own locations
             """
-            items_excluded: Set[SvItem] = set()
+            items_excluded: set[SvItem] = set()
             for item in items:
                 items_excluded.add(item)
                 candidate_items = filter(lambda it: it not in items_excluded, items)
@@ -226,11 +227,11 @@ class SubversionWorld(World):
             self.logger.debug(f"not in my locations: {minimized}")
             return minimized
 
-        items_picked_up: List[SvItem] = []
+        items_picked_up: list[SvItem] = []
         loadout = Loadout(sv_game, base_loadout)
         unused_locations = new_locations().values()
         for sphere in self.multiworld.get_spheres():
-            my_items_in_this_sphere: List[SvItem] = []
+            my_items_in_this_sphere: list[SvItem] = []
             for loc in sphere:
                 if (
                     isinstance(loc.item, SubversionItem) and
@@ -265,7 +266,7 @@ class SubversionWorld(World):
 
         troll_ammo = bool(self.options.troll_ammo.value)
         item_rom_data = ItemRomData(self.player, troll_ammo, self.multiworld.player_name)
-        item_markers: Dict[int, ItemMarker] = {}
+        item_markers: dict[int, ItemMarker] = {}
         for loc in self.multiworld.get_locations():
             item_rom_data.register(loc)
 
@@ -323,7 +324,7 @@ class SubversionWorld(World):
         # TODO: area rando connections, objective rando info
 
     @override
-    def modify_multidata(self, multidata: Dict[str, Any]) -> None:
+    def modify_multidata(self, multidata: MultiData) -> None:
         import base64
         # wait for self.rom_name to be available.
         self.rom_name_available_event.wait()
@@ -332,7 +333,7 @@ class SubversionWorld(World):
         new_name = base64.b64encode(rom_name).decode()
         multidata["connect_names"][new_name] = multidata["connect_names"][self.multiworld.player_name[self.player]]
 
-        precollected_hints: Dict[int, Set[Hint]] = multidata["precollected_hints"]
+        precollected_hints: dict[int, set[Hint]] = multidata["precollected_hints"]
 
         def precollect_hint(location: Location) -> None:
             """ This is mostly copied from `write_multidata` but with ID for hidden item name. """

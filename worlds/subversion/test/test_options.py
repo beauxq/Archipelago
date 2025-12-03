@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 from Utils import parse_yaml
 from worlds.subversion.options import SubversionCustomLogic, SubversionShortGame

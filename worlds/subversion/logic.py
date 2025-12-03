@@ -1,5 +1,5 @@
+from collections.abc import Iterator
 from random import Random
-from typing import Iterator, List, Tuple
 
 from BaseClasses import CollectionState
 from .item import name_to_id as item_name_to_id, id_to_sv_item
@@ -47,7 +47,7 @@ _expert_early = {
 }
 
 
-def choose_torpedo_bay(sv_game: Game, auto_hints: bool, rand: Random) -> Tuple[str, List[str]]:
+def choose_torpedo_bay(sv_game: Game, auto_hints: bool, rand: Random) -> tuple[str, list[str]]:
     """
     The beginning logic is very restrictive,
     so we place the first item in the first location manually before the fill algorithm.
@@ -80,7 +80,7 @@ def choose_torpedo_bay(sv_game: Game, auto_hints: bool, rand: Random) -> Tuple[s
     return item_choice, excluded_locations
 
 
-def item_counts(cs: CollectionState, p: int) -> Iterator[Tuple[str, int]]:
+def item_counts(cs: CollectionState, p: int) -> Iterator[tuple[str, int]]:
     """
     the items that player p has collected
 
