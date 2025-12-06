@@ -15,7 +15,7 @@ from .client import SubversionSNIClient
 from .item import IMPORTANT_ITEM_ID, SubversionItem, name_to_id as _item_name_to_id, names_for_item_pool
 from .location import SubversionLocation, name_to_id as _loc_name_to_id
 from .logic import choose_torpedo_bay, cs_to_loadout
-from .options import SubversionAutoHints, SubversionOptions, SubversionShortGame, make_sv_game
+from .options import SubversionAutoHints, SubversionOptions, make_sv_game
 from .patch_utils import GenData, ItemRomData, make_gen_data
 from .rom import SubversionDeltaPatch
 
@@ -91,12 +91,12 @@ class SubversionWorld(World):
 
     @override
     def create_regions(self) -> None:
-        excludes = frozenset(SubversionShortGame.location_lists[self.options.progression_items.value])
-
         menu = Region("Menu", self.player, self.multiworld)
         self.multiworld.regions.append(menu)
 
-        sv_game = make_sv_game(self.options, self.random.randrange(1_000_000_000))
+        single_player = self.multiworld.players == 1
+
+        sv_game = make_sv_game(self.options, self.random.randrange(1_000_000_000), single_player=single_player)
         self.sv_game = sv_game
 
         tb_item, exc_locs = choose_torpedo_bay(
@@ -129,7 +129,11 @@ class SubversionWorld(World):
 
             if loc_name == "Torpedo Bay":
                 loc.place_locked_item(self.create_item(self.torpedo_bay_item))
-            if (loc_name in self.spaceport_excluded_locs) or (loc_name in excludes):
+            # TODO: Investigate possible bug:
+            # Will there always be enough excludable items in the item pool
+            # for all of the area blitz excluded locations plus the spaceport excluded locations?
+            # (I suspect it only makes sure there's enough for area blitz.)
+            if (loc_name in self.spaceport_excluded_locs) or (loc_name in sv_game.excluded_locs):
                 loc.progress_type = LocationProgressType.EXCLUDED
                 self.options.exclude_locations.value.add(loc.name)
 
@@ -144,10 +148,12 @@ class SubversionWorld(World):
 
     @override
     def create_items(self) -> None:
+        assert self.sv_game is not None, "need create_regions before create_items"
         count_sjb = 0  # 1 SJB is progression, the rest are not
-        count_la = 0  # 10 large ammo are prog, rest not
+        count_la = 0  # 12 large ammo are prog, rest not
         excluded_tb_item = False  # 1 item is placed before fill algorithm
-        for name in names_for_item_pool():
+        item_names = list(names_for_item_pool(self.sv_game.excluded_locs))
+        for name in item_names:
             if name == self.torpedo_bay_item and not excluded_tb_item:
                 # this item is created and placed in create_regions
                 excluded_tb_item = True
@@ -158,10 +164,18 @@ class SubversionWorld(World):
                     this_item.classification = ItemClassification.progression
                 count_sjb += 1
             elif name == Items.LargeAmmo.name:
-                if count_la < 10:
+                if count_la < 12:
                     this_item.classification = ItemClassification.progression
                 count_la += 1
             self.multiworld.itempool.append(this_item)
+        # TODO: Is this the right number of items in the pool
+        # for exclude suzi or thunder lab (without area blitz)?
+        self.multiworld.itempool.extend(
+            [
+                self.create_item(Items.SmallAmmo.name)
+                for _ in range(len(self.sv_game.excluded_locs))
+            ]
+        )
 
     @override
     def fill_hook(self,

@@ -98,7 +98,7 @@ _symbols: dict[str, str] | None = None
 
 
 def offset_from_symbol(symbol: str) -> int:
-    global _symbols
+    global _symbols  # noqa: PLW0603 cache
     if _symbols is None:
         path = Path(__file__).parent.resolve()
         json_path = path.joinpath("data", "ap_subversion_patch", "sm-basepatch-symbols.json")

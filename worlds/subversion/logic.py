@@ -61,7 +61,7 @@ def choose_torpedo_bay(sv_game: Game, auto_hints: bool, rand: Random) -> tuple[s
         else:
             dist = _expert_early.copy()
             if not auto_hints:
-                for _item_name, item_id in item_name_to_id.items():
+                for item_id in item_name_to_id.values():
                     item = id_to_sv_item[item_id]
                     if item not in dist:
                         dist[item] = 1
@@ -72,6 +72,7 @@ def choose_torpedo_bay(sv_game: Game, auto_hints: bool, rand: Random) -> tuple[s
             dist = _casual_early.copy()
             if not auto_hints:
                 dist.update(_casual_extra)
+    dist[Items.SmallAmmo] = 0  # Non-zero could cause problems for area blitz excluded items.
     dist_items = tuple(dist.keys())
     dist_weights = tuple(dist.values())
     item_choice = rand.choices(dist_items, dist_weights)[0].name

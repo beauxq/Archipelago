@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import logging
+from random import Random
 from typing import Any, ClassVar
+from subversion_rando.trick_data import Tricks
 from typing_extensions import override
 
 from BaseClasses import Item, ItemClassification as IC
@@ -9,10 +11,11 @@ from Options import Choice, DefaultOnToggle, FreeText, PerGameCommonOptions, Ran
 from .item import SubversionItem
 from .location import location_data
 
+from subversion_rando.area_blitz import choose_excluded_locs
 from subversion_rando.areaRando import RandomizeAreas
 from subversion_rando.connection_data import vanilla_areas
 from subversion_rando.daphne_gate import get_daphne_gate
-from subversion_rando.game import CypherItems, Game, GameOptions
+from subversion_rando.game import Exclude, Game, GameOptions
 from subversion_rando.goal import generate_goals
 from subversion_rando.item_data import unique_items
 from subversion_rando.item_marker import ItemMarker, ItemMarkersOption
@@ -97,33 +100,25 @@ class SubversionDaphne(Toggle):
 
 
 class SubversionShortGame(Choice):
-    """ Keep the game from being too long by not putting required items in far away places. """
+    """
+    Keep the game from being too long by not putting required items in far away places.
+
+    "Area Blitz" selects a random group of areas to exclude.
+    """
     display_name = "progression items"
     option_anywhere = 0
     option_not_in_thunder_lab = 1
     option_not_in_suzi = 2
+    option_area_blitz = 3
+    option_not_in_suzi_area_blitz = 4
     default = 1
 
-    location_lists: ClassVar[dict[int, list[str]]] = {
-        option_anywhere: [],
-        option_not_in_thunder_lab: ["Shrine Of The Animate Spark", "Enervation Chamber"],
-        option_not_in_suzi: [
-            "Shrine Of The Animate Spark",
-            "Enervation Chamber",
-            "Reef Nook",
-            "Tower Rock Lookout",
-            "Portico",
-            "Saline Cache",
-            "Suzi Ruins Map Station Access",
-            "Obscured Vestibule",
-            "Tram To Suzi Island"
-        ]
-    }
-
-    cypher_options: ClassVar[dict[int, CypherItems]] = {
-        option_anywhere: CypherItems.Anything,
-        option_not_in_thunder_lab: CypherItems.NotRequired,
-        option_not_in_suzi: CypherItems.SmallAmmo
+    exclude_options: ClassVar[dict[int, Exclude]] = {
+        option_anywhere: Exclude.nothing,
+        option_not_in_thunder_lab: Exclude.thunder_lab,
+        option_not_in_suzi: Exclude.suzi,
+        option_area_blitz: Exclude.blitz,
+        option_not_in_suzi_area_blitz: Exclude.suzi_blitz,
     }
     """
     This is just for its effect on objective rando,
@@ -253,7 +248,7 @@ def _make_custom(data: str) -> frozenset[Trick]:
     return casual
 
 
-def make_sv_game(options: SubversionOptions, seed: int) -> Game:
+def make_sv_game(options: SubversionOptions, seed: int, *, single_player: bool) -> Game:
     logics = {
         SubversionLogic.option_casual: casual,
         SubversionLogic.option_expert: expert,
@@ -261,7 +256,7 @@ def make_sv_game(options: SubversionOptions, seed: int) -> Game:
         SubversionLogic.option_custom: _make_custom(options.custom_logic.value)
     }
 
-    cypher_option = SubversionShortGame.cypher_options[options.progression_items.value]
+    exclude_option = SubversionShortGame.exclude_options[options.progression_items.value]
 
     sv_options = GameOptions(
         logics[options.logic_preset.value],
@@ -269,20 +264,37 @@ def make_sv_game(options: SubversionOptions, seed: int) -> Game:
         "D",  # unused
         bool(options.small_spaceport.value),
         bool(options.escape_shortcuts.value),
-        cypher_option,  # used only for objective rando, not for fill
+        exclude_option,  # used only for objective rando, not for fill
         bool(options.daphne_gate.value),
         SubversionItemMarkers.marker_options[options.item_markers.value],
         options.objective_rando.value
     )
 
-    connections = RandomizeAreas(False, seed) if sv_options.area_rando else vanilla_areas()
+    # deal with restrictive start logic
+    force_normal_sand_land = (
+        (
+            single_player
+        ) and (
+            Tricks.movement_moderate not in sv_options.logic or
+            Tricks.wave_gate_glitch not in sv_options.logic or
+            sv_options.exclude in (Exclude.blitz, Exclude.suzi_blitz)  # AP's fill swap has trouble without this.
+        )
+    )
 
-    sv_game = Game(sv_options, location_data, connections, seed)
+    excluded_locations = choose_excluded_locs(
+        sv_options,
+        Random(seed),
+        force_normal_sand_land=force_normal_sand_land,
+    )
+
+    connections = RandomizeAreas(force_normal_sand_land, seed) if sv_options.area_rando else vanilla_areas()
+
+    sv_game = Game(sv_options, location_data, connections, seed, excluded_locs=excluded_locations)
     if sv_options.daphne_gate:
         daphne_blocks = get_daphne_gate(sv_options)
         sv_game.daphne_blocks = daphne_blocks
     if sv_options.objective_rando > 0:
-        goals = generate_goals(sv_options, seed)
+        goals = generate_goals(sv_options, excluded_locations, seed)
         sv_game.goals = goals
 
     return sv_game

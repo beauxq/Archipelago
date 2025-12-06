@@ -1,2 +1,3 @@
 subversion_rando @ git+https://github.com/SubversionRando/SubversionRando@31eb2068f02dec52c49cfce09f700f612f03eac3#0.9.3
 typing_extensions>=4.12.2
+websockets>=13.0.1,<14

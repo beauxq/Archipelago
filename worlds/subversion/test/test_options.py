@@ -1,20 +1,10 @@
 from collections.abc import Iterator
 
 from Utils import parse_yaml
-from worlds.subversion.options import SubversionCustomLogic, SubversionShortGame
+from worlds.subversion.options import SubversionCustomLogic
 import worlds.subversion.options as options_module
 
-from subversion_rando.location_data import new_locations
 from subversion_rando.trick_data import Tricks
-
-
-def test_location_names() -> None:
-    """ make sure all the names in these lists are valid location names """
-    locations = new_locations()
-
-    for op, loc_list in SubversionShortGame.location_lists.items():
-        for loc_name in loc_list:
-            assert loc_name in locations, f"{loc_name} invalid location name in list {op}"
 
 
 def test_parse_custom_logic_string() -> None:

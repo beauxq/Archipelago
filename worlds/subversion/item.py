@@ -1,8 +1,10 @@
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Set as AbstractSet
+
 from BaseClasses import Item, ItemClassification as IC
 from .config import base_id
 
+from subversion_rando.area_blitz import remove_excluded_item_pool
 from subversion_rando.area_rando_types import DoorPairs
 from subversion_rando.item_data import Item as SvItem, Items
 from subversion_rando.fillAssumed import FillAssumed
@@ -16,7 +18,7 @@ classifications.update({
     Items.DamageAmp.name: IC.useful,
     Items.AccelCharge.name: IC.useful,
     Items.SpaceJumpBoost.name: IC.useful,  # 1 progression set by create_items
-    Items.LargeAmmo.name: IC.useful  # 10 progression set by create_items
+    Items.LargeAmmo.name: IC.useful  # 12 progression set by create_items
 })
 
 
@@ -96,8 +98,9 @@ id_to_sv_item[IMPORTANT_ITEM_ID] = Items.Refuel  # This is so unit tests don't c
 # TODO: add API in AP to hide item name in hint
 
 
-def names_for_item_pool() -> Iterator[str]:
+def names_for_item_pool(excluded_locs: AbstractSet[str]) -> Iterator[str]:
     sv_fill = FillAssumed(DoorPairs([]))
+    remove_excluded_item_pool(sv_fill, excluded_locs)
     for sv_item in sv_fill.prog_items:
         yield sv_item.name
     for sv_item in sv_fill.extra_items:

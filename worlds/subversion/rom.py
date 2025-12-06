@@ -35,7 +35,7 @@ class SubversionDeltaPatch(APDeltaPatch):
     gen_data: str
     """ JSON encoded """
 
-    def __init__(self, *args: Any, patched_path: str = "", gen_data: str = "", **kwargs: Any) -> None:  # noqa: ANN401
+    def __init__(self, *args: Any, patched_path: str = "", gen_data: str = "", **kwargs: Any) -> None:
         super().__init__(*args, patched_path=patched_path, **kwargs)
         self.gen_data = gen_data
 
@@ -63,8 +63,12 @@ class SubversionDeltaPatch(APDeltaPatch):
         write_rom_from_gen_data(self.gen_data, target)
 
 
+_base_rom_bytes_cache: bytes | None = None
+
+
 def get_base_rom_bytes(file_name: str = "") -> bytes:
-    base_rom_bytes: bytes | None = getattr(get_base_rom_bytes, "base_rom_bytes", None)
+    global _base_rom_bytes_cache  # noqa: PLW0603 cache
+    base_rom_bytes: bytes | None = _base_rom_bytes_cache
     if not base_rom_bytes:
         file_name = get_base_rom_path(file_name)
         base_rom_bytes = bytes(read_snes_rom(open(file_name, "rb")))
@@ -74,7 +78,7 @@ def get_base_rom_bytes(file_name: str = "") -> bytes:
         if SMJUHASH != basemd5.hexdigest():
             raise Exception("Supplied Base Rom does not match known MD5 for Japan+US release. "
                             "Get the correct game and version, then dump it")
-        setattr(get_base_rom_bytes, "base_rom_bytes", base_rom_bytes)
+        _base_rom_bytes_cache = base_rom_bytes
     return base_rom_bytes
 
 
