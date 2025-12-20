@@ -7,16 +7,17 @@
 # This does not verify the version.
 # TODO: This script could download the correct version from github based on information in requirements.txt
 
+import contextlib
 import os
 from pathlib import Path
-from shutil import copytree, make_archive, rmtree
+from shutil import copytree, rmtree
 import subprocess
 import tempfile
 import zlib
 
 ORIG = "subversion"
-TEMP = "subversion_temp"
-MOVE = "subversion_move"
+TEMP = "._subversion_temp"
+MOVE = "._subversion_move"
 LIBRARY_NAME = "subversion_rando"
 REQUIREMENTS_FILE_PATH = Path(__file__).parent / "requirements.txt"
 
@@ -49,27 +50,25 @@ def copy_directory_from_commit(github_url: str, dir_name: str, destination_path:
     temp_dir_for_lib = tempfile.mkdtemp(dir=os.getcwd(), prefix="lib_temp_clone_")
     clone_cmd = ["git", "clone", repo_url, temp_dir_for_lib]
     checkout_cmd = ["git", "checkout", commit_hash]
-    start_cwd = os.getcwd()
     try:
         print(f"{' '.join(clone_cmd)}")
         subprocess.run(clone_cmd, check=True)
 
-        os.chdir(temp_dir_for_lib)
+        with contextlib.chdir(temp_dir_for_lib):
 
-        print(f"{' '.join(checkout_cmd)}")
-        subprocess.run(checkout_cmd, check=True)
+            print(f"{' '.join(checkout_cmd)}")
+            subprocess.run(checkout_cmd, check=True)
 
-        src_dir = os.path.join(temp_dir_for_lib, "src", dir_name)
-        if not os.path.exists(src_dir):
-            raise FileNotFoundError(f"{dir_name=} does not exist under 'src' at this commit")
+            src_dir = os.path.join(temp_dir_for_lib, "src", dir_name)
+            if not os.path.exists(src_dir):
+                raise FileNotFoundError(f"{dir_name=} does not exist under 'src' at this commit")
 
-        print(f"copying {src_dir} to {destination_path}...")
-        copytree(src_dir, destination_path, dirs_exist_ok=False)
+            print(f"copying {src_dir} to {destination_path}...")
+            copytree(src_dir, destination_path, dirs_exist_ok=False)
     finally:
         print(f"cleaning up {temp_dir_for_lib=}")
         if os.path.exists(temp_dir_for_lib):
             rmtree(temp_dir_for_lib)
-        os.chdir(start_cwd)
 
 
 def get_url_from_requirements_file(req_file: str | Path) -> str:
@@ -120,17 +119,16 @@ def main() -> None:
 
     crc = lib_crc()
     print(f"writing crc {crc}")
-    with open(os.path.join(TEMP, LIBRARY_NAME, "crc"), "w") as crc_file:
+    with open(os.path.join(TEMP, LIBRARY_NAME, "crc"), "w", encoding="utf-8") as crc_file:
         crc_file.write(f"{crc}")
-    with open(os.path.join(TEMP, "lib_crc.py"), "w") as crc_module:
+    with open(os.path.join(TEMP, "lib_crc.py"), "w", encoding="utf-8") as crc_module:
         crc_module.write(f"crc = {crc}\n")
 
     os.rename(ORIG, MOVE)
     os.rename(TEMP, ORIG)
 
-    zip_file_name = make_archive("subversion", "zip", ".", ORIG)
-    print(f"{zip_file_name} -> {destination}")
-    os.rename(zip_file_name, destination)
+    with contextlib.chdir(".."):
+        subprocess.run(["python", "Launcher.py", "Build APWorlds", "Subversion"], check=True)
 
     rmtree(ORIG)
     os.rename(MOVE, ORIG)
