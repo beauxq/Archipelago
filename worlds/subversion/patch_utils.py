@@ -334,7 +334,7 @@ class ItemRomData:
                 item_table[loc_id] = table_entry
 
         player_names = bytearray()
-        player_names.extend(b"  Archipelago   ")
+        player_names.extend(b"  ARCHIPELAGO   ")
         for player_id in sorted_player_ids[1:]:
             this_name = self.player_id_to_name[player_id].upper().encode("ascii", "ignore")[:16].center(16)
             player_names.extend(this_name)
