@@ -72,7 +72,7 @@ def copy_directory_from_commit(github_url: str, dir_name: str, destination_path:
 
 
 def get_url_from_requirements_file(req_file: str | Path) -> str:
-    with open(REQUIREMENTS_FILE_PATH) as file:
+    with open(REQUIREMENTS_FILE_PATH, encoding="utf-8") as file:
         for line in file:
             if line.startswith(LIBRARY_NAME):
                 _lib_name, url = line.split("+", maxsplit=1)
