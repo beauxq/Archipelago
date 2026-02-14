@@ -4,7 +4,7 @@ import itertools
 import logging
 import os
 from threading import Event
-from typing import TextIO
+from typing import TextIO, final
 from typing_extensions import override
 
 from BaseClasses import CollectionState, Item, ItemClassification, Location, \
@@ -34,9 +34,10 @@ from subversion_rando.trick_data import trick_name_lookup
 _ = SubversionSNIClient  # load the module to register the handler
 
 
+@final
 class SubversionWebWorld(WebWorld):
     theme = "ice"
-    tutorials = [
+    tutorials = [  # noqa: RUF012  TODO: fix typing upstream to Sequence
         Tutorial(
             tutorial_name="Setup Guide",
             description="A guide to playing Super Metroid Subversion in Archipelago.",
@@ -48,6 +49,7 @@ class SubversionWebWorld(WebWorld):
     ]
 
 
+@final
 class SubversionWorld(World):
     """
     Following the events of Super Metroid, Samus must destroy another
@@ -58,7 +60,6 @@ class SubversionWorld(World):
     """
 
     game = "Subversion"
-    data_version = 0  # TODO: change to 1 before release
     web = SubversionWebWorld()
 
     options_dataclass = SubversionOptions

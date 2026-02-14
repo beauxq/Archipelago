@@ -1,3 +1,4 @@
+from typing import final
 from BaseClasses import Location, Region
 from .config import base_id
 
@@ -26,6 +27,7 @@ to location id that AP knows about
 """
 
 
+@final
 class SubversionLocation(Location):
     game = "Subversion"
     sv_loc: SvLocation

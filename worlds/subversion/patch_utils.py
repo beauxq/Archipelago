@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
 import json
-from pathlib import Path
+import pkgutil
 from typing import Final
 
 from BaseClasses import ItemClassification, Location
 
-from .config import base_id, open_file_apworld_compatible
+from .config import base_id
 from .item import SubversionItem, local_id_to_sv_item, name_to_id, sv_item_name_to_sm_item_id
 from .location import SubversionLocation
 
@@ -100,10 +100,9 @@ _symbols: dict[str, str] | None = None
 def offset_from_symbol(symbol: str) -> int:
     global _symbols  # noqa: PLW0603 cache
     if _symbols is None:
-        path = Path(__file__).parent.resolve()
-        json_path = path.joinpath("data", "ap_subversion_patch", "sm-basepatch-symbols.json")
-        with open_file_apworld_compatible(json_path) as symbols_file:
-            _symbols = json.load(symbols_file)
+        symbols_bytes = pkgutil.get_data(__name__, "data/ap_subversion_patch/sm-basepatch-symbols.json")
+        assert symbols_bytes is not None
+        _symbols = json.loads(symbols_bytes)
         assert _symbols
 
     snes_addr_str = _symbols[symbol]
@@ -135,17 +134,14 @@ def patch_item_sprites(rom: bytes | bytearray) -> bytearray:
     """
     tr = bytearray(rom)
 
-    path = Path(__file__).parent.resolve()
-
     for item_sprite in _item_sprites:
         palette_offset = offset_from_symbol(item_sprite["paletteSymbolName"])
         data_offset = offset_from_symbol(item_sprite["dataSymbolName"])
-        with open_file_apworld_compatible(
-            path.joinpath("data", "custom_sprite", item_sprite["fileName"]), "rb"
-        ) as file:
-            offworld_data = file.read()
-            tr[palette_offset:palette_offset + 8] = offworld_data[0:8]
-            tr[data_offset:data_offset + 256] = offworld_data[8:264]
+
+        off_world_data = pkgutil.get_data(__name__, "data/custom_sprite/" + item_sprite["fileName"])
+        assert off_world_data is not None, item_sprite
+        tr[palette_offset:palette_offset + 8] = off_world_data[0:8]
+        tr[data_offset:data_offset + 256] = off_world_data[8:264]
     return tr
 
 
@@ -410,16 +406,10 @@ class ItemRomData:
         return tr
 
 
-def ips_patch_from_file(ips_file_name: str | Path, input_bytes: bytes | bytearray) -> bytearray:
-    with open_file_apworld_compatible(ips_file_name, "rb") as ips_file:
-        ips_data = ips_file.read()
+def ips_patch_from_file(input_bytes: bytes | bytearray) -> bytearray:
+    ips_data = pkgutil.get_data(__name__, "data/ap_subversion_patch/multiworld-basepatch.ips")
+    assert ips_data is not None, __name__
     return ips_patch(input_bytes, ips_data)
-
-
-def get_multi_patch_path() -> Path:
-    """ multiworld-basepatch.ips """
-    path = Path(__file__).parent.resolve()
-    return path.joinpath("data", "ap_subversion_patch", "multiworld-basepatch.ips")
 
 
 @dataclass

@@ -3,10 +3,6 @@
 
 # run from working directory subversion - working directory will be changed to ..
 
-# directory "SubversionRando" (with the correct version) needs to be a sibling to "Archipelago"
-# This does not verify the version.
-# TODO: This script could download the correct version from github based on information in requirements.txt
-
 import contextlib
 import os
 from pathlib import Path

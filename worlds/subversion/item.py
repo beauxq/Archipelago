@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterator, Set as AbstractSet
+from typing import final
 
 from BaseClasses import Item, ItemClassification as IC
 from .config import base_id
@@ -22,9 +23,10 @@ classifications.update({
 })
 
 
+@final
 class SubversionItem(Item):
     game = "Subversion"
-    __slots__ = ("sv_item",)
+    __slots__ = ("sv_item",)  # pyright: ignore[reportIncompatibleUnannotatedOverride]  # TODO: fix basedpyright
     sv_item: SvItem
 
     def __init__(self, name: str, player: int) -> None:

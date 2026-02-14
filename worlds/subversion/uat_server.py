@@ -1,7 +1,6 @@
 from collections.abc import Mapping, Sequence
 import json
-from typing import Any, Literal, TypedDict
-from typing_extensions import NotRequired
+from typing import Any, Literal, NotRequired, TypedDict
 import websockets
 
 from subversion_rando.tracker_logic import TrackerLogic
@@ -52,14 +51,14 @@ class UATServer:
 
     async def send_data(self, client: websockets.WebSocketCommonProtocol) -> None:
         data = json.dumps(self.get_variable_data())
-        print(f"sending {data=}")
+        # print(f"sending {data=}")
         await client.send(data)
 
     async def server_loop(self, client: websockets.WebSocketCommonProtocol, path: str) -> None:
         async def error(cmd_name: str,
                         reason: Literal["unknown cmd", "missing argument", "bad value", "unknown"]) -> None:
             data = [{"cmd": "ErrorReply", "name": cmd_name, "reason": reason}]
-            print(f"error {data=}")
+            # print(f"error {data=}")
             await client.send(json.dumps(data))
 
         self._clients.add(client)
@@ -68,7 +67,7 @@ class UATServer:
             async for data in client:
                 # TODO: better solution for narrowing generics
                 packet: Sequence[ClientPacket | None] | None = json.loads(data)
-                print(f"received {json.dumps(packet, indent=4)}")
+                # print(f"received {json.dumps(packet, indent=4)}")
                 if not isinstance(packet, Sequence):
                     await error("?", "unknown")
                     continue

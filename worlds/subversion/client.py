@@ -4,7 +4,7 @@ import itertools
 import logging
 import asyncio
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, final
 from typing_extensions import override
 
 from NetUtils import ClientStatus, color
@@ -45,6 +45,7 @@ SM_DEATH_LINK_ACTIVE_ADDR = ROM_START + offset_from_symbol("config_deathlink")  
 SM_REMOTE_ITEM_FLAG_ADDR = ROM_START + offset_from_symbol("config_remote_items")  # 1 byte
 
 
+@final
 class SubversionSNIClient(SNIClient):
     game = "Subversion"
     patch_suffix = ".apsv"
@@ -265,7 +266,7 @@ class SubversionSNIClient(SNIClient):
             # print(f"wcount addr {SM_RECV_QUEUE_WCOUNT}: {hex(item_out_ptr & 0xFF)} {(item_out_ptr >> 8) & 0xFF}")
             snes_buffered_write(ctx, SM_RECV_QUEUE_WCOUNT,
                                 bytes([item_out_ptr & 0xFF, (item_out_ptr >> 8) & 0xFF]))
-            logging.info("Received %s from %s (%s) (%d/%d in list)" % (
+            logging.info("Received %s from %s (%s) (%d/%d in list)" % (  # noqa: UP031
                 color(ctx.item_names.lookup_in_game(item.item), "red", "bold"),
                 color(ctx.player_names[item.player], "yellow"),
                 ctx.location_names.lookup_in_slot(item.location, item.player),

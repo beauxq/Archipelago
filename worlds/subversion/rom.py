@@ -1,7 +1,7 @@
 import hashlib
 from logging import getLogger
 import os
-from typing import Any
+from typing import Any, final
 from typing_extensions import override
 import zipfile
 
@@ -11,7 +11,7 @@ from worlds.Files import APContainer, APDeltaPatch
 
 from .patch_utils import (
     LOGIC_LENGTH, LOGIC_LOCATION,
-    ItemRomData, get_gen_data, get_multi_patch_path, ips_patch_from_file, offset_from_symbol, patch_item_sprites
+    ItemRomData, get_gen_data, ips_patch_from_file, offset_from_symbol, patch_item_sprites
 )
 
 from subversion_rando.logic_presets import custom_logic_str_from_tricks
@@ -27,6 +27,7 @@ SMJUHASH = "21f3e98df4780ee1c667b84e57d88675"
 # So in some places, instead of calling `super()`, we jump over APDeltaPatch to APContainer
 # because we don't have a bs4diff.
 
+@final
 class SubversionDeltaPatch(APDeltaPatch):
     hash = SMJUHASH
     game = "Subversion"
@@ -105,8 +106,7 @@ def write_rom_from_gen_data(gen_data_str: str, output_rom_file_name: str) -> Non
     logger = getLogger("Subversion")
     logger.debug("patched Super Metroid to Subversion")
 
-    multi_patch_path = get_multi_patch_path()
-    rom_writer.rom_data = ips_patch_from_file(multi_patch_path, rom_writer.rom_data)
+    rom_writer.rom_data = ips_patch_from_file(rom_writer.rom_data)
 
     rom_writer.rom_data = patch_item_sprites(rom_writer.rom_data)
 
