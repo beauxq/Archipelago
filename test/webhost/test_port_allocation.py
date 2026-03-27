@@ -47,16 +47,16 @@ class TestPortAllocating(unittest.TestCase):
     def test_random_port_socket_edge_cases(self) -> None:
         """Verify if edge cases on creation of random port socket is working fine"""
         # Try giving an empty tuple and fail over it
-        creator = RandomPortSocketCreator((), "127.0.0.1")
+        creator = RandomPortSocketCreator(())
         with self.assertRaises(OSError) as err:
-            creator.create()
+            creator.create("127.0.0.1")
         self.assertEqual(err.exception.errno, 98, "Raised an unexpected error code")
         self.assertEqual(err.exception.strerror, "No available ports", "Raised an unexpected error string")
 
         # Try only having ephemeral ports enabled
-        creator = RandomPortSocketCreator(("0",), "127.0.0.1")
+        creator = RandomPortSocketCreator(("0",))
         try:
-            creator.create().close()
+            creator.create("127.0.0.1").close()
         except OSError as err:
             self.assertEqual(err.errno, 98, "Raised an unexpected error code")
             # If it returns our error string that means something is wrong with our code
@@ -66,10 +66,10 @@ class TestPortAllocating(unittest.TestCase):
     @unittest.skipUnless(ci, "can't guarantee free ports outside of CI")
     def test_random_port_socket(self) -> None:
         """Verify if returned sockets use the correct port ranges"""
-        creator = RandomPortSocketCreator(("8080-8085",), "127.0.0.1")
+        creator = RandomPortSocketCreator(("8080-8085",))
         sockets: list[Socket] = []
         for _ in range(6):
-            socket = creator.create()
+            socket = creator.create("127.0.0.1")
             sockets.append(socket)
             _, port = socket.getsockname()
             self.assertIn(port, range(8080, 8086), "Port of socket was not inside the expected range")
@@ -77,10 +77,10 @@ class TestPortAllocating(unittest.TestCase):
             s.close()
 
         sockets.clear()
-        creator = RandomPortSocketCreator(("30000-65535",), "127.0.0.1")
+        creator = RandomPortSocketCreator(("30000-65535",))
         length = 5_000 if is_macos else (30_000 - len(creator._get_used_ports()))
         for _ in range(length):
-            socket = creator.create()
+            socket = creator.create("127.0.0.1")
             sockets.append(socket)
             _, port = socket.getsockname()
             self.assertIn(port, range(30_000, 65536), "Port of socket was not inside the expected range")
