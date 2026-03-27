@@ -192,13 +192,11 @@ class GameRangePorts(typing.NamedTuple):
 class RandomPortSocketCreator:
     """ Creates server sockets on random available ports from a configured range. """
 
-    _host: str
     _next_port_index: int
     _used_ports_cache: tuple[frozenset[int], float] | None
     _parsed_ports: GameRangePorts
 
-    def __init__(self, game_ports: Iterable[str | int], host: str):
-        self._host = host
+    def __init__(self, game_ports: Iterable[str | int]) -> None:
         self._next_port_index = 0
         self._used_ports_cache = None
         self._parsed_ports = self._parse_game_ports(game_ports)
@@ -255,7 +253,7 @@ class RandomPortSocketCreator:
 
         return self._used_ports_cache[0]
 
-    def create(self) -> socket.socket:
+    def create(self, host: str) -> socket.socket:
         """ Create a server socket on an available port. """
         valid_ports, ephemeral_allowed = self._parsed_ports
         used_ports = self._get_used_ports()
@@ -266,7 +264,7 @@ class RandomPortSocketCreator:
                 continue
 
             try:
-                res = socket.create_server((self._host, port))
+                res = socket.create_server((host, port))
                 next_index = (next_index + i + 1) % len(valid_ports)
                 self._next_port_index = next_index
                 return res
@@ -274,7 +272,7 @@ class RandomPortSocketCreator:
                 pass
 
         if ephemeral_allowed:
-            return socket.create_server((self._host, 0))
+            return socket.create_server((host, 0))
 
         raise OSError(98, "No available ports")
 
@@ -386,7 +384,7 @@ def run_server_process(name: str, ponyconfig: dict, static_server_data: dict,
     gc.collect()  # free intermediate objects used during setup
 
     loop = asyncio.get_event_loop()
-    socket_creator = RandomPortSocketCreator(game_ports, host)
+    socket_creator = RandomPortSocketCreator(game_ports)
 
     async def start_room(room_id):
         with Locker(f"RoomLocker {room_id}"):
@@ -411,7 +409,7 @@ def run_server_process(name: str, ponyconfig: dict, static_server_data: dict,
                 if ctx.port == 0:
                     ctx.server = websockets.serve(
                         functools.partial(server, ctx=ctx),
-                        sock=socket_creator.create(),
+                        sock=socket_creator.create(ctx.host),
                         ssl=get_ssl_context(),
                         extensions=[server_per_message_deflate_factory],
                     )
