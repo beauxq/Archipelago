@@ -32,7 +32,7 @@ class Reward:
         self.ap_index = ap_index
 
     def single_possible_type(self):
-        return self.possible_types in RewardType
+        return self.possible_types in (RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM, RewardType.ARCHIPELAGO)
 
     def __str__(self):
         result = f"{self.id} {self.type} {self.event.name()}"
