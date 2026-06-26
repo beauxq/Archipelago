@@ -80,7 +80,10 @@ def build_ir_from_placements(wc_event_locations: list[Location]) -> list[str]:
         if loc.item and loc.item.player == loc.player:
             ap_item_id = loc.item.code
             if ap_item_id in inventory_item_ap_id_to_name:
-                wc_item_id = Rom.item_name_id[inventory_item_ap_id_to_name[ap_item_id]]
+                item_name = inventory_item_ap_id_to_name[ap_item_id]
+                if item_name == "Empty":
+                    continue
+                wc_item_id = Rom.item_name_id[item_name]
                 items_in_wc_event_locations[loc.name] = wc_item_id
 
     items_in_wc_event_locations_list = sorted(set(items_in_wc_event_locations.values()))
@@ -109,6 +112,15 @@ def item_qualities() -> Mapping[int, int]:
         for item_tier, key in zip(tiers, sort_keys, strict=True):
             for wc_id in item_tier:
                 qualities[wc_id] = key
+
+        # Add items not present in chest_item_tiers
+        if "Cursed Shld" in Rom.item_name_id:
+            qualities[Rom.item_name_id["Cursed Shld"]] = 1
+        if "ArchplgoItem" in Rom.item_name_id:
+            qualities[Rom.item_name_id["ArchplgoItem"]] = 1
+        if "Empty" in Rom.item_name_id:
+            qualities[Rom.item_name_id["Empty"]] = 10
+
         return qualities
 
 
@@ -126,14 +138,17 @@ def limit_event_items(wc_event_locations: list[Location], random: Random) -> Non
         if loc.item and loc.item.player == loc.player:
             ap_item_id = loc.item.code
             if ap_item_id in inventory_item_ap_id_to_name:
-                wc_item_id = Rom.item_name_id[inventory_item_ap_id_to_name[ap_item_id]]
+                item_name = inventory_item_ap_id_to_name[ap_item_id]
+                if item_name == "Empty":
+                    continue
+                wc_item_id = Rom.item_name_id[item_name]
                 items_in_wc_event_locations[loc.name] = wc_item_id
                 locations_by_name[loc.name] = loc
 
     qualities = item_qualities()
 
     def sort_key(wc_item_id: int) -> int:
-        return qualities[wc_item_id]
+        return qualities.get(wc_item_id, 10)
 
     items_by_quality = sorted(set(items_in_wc_event_locations.values()), key=sort_key)
 
@@ -144,14 +159,15 @@ def limit_event_items(wc_event_locations: list[Location], random: Random) -> Non
 
     # print(f"{[Rom.item_id_name_weight[i_id][0] for i_id in smaller_set]=}")
 
-    for loc_name, loc in locations_by_name.items():
-        wc_item_id = items_in_wc_event_locations[loc_name]
-        if wc_item_id not in smaller_set:
-            replacement = random.choice(smaller_set)
-            replacement_name = Rom.item_id_name_weight[replacement][0]
-            replacement_code = item_name_to_id[replacement_name]
-            assert loc.item, f"{loc=}"
-            loc.item.name = replacement_name
-            loc.item.code = replacement_code
-            loc.item.classification = ItemClassification.useful
-            loc.locked = True
+    if smaller_set:
+        for loc_name, loc in locations_by_name.items():
+            wc_item_id = items_in_wc_event_locations[loc_name]
+            if wc_item_id not in smaller_set:
+                replacement = random.choice(smaller_set)
+                replacement_name = Rom.item_id_name_weight[replacement][0]
+                replacement_code = item_name_to_id[replacement_name]
+                assert loc.item, f"{loc=}"
+                loc.item.name = replacement_name
+                loc.item.code = replacement_code
+                loc.item.classification = ItemClassification.useful
+                loc.locked = True
