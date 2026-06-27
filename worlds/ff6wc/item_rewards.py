@@ -81,8 +81,6 @@ def build_ir_from_placements(wc_event_locations: list[Location]) -> list[str]:
             ap_item_id = loc.item.code
             if ap_item_id in inventory_item_ap_id_to_name:
                 item_name = inventory_item_ap_id_to_name[ap_item_id]
-                if item_name == "Empty":
-                    continue
                 wc_item_id = Rom.item_name_id[item_name]
                 items_in_wc_event_locations[loc.name] = wc_item_id
 
