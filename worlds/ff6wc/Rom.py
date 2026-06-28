@@ -1,8 +1,11 @@
+from collections.abc import Mapping, Sequence
+from typing import Final
+
 ROM_PLAYER_LIMIT = 65535
 ROM_NAME = 0x00FFC0
 treasure_chest_base_address = 0xF51E40
 event_flag_base_address = 0xF51E80
-bit_positions = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80]
+bit_positions: Final = (0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80)
 esper_bit_base_address = 0xF51A69
 espers_obtained_address = 0xF51FC8
 character_intialized_bit_base_address = 0xF51EDC
@@ -23,7 +26,7 @@ dialog_index_address = 0xF500D0
 dialog_index_size = 2
 
 
-espers = [  # This is the internal order of the Espers in the game. Editing this will break things.
+espers: Final = (  # This is the internal order of the Espers in the game. Editing this will break things.
     "Ramuh", "Ifrit", "Shiva",
     "Siren", "Terrato", "Shoat",
     "Maduin", "Bismark", "Stray",
@@ -33,14 +36,14 @@ espers = [  # This is the internal order of the Espers in the game. Editing this
     "ZoneSeek", "Carbunkl", "Phantom",
     "Sraphim", "Golem", "Unicorn",
     "Fenrir", "Starlet", "Phoenix"
-]
+)
 
-characters = [  # Same here.
+characters: Final = (  # Same here.
     "Terra", "Locke", "Cyan", "Shadow", "Edgar", "Sabin", "Celes", "Strago",
     "Relm", "Setzer", "Mog", "Gau", "Gogo", "Umaro"
-]
+)
 
-item_id_name_weight = {  # second element is the chest item tier weight
+item_id_name_weight: Final[Mapping[int, tuple[str, int]]] = {  # second element is the chest item tier weight
     0: ("Dirk", 143),
     1: ("MithrilKnife", 143),
     2: ("Guardian", 291),
@@ -299,9 +302,9 @@ item_id_name_weight = {  # second element is the chest item tier weight
     255: ("Empty", 0),
 }
 
-item_name_id = {v[0]: k for k, v in item_id_name_weight.items()}
+item_name_id: Final[Mapping[str, int]] = {v[0]: k for k, v in item_id_name_weight.items()}
 
-event_flag_location_names = {
+event_flag_location_names: Final[Mapping[str, int]] = {
     "Whelk": 0x135,
     "Lete River": 0x257,
     "Sealed Gate": 0x471,
@@ -366,7 +369,7 @@ event_flag_location_names = {
     "Gold Dragon": 0x11d
 }
 
-additional_event_flags = {
+additional_event_flags: Final[Mapping[str, int]] = {
     "Lone Wolf Encountered": 0x68d,
     "Lone Wolf First Reward Picked": 0x29f,
     "Lone Wolf Both Rewards Picked": 0x241,
@@ -376,7 +379,7 @@ additional_event_flags = {
     "Narshe Weapon Shop Both Rewards Picked": 0x0b7
 }
 
-treasure_chest_data: dict[str, tuple[int, int, int]] = {
+treasure_chest_data: Final[Mapping[str, tuple[int, int, int]]] = {
     "Narshe Arvis's Clock": (0x1E40, 2, 1),
     "Narshe Elder's Clock": (0x1E41, 2, 9),
     "Narshe Adventuring School Advanced Battle Tactics Chest": (0x1E51, 4, 74),
@@ -640,7 +643,7 @@ treasure_chest_data: dict[str, tuple[int, int, int]] = {
     "Zozo Esper Room Right": (0x1E48, 7, 140)
 }
 
-dialog_location_scouts_lookup = {
+dialog_location_scouts_lookup: Final[Mapping[tuple[int, int], Sequence[str]]] = {
     (200, 1111): ["Auction House 10kGP"],
     (200, 1115): ["Auction House 20kGP"],
     (23, 1765): ["Lone Wolf 1", "Lone Wolf 2"],
