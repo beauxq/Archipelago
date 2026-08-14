@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from functools import cache
 from random import Random
 
 from BaseClasses import ItemClassification, Location
@@ -91,6 +92,7 @@ def build_ir_from_placements(wc_event_locations: list[Location]) -> list[str]:
         return []
 
 
+@cache
 def item_qualities() -> Mapping[int, int]:
     """ to be able to sort items by quality """
     from . import FF6WCWorld
@@ -109,6 +111,12 @@ def item_qualities() -> Mapping[int, int]:
         for item_tier, key in zip(tiers, sort_keys, strict=True):
             for wc_id in item_tier:
                 qualities[wc_id] = key
+
+        # Add items not present in chest_item_tiers
+        qualities[Rom.item_name_id["Cursed Shld"]] = 1
+        qualities[Rom.item_name_id["ArchplgoItem"]] = 1
+        qualities[Rom.item_name_id["Empty"]] = 10
+
         return qualities
 
 
