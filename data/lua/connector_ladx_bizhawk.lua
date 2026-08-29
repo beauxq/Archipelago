@@ -3,7 +3,7 @@
 -- SPDX-License-Identifier: MIT
 
 -- This script attempts to implement the basic functionality needed in order for
--- the LADXR Archipelago client to be able to talk to EmuHawk instead of RetroArch
+-- the some Archipelago clients to be able to talk to EmuHawk instead of RetroArch
 -- by reproducing the RetroArch API with EmuHawk's Lua interface.
 --
 -- RetroArch UDP API: https://github.com/libretro/RetroArch/blob/master/command.c
@@ -49,20 +49,15 @@ require('common')
 udp:setsockname('127.0.0.1', 55355)
 udp:settimeout(0)
 
-function on_vblank()
-    -- Attempt to lessen the CPU load by only polling the UDP socket every x frames.
-    -- x = 10 is entirely arbitrary, very little thought went into it.
-    -- We could try to make use of client.get_approx_framerate() here, but the values returned
-    -- seemed more or less arbitrary as well.
-    --
-    -- NOTE: Never mind the above, the LADXR Archipelago client appears to run into problems with
-    --       interwoven GET_STATUS calls, leading to stopped communication.
-    --       For GB(C), polling the socket on every frame is OK-ish, so we just do that.
-    --
-    --while emu.framecount() % 10 ~= 0 do
-    --    emu.frameadvance()
-    --end
+local domains = {
+    ["READ_CORE_MEMORY"] = "System Bus",
+    ["READ_CORE_RAM"] = "Main RAM",
+    ["WRITE_CORE_MEMORY"] = "System Bus",
+    ["WRITE_CORE_RAM"] = "Main RAM"
+}
 
+-- receive a udp packet and handle it
+local function server_handle()
     local data, msg_or_ip, port_or_nil = udp:receivefrom()
     if data then
         -- "data" format is "COMMAND [PARAMETERS] [...]"
@@ -95,7 +90,7 @@ function on_vblank()
                 -- NOTE: No newline is intentional here for 1:1 RetroArch compatibility
                 udp:sendto("GET_STATUS CONTENTLESS", msg_or_ip, port_or_nil)
             end
-        elseif command == "READ_CORE_MEMORY" then
+        elseif command == "READ_CORE_MEMORY" or command == "READ_CORE_RAM" then
             local _, address, length = string.match(data, "(%S+) (%S+) (%S+)")
             address = stripPrefix(address, "0x")
             address = tonumber(address, 16)
@@ -107,7 +102,7 @@ function on_vblank()
             --       Using memory.read_bytes_as_array() and explicitly using the System Bus
             --       as the active memory domain solves this incompatibility, allowing us
             --       to hopefully use whatever GB(C) emulator we want.
-            local mem = memory.read_bytes_as_array(address, length, "System Bus")
+            local mem = memory.read_bytes_as_array(address, length, domains[command])
             local hex_string = ""
             for _, v in ipairs(mem) do
                 hex_string = hex_string .. string.format("%02X ", v)
@@ -116,7 +111,7 @@ function on_vblank()
             hex_string = hex_string:sub(1, -2) -- Hang head in shame, remove last " "
             local reply = string.format("%s %02x %s\n", command, address, hex_string)
             udp:sendto(reply, msg_or_ip, port_or_nil)
-        elseif command == "WRITE_CORE_MEMORY" then
+        elseif command == "WRITE_CORE_MEMORY" or command == "WRITE_CORE_RAM" then
             local _, address = string.match(data, "(%S+) (%S+)")
             address = stripPrefix(address, "0x")
             address = tonumber(address, 16)
@@ -131,15 +126,23 @@ function on_vblank()
                 i = i + 1
             end
 
-            memory.write_bytes_as_array(address, to_write, "System Bus")
+            memory.write_bytes_as_array(address, to_write, domains[command])
             local reply = string.format("%s %02x %d\n", command, address, i - 3)
             udp:sendto(reply, msg_or_ip, port_or_nil)
         end
     end
 end
 
-event.onmemoryexecute(on_vblank, 0x40, "ap_connector_vblank")
+if emu.getsystemid() == "GBC" then
+    -- This is a workaround for: https://github.com/TASEmulators/BizHawk/issues/3711
+    event.onmemoryexecute(server_handle, 0x40, "ap_connector_vblank")
+    print("using vblank event")
+else
+    event.onframeend(server_handle, "ap_connector_frame")
+    print("using frame event")
+end
 
+print("connector loaded")
 while true do
     emu.yield()
 end
